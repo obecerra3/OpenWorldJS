@@ -26,8 +26,29 @@ superpowers like radar and loud voice
 
 should there be impending doom
 
-incentivize travelling in groups. there should be monsters or something that can only be defeated by a group of people. exploring selfishness and greed, prisoner's dilemma type thing. trust and betrayal.     
+incentivize travelling in groups. there should be monsters or something that can only be defeated by a group of people. exploring selfishness and greed, prisoner's dilemma type thing. trust and betrayal.
 
+maybe u should be able to punch people, center of maze should be a safe zone.
+
+maybe they should have a shitty map that gives them some sense of progress.
+
+fast travel back to the centre of the map and rooms that u have already visited.
+
+rooms are safe zones. 
+
+maybe make it so that people can buy powerups to help them with the game.
+
+WHATS SHOULD THE PLAYERS LOOK LIKE??
+
+monetization: aesthetic/emotes, maybe the people should be able to buy new markers to teleport to around the maze.
+
+everyone should have a marker that they can teleport around to.
+
+what should happen when someone dies? should they drop loot? trust and betrayal.
+
+most interesting part is social interaction.
+
+massive trees that you see above the maze.
 
 ￼<img width="300px" src="inspiration/maze.jpg"></img>￼<img width="300px" src="inspiration/slender.png"></img>
 ￼
