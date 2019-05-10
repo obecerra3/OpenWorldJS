@@ -1,2 +1,2 @@
-# Maze
+# maze
 An internet maze
