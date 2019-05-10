@@ -16,6 +16,8 @@ center room shows stats
 
 sound adjustment based on physical surroundings, people make sounds when the bump into walls, you can hear super faintly through walls
 
+on your journey, u need to follow sounds and murmurs in order to find more advanced players to get information about the surroundings or more directions
+
 
 ￼<img width="300px" src="inspiration/maze.jpg"></img>￼<img width="300px" src="inspiration/slender.png"></img>
 ￼
