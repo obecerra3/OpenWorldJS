@@ -26,6 +26,8 @@ superpowers like radar and loud voice
 
 should there be impending doom
 
+incentivize travelling in groups. there should be monsters or something that can only be defeated by a group of people. exploring selfishness and greed, prisoner's dilemma type thing. trust and betrayal.     
+
 
 ￼<img width="300px" src="inspiration/maze.jpg"></img>￼<img width="300px" src="inspiration/slender.png"></img>
 ￼
