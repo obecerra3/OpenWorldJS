@@ -18,6 +18,14 @@ sound adjustment based on physical surroundings, people make sounds when the bum
 
 on your journey, u need to follow sounds and murmurs in order to find more advanced players to get information about the surroundings or more directions
 
+maybe vehicles
+
+changing walking speed
+
+superpowers like radar and loud voice
+
+should there be impending doom
+
 
 ￼<img width="300px" src="inspiration/maze.jpg"></img>￼<img width="300px" src="inspiration/slender.png"></img>
 ￼
