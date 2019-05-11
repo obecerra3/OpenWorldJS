@@ -51,4 +51,7 @@ most interesting part is social interaction.
 massive trees that you see above the maze.
 
 ￼<img width="300px" src="inspiration/maze.jpg"></img>￼<img width="300px" src="inspiration/slender.png"></img>
+
+Shortcuts that cut out significant parts of the maze, think of like fill in the sentence puzzles in which people can find letters by exploring, or take the brute force approach around the short cut. You can also have only a certain number of tries to open a short cut, they take time to regen. Also how many teleport waypoints should you have. 
+
 ￼
