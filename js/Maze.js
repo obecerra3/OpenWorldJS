@@ -1,98 +1,162 @@
-var scene, camera, key, renderer, clock;
-var cube, meshFloor;//, ambientLight, light;
 
-var keyboard = {};
+var camera, scene, renderer, controls;
+var cube, meshFloor;
 
-var player = { height:1.8, speed:0.2, turnSpeed:Math.PI*0.02 };
-var USE_WIREFRAME = false;
+var objects = [];
+
+var raycaster;
+
+var moveForward = false;
+var moveBackward = false;
+var moveLeft = false;
+var moveRight = false;
+var canJump = false;
+
+var prevTime = performance.now();
+var velocity = new THREE.Vector3();
+var direction = new THREE.Vector3();
+var vertex = new THREE.Vector3();
+var color = new THREE.Color();
+
+init();
+animate();
 
 function init() {
+
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-    key = [0,0,0,0,0]; // left, right, up, down
-    clock = new THREE.Clock();
-    renderer = new THREE.WebGLRenderer();
+    scene.background = new THREE.Color( 0xffffff );
+    scene.fog = new THREE.Fog( 0xffffff, 0, 750 );
+
+    var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
+    light.position.set( 0.5, 1, 0.75 );
+    scene.add( light );
+
+    controls = new THREE.PointerLockControls( camera );
+
+    document.addEventListener( 'click', function () {
+        controls.lock();
+    }, false );
+
+    scene.add( controls.getObject() );
+
+    var onKeyDown = function ( event ) {
+        switch ( event.keyCode ) {
+            case 38: // up
+            case 87: // w
+                moveForward = true;
+                break;
+            case 37: // left
+            case 65: // a
+                moveLeft = true;
+                break;
+            case 40: // down
+            case 83: // s
+                moveBackward = true;
+                break;
+            case 39: // right
+            case 68: // d
+                moveRight = true;
+                break;
+            case 32: // space
+                if ( canJump === true ) velocity.y += 350;
+                canJump = false;
+                break;
+        }
+    };
+
+    var onKeyUp = function ( event ) {
+        switch ( event.keyCode ) {
+            case 38: // up
+            case 87: // w
+                moveForward = false;
+                break;
+            case 37: // left
+            case 65: // a
+                moveLeft = false;
+                break;
+            case 40: // down
+            case 83: // s
+                moveBackward = false;
+                break;
+            case 39: // right
+            case 68: // d
+                moveRight = false;
+                break;
+
+        }
+
+    };
+
+    document.addEventListener( 'keydown', onKeyDown, false );
+    document.addEventListener( 'keyup', onKeyUp, false );
+
+    raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
+
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
-    //Create a Cube
-    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    var material = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
-    cube = new THREE.Mesh( geometry, material );
-    scene.add(cube);
+    window.addEventListener( 'resize', onWindowResize, false );
 
-    //mesh floor
-    meshFloor = new THREE.Mesh(
-        new THREE.PlaneGeometry(20,20, 10,10),
-        new THREE.MeshPhongMaterial({color:0xffffff, wireframe:USE_WIREFRAME})
-    );
-    meshFloor.rotation.x -= Math.PI / 2;
-    meshFloor.receiveShadow = true;
-    scene.add(meshFloor);
+}
 
-    camera.position.set(0, player.height, -5);
-    camera.lookAt(new THREE.Vector3(0,player.height,0));
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 
-    animate();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
 }
 
 function animate() {
+
     requestAnimationFrame( animate );
 
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
+    if ( controls.isLocked === true ) {
 
-    if (keyboard[KEY.W] || keyboard[KEY.UP]) {
-        camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
-        camera.position.z -= -Math.cos(camera.rotation.y) * player.speed;
-    }
-    if (keyboard[KEY.S] || keyboard[KEY.DOWN]) {
-        camera.position.x += Math.sin(camera.rotation.y) * player.speed;
-        camera.position.z += -Math.cos(camera.rotation.y) * player.speed;
-    }
-    if (keyboard[KEY.A] || keyboard[KEY.LEFT]) {
-        camera.position.x += Math.sin(camera.rotation.y + Math.PI/2) * player.speed;
-        camera.position.z += -Math.cos(camera.rotation.y + Math.PI/2) * player.speed;
-    }
-    if (keyboard[KEY.D] || keyboard[KEY.RIGHT]) {
-        camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
-        camera.position.z += -Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
+        raycaster.ray.origin.copy( controls.getObject().position );
+        raycaster.ray.origin.y -= 10;
+
+        var intersections = raycaster.intersectObjects( objects );
+
+        var onObject = intersections.length > 0;
+
+        var time = performance.now();
+        var delta = ( time - prevTime ) / 1000;
+
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+
+        velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+
+        direction.z = Number( moveForward ) - Number( moveBackward );
+        direction.x = Number( moveLeft ) - Number( moveRight );
+        direction.normalize(); // this ensures consistent movements in all directions
+
+        if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
+        if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
+
+        if ( onObject === true ) {
+
+            velocity.y = Math.max( 0, velocity.y );
+            canJump = true;
+
+        }
+        controls.getObject().translateX( velocity.x * delta );
+        controls.getObject().position.y += ( velocity.y * delta ); // new behavior
+        controls.getObject().translateZ( velocity.z * delta );
+
+        if ( controls.getObject().position.y < 10 ) {
+            velocity.y = 0;
+            controls.getObject().position.y = 10;
+            canJump = true;
+        }
+
+        prevTime = time;
     }
 
     renderer.render( scene, camera );
 }
-
-function keyDown(event){
-    keyboard[event.keyCode] = true;
-}
-
-function keyUp(event){
-    keyboard[event.keyCode] = false;
-}
-
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
-
-window.onload = init;
-
-//Keycode values
-var KEY = {
-    BACKSPACE: 8,
-    TAB:       9,
-    RETURN:   13,
-    ESC:      27,
-    SPACE:    32,
-    PAGEUP:   33,
-    PAGEDOWN: 34,
-    END:      35,
-    HOME:     36,
-    LEFT:     37,
-    UP:       38,
-    RIGHT:    39,
-    DOWN:     40,
-    INSERT:   45,
-    DELETE:   46,
-    ZERO:     48, ONE: 49, TWO: 50, THREE: 51, FOUR: 52, FIVE: 53, SIX: 54, SEVEN: 55, EIGHT: 56, NINE: 57,
-    A:        65, B: 66, C: 67, D: 68, E: 69, F: 70, G: 71, H: 72, I: 73, J: 74, K: 75, L: 76, M: 77, N: 78, O: 79, P: 80, Q: 81, R: 82, S: 83, T: 84, U: 85, V: 86, W: 87, X: 88, Y: 89, Z: 90,
-    TILDA:    192
-  };
