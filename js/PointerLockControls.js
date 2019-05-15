@@ -9,6 +9,7 @@ THREE.PointerLockControls = function ( camera, domElement ) {
 
     this.domElement = domElement || document.body;
     this.isLocked = false;
+    this.isEnabled = false;
 
     var euler = new THREE.Euler( 0, 0, 0, 'YXZ' );
 

@@ -1,8 +1,12 @@
 /*
-Currently directly taken from: https://github.com/mrdoob/three.js/blob/master/examples/misc_controls_pointerlock.html
+Currently directly taken from: https://github.com/mrdoob/three.js/blob/master/examples/misc_fpsControls_pointerlock.html
 */
 
-var camera, scenex, renderer, controls;
+var camera, scene, renderer, clock;
+
+var fpsControls;
+var orbitControls;
+
 
 var objects = [];
 
@@ -25,15 +29,39 @@ var maze;
 var COL_LEN = 6;
 var ROW_LEN = 6;
 var WALL_SIZE = 10;
-var SPACE_SIZE = 40;
+var SPACE_SIZE = 50;
 
+// Physics variables
+var gravityConstant = - 9.8;
+var physicsWorld;
+var rigidBodies = [];
+var margin = 0.05;
+var transformAux1;
 
-init();
-animate();
+Ammo().then( function( AmmoLib ) {
+
+    Ammo = AmmoLib;
+    init();
+    animate();
+
+} );
 
 function init() {
 
+    initGraphics();
+
+    initPhysics();
+
+    createObjects();
+
+    initInput();
+
+}
+
+function initGraphics() {
+
     THREE.Cache.enabled = true;
+    clock = new THREE.Clock();
     loadMaze();
 
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
@@ -46,14 +74,61 @@ function init() {
     light.position.set( 0.5, 1, 0.75 );
     scene.add( light );
 
-    controls = new THREE.PointerLockControls( camera );
+    fpsControls = new THREE.PointerLockControls( camera );
+    fpsControls.isEnabled = true;
+    orbitControls = new THREE.OrbitControls( camera );
+    orbitControls.isEnabled = false;
+    orbitControls.enableZoom = false;
 
     document.addEventListener( 'click', function () {
-        controls.lock();
-        drawMaze();
+        if (fpsControls.isEnabled) {
+            fpsControls.lock();
+        }
     }, false );
 
-    scene.add( controls.getObject() );
+   // scene.add( fpsControls.getObject() );
+
+    raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
+
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    window.addEventListener( 'resize', onWindowResize, false );
+
+}
+
+function createObjects() {
+
+    var pos = new THREE.Vector3();
+    var quat = new THREE.Quaternion();
+
+    // Ground
+
+    pos.set( 0, -32, 0 );
+    quat.set( 0, 0, 0, 1 );
+    var ground = createParalellepiped( 1000, 0.25, 1000, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
+    ground.castShadow = true;
+    ground.receiveShadow = true;
+
+}
+
+function initPhysics() {
+
+    var collisionConfiguration = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
+    var dispatcher = new Ammo.btCollisionDispatcher( collisionConfiguration );
+    var broadphase = new Ammo.btDbvtBroadphase();
+    var solver = new Ammo.btSequentialImpulseConstraintSolver();
+    var softBodySolver = new Ammo.btDefaultSoftBodySolver();
+    physicsWorld = new Ammo.btSoftRigidDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration, softBodySolver );
+    physicsWorld.setGravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
+    physicsWorld.getWorldInfo().set_m_gravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
+    transformAux1 = new Ammo.btTransform();
+
+}
+
+function initInput() {
 
     var onKeyDown = function ( event ) {
         switch ( event.keyCode ) {
@@ -76,6 +151,18 @@ function init() {
             case 32: // space
                 if ( canJump === true ) velocity.y += 250;
                 canJump = false;
+                break;
+            case 79: // o
+                fpsControls.isEnabled = false;
+                orbitControls.isEnabled = true;
+                orbitControls.enableZoom = true;
+                fpsControls.unlock();
+                break;
+            case 70: // f
+                fpsControls.isEnabled = true;
+                orbitControls.isEnabled = false;
+                orbitControls.enableZoom = false;
+                fpsControls.lock();
                 break;
         }
     };
@@ -105,45 +192,65 @@ function init() {
 
     document.addEventListener('keydown', onKeyDown, false);
     document.addEventListener('keyup', onKeyUp, false);
+}
 
-    raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
+function createParalellepiped( sx, sy, sz, mass, pos, quat, material ) {
 
-    //cube
+    var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
+    var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
+    shape.setMargin( margin );
+    createRigidBody( threeObject, shape, mass, pos, quat );
+    return threeObject;
 
-    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    var material = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
-    var cube = new THREE.Mesh( geometry, material );
-    scene.add (cube);
+}
 
-    // ground
+function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
 
-    var mesh = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry( 5000, 5000 ),
-        new THREE.MeshPhongMaterial( { color: 0xffffff, depthWrite: false } )
-    );
-    mesh.rotation.x = - Math.PI / 2;
-    mesh.receiveShadow = true;
-    scene.add( mesh );
+    threeObject.position.copy( pos );
+    threeObject.quaternion.copy( quat );
+    var transform = new Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+    transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+    var motionState = new Ammo.btDefaultMotionState( transform );
+    var localInertia = new Ammo.btVector3( 0, 0, 0 );
+    physicsShape.calculateLocalInertia( mass, localInertia );
+    var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
+    var body = new Ammo.btRigidBody( rbInfo );
+    threeObject.userData.physicsBody = body;
+    scene.add( threeObject );
+    if ( mass > 0 ) {
+        rigidBodies.push( threeObject );
+        // Disable deactivation
+        body.setActivationState( 4 );
+    }
+    physicsWorld.addRigidBody( body );
 
+}
 
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
+function createRandomColor() {
 
-    window.addEventListener( 'resize', onWindowResize, false );
+    return Math.floor( Math.random() * ( 1 << 24 ) );
+
+}
+
+function createMaterial() {
+
+    return new THREE.MeshPhongMaterial( { color: createRandomColor() } );
 
 }
 
 function loadMaze(data) {
+
     if (data == null) {
         var loader = new THREE.FileLoader();
         loader.load('assets/maze.txt', loadMaze,
-            function (xhr) { console.log((xhr.loaded / xhr.total * 100) + '% loaded'); },
+            function (xhr) { /*console.log((xhr.loaded / xhr.total * 100) + '% loaded');*/ },
             function (err) { console.error( 'An error happened' ); }
         );
     } else {
         maze = data;
+        drawMaze();
     }
 
 }
@@ -165,6 +272,11 @@ function drawMaze() {
     }
 
 }
+
+/*
+    Takes input i (index of maze data binary) and returns an array of walls created
+    at that point.
+*/
 
 function createWalls( i ) {
 
@@ -251,9 +363,9 @@ function animate() {
 
     requestAnimationFrame( animate );
 
-    if ( controls.isLocked === true ) {
+    if ( fpsControls.isEnabled && fpsControls.isLocked ) {
 
-        raycaster.ray.origin.copy( controls.getObject().position );
+        raycaster.ray.origin.copy( fpsControls.getObject().position );
         raycaster.ray.origin.y -= 10;
 
         var intersections = raycaster.intersectObjects( objects );
@@ -280,13 +392,13 @@ function animate() {
             canJump = true;
 
         }
-        controls.getObject().translateX( velocity.x * delta );
-        controls.getObject().position.y += ( velocity.y * delta ); // new behavior
-        controls.getObject().translateZ( velocity.z * delta );
+        fpsControls.getObject().translateX( velocity.x * delta );
+        fpsControls.getObject().position.y += ( velocity.y * delta ); // new behavior
+        fpsControls.getObject().translateZ( velocity.z * delta );
 
-        if ( controls.getObject().position.y < 5 ) {
+        if ( fpsControls.getObject().position.y < 5 ) {
             velocity.y = 0;
-            controls.getObject().position.y = 5;
+            fpsControls.getObject().position.y = 5;
             canJump = true;
         }
 
