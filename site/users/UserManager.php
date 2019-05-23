@@ -7,12 +7,16 @@ class UserManager {
     }
     
     /* verify that the user exists
-     * returns true iff user exists and password is correct
+     * returns response object accordingly
      */ 
     public function verify ($username, $password) {
       $query = $this->link->query("SELECT * FROM Users WHERE username='$username'");
       $result = $query->fetch_assoc();
-      return password_verify($password, $result["phash"]);
+      if (password_verify($password, $result["phash"])) {
+        return (object) array('success' => True, 'x' => $result["x"], 'y' => $result["y"]);
+      } else {
+        return (object) array('success' => False);
+      }
     }
     
     /* create a new user
