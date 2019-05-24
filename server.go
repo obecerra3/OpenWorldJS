@@ -18,20 +18,14 @@ var upgrader = websocket.Upgrader{
 }
 
 
-func chunk(idx int) [][]byte {
-  matrix := make([][]byte, CHUNK_SIZE)
-  rows := make([]byte, CHUNK_SIZE*CHUNK_SIZE)
-  for i := 0; i < CHUNK_SIZE; i++ {
-    matrix[i] = rows[i*CHUNK_SIZE : (i+1)*CHUNK_SIZE]
-  }
+func chunk(idx int) []byte {
+  matrix := make([]byte, CHUNK_SIZE*CHUNK_SIZE)
   var start = ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE));
-  fmt.Println(start);
   for i := start; i < start + (CHUNK_SIZE * CHUNK_SIZE); i++ {
     var ix = (i - start) / 27;
     var jx = (i - start) % 27;
     var mi = start + (ix * MAZE_SIZE) + jx;
-    fmt.Println(mi/8);
-    matrix[ix][jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1;
+    matrix[ix*CHUNK_SIZE + jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1;
   }
   return matrix;
 }
@@ -42,9 +36,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         log.Println(err)
         return
+    } 
+    
+    if err := conn.WriteMessage(websocket.BinaryMessage, chunk(0)); err != nil {
+      log.Println(err)
+      return
     }
-    _,p,_ := conn.ReadMessage()
-    fmt.Printf("%s", p)
 }
 
 
@@ -54,8 +51,7 @@ func main () {
     fmt.Print(err)
   }
   MAZE = maze
-  
-  fmt.Print(chunk(224));
+
   
   
   http.HandleFunc("/", handler)
