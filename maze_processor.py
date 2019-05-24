@@ -35,8 +35,3 @@ with open('maze.bin', 'wb') as fh:
  
 
 print("width: %d, height: %d" %(width//2, height//2))
-
-
-
-
-

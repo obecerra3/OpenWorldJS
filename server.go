@@ -1,7 +1,6 @@
 package main
 
 import (
-        "math"
         "io/ioutil"
         "fmt"
         "log"
@@ -10,8 +9,7 @@ import (
 )
 
 const MAZE_SIZE = 405
-const NUM_CHUNKS = 15
-const CHUNK_SIZE = MAZE_SIZE / NUM_CHUNKS
+const CHUNK_SIZE = 27
 var MAZE []byte
 
 var upgrader = websocket.Upgrader{
@@ -19,22 +17,23 @@ var upgrader = websocket.Upgrader{
     WriteBufferSize: 1024,
 }
 
-func chunk(x float64, y float64) [][]byte {
-  var xchunk = math.Floor(x * NUM_CHUNKS);
-  var ychunk = math.Floor(y * NUM_CHUNKS);
-  var ret = make([][]byte, CHUNK_SIZE * CHUNK_SIZE)
-  
-  for i:=0; i<CHUNK_SIZE; i++ {
-    for j := 0; j < CHUNK_SIZE; j++ {
-      ret[i][j] = MAZE[MAZE_SIZE*i + CHUNK_SIZE*ychunk]
-    }
+
+func chunk(idx int) [][]byte {
+  matrix := make([][]byte, CHUNK_SIZE)
+  rows := make([]byte, CHUNK_SIZE*CHUNK_SIZE)
+  for i := 0; i < CHUNK_SIZE; i++ {
+    matrix[i] = rows[i*CHUNK_SIZE : (i+1)*CHUNK_SIZE]
   }
-  
-  
-  
-  
-  
-  
+  var start = ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE));
+  fmt.Println(start);
+  for i := start; i < start + (CHUNK_SIZE * CHUNK_SIZE); i++ {
+    var ix = (i - start) / 27;
+    var jx = (i - start) % 27;
+    var mi = start + (ix * MAZE_SIZE) + jx;
+    fmt.Println(mi/8);
+    matrix[ix][jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1;
+  }
+  return matrix;
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +54,9 @@ func main () {
     fmt.Print(err)
   }
   MAZE = maze
+  
+  fmt.Print(chunk(224));
+  
   
   http.HandleFunc("/", handler)
   http.ListenAndServe(":8080", nil)
