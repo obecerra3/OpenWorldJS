@@ -52,8 +52,6 @@ func main () {
   }
   MAZE = maze
 
-  
-  
   http.HandleFunc("/", handler)
   http.ListenAndServe(":8080", nil)
 }
