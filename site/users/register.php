@@ -15,6 +15,6 @@ $password = $_POST["password"];
 
 $user_manager = new UserManager();
 $result = $user_manager->register($email, $username, $password);
-echo $result ? 1 : 0;
+echo json_encode($result);
 
 ?> 
