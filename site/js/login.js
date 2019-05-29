@@ -1,7 +1,9 @@
 $('#login').click(function () {
   var data = {}
   $('#login-form').serializeArray().forEach((x)=>data[x["name"]] = x["value"]);
-  $.post("https://themaze.io/users/login.php", data, function (data) {
+
+  $.post("users/login.php", data, function (data) {
+
     var response = $.parseJSON(data);
     if (response["success"]) {
       // logged in
@@ -18,7 +20,7 @@ $('#login').click(function () {
 $('#create').click(function () {
   var data = {}
   $('#register-form').serializeArray().forEach((x)=>data[x["name"]] = x["value"]);
-  $.post("https://themaze.io/users/register.php", data, function (data) {
+  $.post("users/register.php", data, function (data) {
     console.log(data);
     var response = $.parseJSON(data);
     if (response["success"]) {

@@ -5,7 +5,6 @@ webSocket.onmessage = function (event) {
   printBuf(blob);
 }
 
-
 async function printBuf(blob) {
   var arrayBuffer = await new Response(blob).arrayBuffer();
   var array = new Int8Array(arrayBuffer);
@@ -18,4 +17,9 @@ async function printBuf(blob) {
       str = "" 
     }
   }
+}
+
+webSocket.onopen = function (event) {
+  console.log("websocket connected");
+  webSocket.send("10");
 }

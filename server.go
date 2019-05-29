@@ -5,11 +5,19 @@ import (
         "fmt"
         "log"
         "net/http"
+        "strconv"
         "github.com/gorilla/websocket"
+)
+
+
+const (
+  INVALID_INDEX = 0
+  CAST_ERROR = 1
 )
 
 const MAZE_SIZE = 405
 const CHUNK_SIZE = 27
+const NUM_CHUNKS = (MAZE_SIZE/CHUNK_SIZE)*(MAZE_SIZE/CHUNK_SIZE)
 var MAZE []byte
 
 var upgrader = websocket.Upgrader{
@@ -37,10 +45,37 @@ func handler(w http.ResponseWriter, r *http.Request) {
         log.Println(err)
         return
     } 
-    
+
     if err := conn.WriteMessage(websocket.BinaryMessage, chunk(0)); err != nil {
       log.Println(err)
       return
+
+    for {
+      _, p, err := conn.ReadMessage()
+      if err != nil {
+       log.Println(err)
+       return
+      }
+      req, err := strconv.Atoi(string(p))
+      if err != nil {
+        if err := conn.WriteMessage(websocket.BinaryMessage, []byte{CAST_ERROR}); err != nil { 
+          log.Println(err)
+          return
+        }
+        continue
+      }
+      if (req > NUM_CHUNKS-1 || req < 0) {
+        if err := conn.WriteMessage(websocket.BinaryMessage, []byte{INVALID_INDEX}); err != nil { 
+          log.Println(err)
+          return
+        }
+        continue
+      }
+      if err := conn.WriteMessage(websocket.BinaryMessage, chunk(req)); err != nil { 
+        log.Println(err)
+        return
+      }
+
     }
 }
 
@@ -53,5 +88,6 @@ func main () {
   MAZE = maze
 
   http.HandleFunc("/", handler)
-  http.ListenAndServe(":8080", nil)
+  http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/key.pem", nil)
+
 }
