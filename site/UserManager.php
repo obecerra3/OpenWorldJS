@@ -26,5 +26,17 @@ class UserManager {
       return (object) array('success' => $query ? True : False);
     }
     
+    /* check if username or email already exists
+    */
+    public function exists_username($username) {
+      $query = $this->link->query("SELECT * FROM Users WHERE username='$username'");
+      return $query->num_rows > 0;
+    }
+    
+    public function exists_email($email) {
+      $query = $this->link->query("SELECT * FROM Users WHERE email='$email'");
+      return $query->num_rows > 0;
+    }
+    
     
 }

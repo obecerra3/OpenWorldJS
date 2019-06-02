@@ -21,5 +21,5 @@ async function printBuf(blob) {
 
 webSocket.onopen = function (event) {
   console.log("websocket connected");
-  webSocket.send("10");
+  webSocket.send("poato");
 }

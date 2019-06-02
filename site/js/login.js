@@ -1,9 +1,7 @@
 $('#login').click(function () {
   var data = {}
   $('#login-form').serializeArray().forEach((x)=>data[x["name"]] = x["value"]);
-
   $.post("users/login.php", data, function (data) {
-
     var response = $.parseJSON(data);
     if (response["success"]) {
       // logged in
