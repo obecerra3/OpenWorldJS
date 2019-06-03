@@ -1,5 +1,9 @@
 <?php
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 class UserManager {
     var $link;
     public function __construct () {
@@ -10,6 +14,7 @@ class UserManager {
      */ 
     public function verify ($username, $password) {
       $query = $this->link->query("SELECT * FROM Users WHERE username='$username'");
+      if ($query->num_rows == 0) { return (object) array('success' => False); }
       $result = $query->fetch_assoc();
       if (password_verify($password, $result["phash"])) {
         return (object) array('success' => True, 'x' => $result["x"], 'y' => $result["y"]);
