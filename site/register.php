@@ -8,6 +8,12 @@ spl_autoload_register(function ($class_name) {
     include $_SERVER['DOCUMENT_ROOT'] . "/" . $class_name . ".php";
 });
 
+
+if(isset($_SESSION["auth"]) && $_SESSION["auth"] === true){
+  header("location: maze.php");
+  exit;
+}
+
 $userMan = new UserManager();
  
 $username = $email = $password = $confirm_password = "";

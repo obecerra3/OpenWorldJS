@@ -10,6 +10,7 @@ echo "WELCOME TO THE MAZE, " . $_SESSION["username"];
 
 
 
+
 ?>
 
 
