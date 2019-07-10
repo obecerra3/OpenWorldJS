@@ -1,13 +1,19 @@
 <?php
 session_start();
-if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
-  header("location: login.php");
-  exit;
-}
+/* DEBUG */
+
+$_SESSION["username"] = "developer";
+$_SESSION["x"] = 0;
+$_SESSION["y"] = 0;
 
 
-echo "WELCOME TO THE MAZE, " . $_SESSION["username"];
+/* DEBUG */
 
+
+//if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
+//  header("location: login.php");
+//  exit;
+//}
 
 
 
@@ -16,12 +22,31 @@ echo "WELCOME TO THE MAZE, " . $_SESSION["username"];
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-    <link rel="stylesheet" href="">
-</head>
-<body>
-</body>
+  <head>
+    <title>Collision DEMO</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="./css/main.css">
+    <style>
+      #blocker {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+      }
+
+  
+    </style>
+  </head>
+  <body>
+    <div id="blocker">
+
+     
+
+    </div>
+
+    <script type="module" src="js/maze.js"></script>
+  </body>
 </html>
+
 
