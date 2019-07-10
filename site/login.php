@@ -19,7 +19,7 @@ $user_man = new UserManager();
  
 $username = $password = "";
 $username_err = $password_err = "";
- 
+
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     
     if(empty(trim($_POST["username"]))){
@@ -39,7 +39,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     if ($verification->success) {
       session_start();
       $_SESSION["auth"] = true;
-      $_SESSION["username"] = $username;                            
+      $_SESSION["username"] = $username;
+      $_SESSION["x"] = $verification->x;
+      $_SESSION["y"] = $verificaiton->y;                            
       header("location: maze.php");
     } else {
         $password_err = "Login failed, please try again.";
