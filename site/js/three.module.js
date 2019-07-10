@@ -6973,7 +6973,7 @@ function Ray( origin, direction ) {
 Object.assign( Ray.prototype, {
 
 	set: function ( origin, direction ) {
-
+  
 		this.origin.copy( origin );
 		this.direction.copy( direction );
 

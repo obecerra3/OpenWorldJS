@@ -3,15 +3,20 @@ import { PointerLockControls } from './PointerLockControls.js';
 import { BasisTextureLoader } from './BasisTextureLoader.js';
 
 
-var PLAYER_HEIGHT = 10;
-var JUMP_SIZE = 100;
+const PLAYER_HEIGHT = 10;
+const PLAYER_SIZE = 5;
+const PLAYER_MASS = 50.0;
+const PLAYER_SPEED = 500.0;
+const JUMP_SIZE = 100;
+const GRAVITY = 9.8;
 
 
-var camera, scene, renderer, controls;
+
+var camera, scene, renderer, controls, theta;
 
 var walls = [];
+var intersections = [];
 
-var raycaster;
 
 var moveForward = false;
 var moveBackward = false;
@@ -21,13 +26,19 @@ var canJump = false;
 
 var prevTime = performance.now();
 var velocity = new THREE.Vector3();
-var keyDirection = new THREE.Vector3();
+var moveDirection = new THREE.Vector3();
 var lookDirection = new THREE.Vector3();
-var xComp = new THREE.Vector3();
-var zComp = new THREE.Vector3();
 var X = new THREE.Vector3(1,0,0);
 var Y = new THREE.Vector3(0,1,0);
 var Z = new THREE.Vector3(0,0,1);
+var XZ = (new THREE.Vector3(1,0,1)).normalize();
+var _XZ = (new THREE.Vector3(-1,0,1)).normalize();
+var X_Z = (new THREE.Vector3(1,0,-1)).normalize();
+var _X_Z = (new THREE.Vector3(-1,0,-1)).normalize();
+
+
+var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, PLAYER_SIZE);
+
 
 init();
 animate();
@@ -36,14 +47,14 @@ function init() {
   
   
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
-  camera.position.y = 10;
+  camera.position.y = PLAYER_HEIGHT;
   
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xd9edfa );
   scene.fog = new THREE.Fog( 0xd3d3d3, 0, 750 );
   
-  var axesHelper = new THREE.AxesHelper( 5 );
+  var axesHelper = new THREE.AxesHelper( 10 );
   scene.add( axesHelper );
 
   var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
@@ -72,7 +83,6 @@ function init() {
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
 
-  raycaster = new THREE.Raycaster( new THREE.Vector3() , new THREE.Vector3(), 0, 5);
 
 
   var floorGeometry = new THREE.PlaneBufferGeometry( 2000, 2000, 100, 100 );
@@ -195,17 +205,13 @@ function animate() {
     
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 50.0 * delta; // 100.0 = mass
+    velocity.y -= GRAVITY * PLAYER_MASS * delta; 
 
-    keyDirection.z = Number(moveForward) - Number(moveBackward);
-    keyDirection.x = Number(moveLeft) - Number(moveRight);
-    keyDirection.normalize(); 
+    moveDirection.z = Number(moveForward) - Number(moveBackward);
+    moveDirection.x = Number(moveLeft) - Number(moveRight);
+    moveDirection.normalize(); 
     
     controls.getDirection(lookDirection);
-    lookDirection.projectOnPlane(Y);
-  
-    
-    var theta;
     
     if (lookDirection.z > 0) {
       theta = Math.atan(lookDirection.x / lookDirection.z);
@@ -219,39 +225,35 @@ function animate() {
       }
     }
     
-    keyDirection.applyAxisAngle(Y, theta);
+    moveDirection.applyAxisAngle(Y, theta);
     
-    velocity.z += keyDirection.z * 500 * delta;
-    velocity.x += keyDirection.x * 500 * delta;
+    velocity.z += moveDirection.z * PLAYER_SPEED * delta;
+    velocity.x += moveDirection.x * PLAYER_SPEED * delta;
+    
+    
+    raycaster.ray.origin.copy(camera.position);
   
+    raycaster.ray.direction.copy(XZ);
+    intersections = intersections.concat(raycaster.intersectObjects(walls));
+    raycaster.ray.direction.copy(X_Z);
+    intersections = intersections.concat(raycaster.intersectObjects(walls));
+    raycaster.ray.direction.copy(_XZ);
+    intersections = intersections.concat(raycaster.intersectObjects(walls));
+    raycaster.ray.direction.copy(_X_Z);
+    intersections = intersections.concat(raycaster.intersectObjects(walls));
     
-    xComp.copy(velocity);
-    zComp.copy(velocity);
-    zComp.y = xComp.y = 0;
+    if (intersections.length > 0) {
+      if (intersections[0].face.normal.dot(velocity) < 0) {
+        velocity.projectOnPlane(intersections[0].face.normal);
+      }
+    }  
     
-    xComp.projectOnPlane(Z);
-    zComp.projectOnPlane(X);
-    
-    zComp.normalize();
-    xComp.normalize();
-
-    raycaster.set(camera.position, xComp);
-    if (raycaster.intersectObjects(walls).length > 0) {
-      velocity.x = 0;
-    }    
-    
-    
-    raycaster.set(camera.position, zComp);
-    if (raycaster.intersectObjects(walls).length > 0) {
-      velocity.z = 0;
-    }
+    intersections = [];
   
-    
     camera.position.x += velocity.x*delta;
     camera.position.y += velocity.y*delta;
     camera.position.z += velocity.z*delta;
     
-
     
     if ( camera.position.y < PLAYER_HEIGHT ) {
       velocity.y = 0;
