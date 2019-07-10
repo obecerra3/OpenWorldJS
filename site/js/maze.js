@@ -13,6 +13,10 @@ var walls = [];
 
 var theta;
 
+var intersections = [];
+
+var arrow1, arrow2, arrow3;
+
 var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
@@ -21,22 +25,17 @@ var canJump = false;
 
 var prevTime = performance.now();
 var velocity = new THREE.Vector3();
-var keyDirection = new THREE.Vector3();
+var moveDirection = new THREE.Vector3();
 var lookDirection = new THREE.Vector3();
 var X = new THREE.Vector3(1,0,0);
 var Y = new THREE.Vector3(0,1,0);
 var Z = new THREE.Vector3(0,0,1);
-var XZ = (new THREE.Vector3(1,0,1)).normalize();
-var ZX = (new THREE.Vector3(-1,0,1)).normalize();
+var _X = new THREE.Vector3(-1,0,0);
+var _Z = new THREE.Vector3(0,0,-1);
 
-var rayXPosition = new THREE.Vector3();
 
-var rayX = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
-var rayZ = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
-var rayXZ = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
-var rayZX = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
+var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 5);
 
-console.log(X);
 
 init();
 animate();
@@ -205,13 +204,11 @@ function animate() {
     velocity.z -= velocity.z * 10.0 * delta;
     velocity.y -= 9.8 * 50.0 * delta; // 100.0 = mass
 
-    keyDirection.z = Number(moveForward) - Number(moveBackward);
-    keyDirection.x = Number(moveLeft) - Number(moveRight);
-    keyDirection.normalize(); 
+    moveDirection.z = Number(moveForward) - Number(moveBackward);
+    moveDirection.x = Number(moveLeft) - Number(moveRight);
+    moveDirection.normalize(); 
     
     controls.getDirection(lookDirection);
-    lookDirection.projectOnPlane(Y);
-
     
     if (lookDirection.z > 0) {
       theta = Math.atan(lookDirection.x / lookDirection.z);
@@ -225,24 +222,48 @@ function animate() {
       }
     }
     
-    keyDirection.applyAxisAngle(Y, theta);
     
-    velocity.z += keyDirection.z * 500 * delta;
-    velocity.x += keyDirection.x * 500 * delta;
+    var arrowPos = camera.position.clone();
+    arrowPos.y -= 5;
+    
+    moveDirection.applyAxisAngle(Y, theta);
+    
+    velocity.z += moveDirection.z * 500 * delta;
+    velocity.x += moveDirection.x * 500 * delta;
   
-
+   
     
-    rayXPosition.copy(camera.position).x -= 5;
-    rayX.set(rayXPosition, X);
-
+  
+    raycaster.set(camera.position, X);
+    intersections = raycaster.intersectObjects(walls);
+    if (intersections.length > 0) {
+      velocity.x = Math.min(velocity.x, 0);
+    }  
     
-    if (rayX.intersectObjects(walls).length > 0) {
-      velocity.x = 0;
-    }
+    raycaster.set(camera.position, _X);
+    intersections = raycaster.intersectObjects(walls)
+    if (intersections.length > 0) {
+      velocity.x = Math.max(velocity.x, 0);
+    } 
+    
+    raycaster.set(camera.position, Z);
+    intersections = raycaster.intersectObjects(walls);
+    if (intersections.length > 0) {
+      velocity.z = Math.min(velocity.z, 0);
+    }  
+    
+    raycaster.set(camera.position, _Z);
+    intersections = raycaster.intersectObjects(walls)
+    if (intersections.length > 0) {
+      velocity.z = Math.max(velocity.z, 0);
+    } 
+    
+    raycaster.set(camera. )
     
     
     
-    
+     
+  
     camera.position.x += velocity.x*delta;
     camera.position.y += velocity.y*delta;
     camera.position.z += velocity.z*delta;
