@@ -11,7 +11,7 @@ var camera, scene, renderer, controls;
 
 var walls = [];
 
-var raycaster;
+var theta;
 
 var moveForward = false;
 var moveBackward = false;
@@ -23,11 +23,20 @@ var prevTime = performance.now();
 var velocity = new THREE.Vector3();
 var keyDirection = new THREE.Vector3();
 var lookDirection = new THREE.Vector3();
-var xComp = new THREE.Vector3();
-var zComp = new THREE.Vector3();
 var X = new THREE.Vector3(1,0,0);
 var Y = new THREE.Vector3(0,1,0);
 var Z = new THREE.Vector3(0,0,1);
+var XZ = (new THREE.Vector3(1,0,1)).normalize();
+var ZX = (new THREE.Vector3(-1,0,1)).normalize();
+
+var rayXPosition = new THREE.Vector3();
+
+var rayX = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
+var rayZ = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
+var rayXZ = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
+var rayZX = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 10);
+
+console.log(X);
 
 init();
 animate();
@@ -72,7 +81,6 @@ function init() {
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
 
-  raycaster = new THREE.Raycaster( new THREE.Vector3() , new THREE.Vector3(), 0, 5);
 
 
   var floorGeometry = new THREE.PlaneBufferGeometry( 2000, 2000, 100, 100 );
@@ -203,9 +211,7 @@ function animate() {
     
     controls.getDirection(lookDirection);
     lookDirection.projectOnPlane(Y);
-  
-    
-    var theta;
+
     
     if (lookDirection.z > 0) {
       theta = Math.atan(lookDirection.x / lookDirection.z);
@@ -224,28 +230,18 @@ function animate() {
     velocity.z += keyDirection.z * 500 * delta;
     velocity.x += keyDirection.x * 500 * delta;
   
-    
-    xComp.copy(velocity);
-    zComp.copy(velocity);
-    zComp.y = xComp.y = 0;
-    
-    xComp.projectOnPlane(Z);
-    zComp.projectOnPlane(X);
-    
-    zComp.normalize();
-    xComp.normalize();
 
-    raycaster.set(camera.position, xComp);
-    if (raycaster.intersectObjects(walls).length > 0) {
+    
+    rayXPosition.copy(camera.position).x -= 5;
+    rayX.set(rayXPosition, X);
+
+    
+    if (rayX.intersectObjects(walls).length > 0) {
       velocity.x = 0;
-    }    
-    
-    
-    raycaster.set(camera.position, zComp);
-    if (raycaster.intersectObjects(walls).length > 0) {
-      velocity.z = 0;
     }
-  
+    
+    
+    
     
     camera.position.x += velocity.x*delta;
     camera.position.y += velocity.y*delta;
