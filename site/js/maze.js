@@ -241,11 +241,13 @@ function animate() {
     intersections = intersections.concat(raycaster.intersectObjects(walls));
     raycaster.ray.direction.copy(_X_Z);
     intersections = intersections.concat(raycaster.intersectObjects(walls));
-    
+
     if (intersections.length > 0) {
-      if (intersections[0].face.normal.dot(velocity) < 0) {
-        velocity.projectOnPlane(intersections[0].face.normal);
-      }
+      intersections.forEach((x)=> {
+        if (x.face.normal.dot(velocity) < 0) {
+          velocity.projectOnPlane(x.face.normal);
+        }
+      });
     }  
     
     intersections = [];
