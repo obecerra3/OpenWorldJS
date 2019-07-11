@@ -1,2 +1,4 @@
-js/* linguist-vendored
-textures/* linguist-vendored
+site/js/BasisTextureLoader.js linguist-vendored
+site/js/three.module.js linguist-vendored
+site/js/PointerLockControls.js linguist-vendored
+site/textures/* linguist-vendored
