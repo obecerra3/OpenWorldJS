@@ -10,10 +10,10 @@ session_start();
 /* DEBUG */
 
 
-if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
-  header("location: login.php");
-  exit;
-}
+// if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
+//   header("location: login.php");
+//   exit;
+// }
 
 
 
@@ -21,7 +21,7 @@ if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
 
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en">  
   <head>
     <title>The Maze</title>
     <meta charset="utf-8">
@@ -42,18 +42,16 @@ if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
         z-index: 100;
         display:block;
       }
-  
+
     </style>
   </head>
   <body>
     <div id="blocker">
      <div id="info"><?php echo $_SESSION["username"]?></div>
     </div>
-    
-    
+
+
 
     <script type="module" src="js/maze.js"></script>
   </body>
 </html>
-
-

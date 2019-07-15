@@ -1,7 +1,7 @@
 import * as THREE from './three.module.js';
 import { PointerLockControls } from './PointerLockControls.js';
 import { BasisTextureLoader } from './BasisTextureLoader.js';
-
+import { BuildWalls } from './BuildWalls.js';
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
@@ -11,11 +11,11 @@ const JUMP_SIZE = 100;
 const GRAVITY = 9.8;
 
 
-
 var camera, scene, renderer, controls, theta;
 
 var walls = [];
 var intersections = [];
+var mazeBlocks = {};
 
 
 var moveForward = false;
@@ -44,16 +44,15 @@ init();
 animate();
 
 function init() {
-  
-  
+
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
   camera.position.y = PLAYER_HEIGHT;
-  
+
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xd9edfa );
   scene.fog = new THREE.Fog( 0xd3d3d3, 0, 750 );
-  
+
   var axesHelper = new THREE.AxesHelper( 10 );
   scene.add( axesHelper );
 
@@ -79,7 +78,7 @@ function init() {
 
   scene.add(controls.getObject());
 
-  
+
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
 
@@ -92,31 +91,48 @@ function init() {
 
   var floor = new THREE.Mesh( floorGeometry, floorMaterial );
   scene.add( floor );
-  
+
 
   renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
   document.body.appendChild( renderer.domElement );
-  
+
   var loader = new BasisTextureLoader();
   loader.setTranscoderPath( '../textures/' );
   loader.detectSupport( renderer );
-  
-  var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
-  var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
-  var material = new THREE.MeshBasicMaterial(  );
-  var wall1 = new THREE.Mesh( geometry1, material );
-  var wall2 = new THREE.Mesh( geometry2, material );
-  wall1.position.z = -100;
-  wall2.position.z = -50;
-  wall2.position.x = 25;
-  
-  walls.push(wall1);
-  walls.push(wall2);
-  scene.add(wall1);
-  scene.add(wall2);
-  
+
+  //maze loading stuff with BuildWalls
+
+  var exampleChunkArray = [];
+  for (var i = 0; i < 729; i++) {
+    if (i % 10 ) {
+      exampleChunkArray.push(1);
+    } else  {
+      exampleChunkArray.push(0);
+    }
+  }
+
+  var exampleChunkPosition = [0, 0];
+
+  var wallArray = new BuildWalls(exampleChunkPosition, exampleChunkArray);
+
+  var material = new THREE.MeshBasicMaterial();
+  var wall, wallGeo, wallPos;
+
+  for (var i = 0; i < wallArray[0].length; i++) {
+    wallGeo = wallArray[0][i];
+    wallPos = new THREE.Vector3(wallArray[1][i][0], wallArray[1][i][1], wallArray[1][i][2]);
+    // wallPos.y += 50;
+    wall = new THREE.Mesh(wallGeo, material);
+    wall.position.copy(wallPos);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+
+    walls.push(wall);
+    scene.add(wall);
+  };
+
   loader.load( '../textures/PavingStones.basis', function ( texture ) {
 
     texture.encoding = THREE.sRGBEncoding;
@@ -128,7 +144,7 @@ function init() {
     console.error( error );
 
   } );
-  
+
 
   window.addEventListener( 'resize', onWindowResize, false );
 
@@ -193,8 +209,6 @@ function onKeyUp ( event ) {
     }
 }
 
-
-
 function animate() {
 
   requestAnimationFrame( animate );
@@ -202,17 +216,17 @@ function animate() {
   if ( controls.isLocked === true ) {
     var time = performance.now();
     var delta = ( time - prevTime ) / 1000;
-    
+
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= GRAVITY * PLAYER_MASS * delta; 
+    velocity.y -= GRAVITY * PLAYER_MASS * delta;
 
     moveDirection.z = Number(moveForward) - Number(moveBackward);
     moveDirection.x = Number(moveLeft) - Number(moveRight);
-    moveDirection.normalize(); 
-    
+    moveDirection.normalize();
+
     controls.getDirection(lookDirection);
-    
+
     if (lookDirection.z > 0) {
       theta = Math.atan(lookDirection.x / lookDirection.z);
     } else if (lookDirection.x > 0) {
@@ -224,15 +238,15 @@ function animate() {
         theta = -Math.PI/2 - Math.atan(-lookDirection.z/-lookDirection.x);
       }
     }
-    
+
     moveDirection.applyAxisAngle(Y, theta);
-    
+
     velocity.z += moveDirection.z * PLAYER_SPEED * delta;
     velocity.x += moveDirection.x * PLAYER_SPEED * delta;
-    
-    
+
+
     raycaster.ray.origin.copy(camera.position);
-  
+
     raycaster.ray.direction.copy(XZ);
     intersections = intersections.concat(raycaster.intersectObjects(walls));
     raycaster.ray.direction.copy(X_Z);
@@ -248,15 +262,15 @@ function animate() {
           velocity.projectOnPlane(x.face.normal);
         }
       });
-    }  
-    
+    }
+
     intersections = [];
-  
+
     camera.position.x += velocity.x*delta;
     camera.position.y += velocity.y*delta;
     camera.position.z += velocity.z*delta;
-    
-    
+
+
     if ( camera.position.y < PLAYER_HEIGHT ) {
       velocity.y = 0;
       camera.position.y = PLAYER_HEIGHT;
