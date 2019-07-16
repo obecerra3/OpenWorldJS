@@ -28,9 +28,8 @@ var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
 var moveDirection = new THREE.Vector3();
-var X = new THREE.Vector3(1,0,0);
+
 var Y = new THREE.Vector3(0,1,0);
-var Z = new THREE.Vector3(0,0,1);
 var XZ = (new THREE.Vector3(1,0,1)).normalize();
 var _XZ = (new THREE.Vector3(-1,0,1)).normalize();
 var X_Z = (new THREE.Vector3(1,0,-1)).normalize();
@@ -244,8 +243,7 @@ function animate() {
     
     player.position.copy(camera.position);
     
-    
-    
+  
     if (time - prevUpdateTime > updateDelta && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
       socket.send(player.state);
       prevUpdateTime = time;
