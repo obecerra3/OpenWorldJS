@@ -10,6 +10,8 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 
+const MAZE_INFLATION = 10;
+
 var camera, scene, renderer, controls, theta;
 
 var walls = [];
@@ -40,6 +42,7 @@ var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0,
 var player = new Player ("boris");
 var socket = new WebSocket("ws://localhost:8000");
 socket.onopen = () => { socket.send(player.username); }
+socket.onmessage = (event) => { console.log(event.data); }
 
 init();
 animate();
@@ -100,6 +103,8 @@ function init() {
   
   var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
   var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
+  
+  
   var material = new THREE.MeshBasicMaterial(  );
   var wall1 = new THREE.Mesh( geometry1, material );
   var wall2 = new THREE.Mesh( geometry2, material );
@@ -111,6 +116,7 @@ function init() {
   walls.push(wall2);
   scene.add(wall1);
   scene.add(wall2);
+  
   
   loader.load( '../textures/PavingStones.basis', function ( texture ) {
     texture.encoding = THREE.sRGBEncoding;
@@ -245,6 +251,7 @@ function animate() {
     
   
     if (time - prevUpdateTime > updateDelta && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
+      console.log(player.position);
       socket.send(player.state);
       prevUpdateTime = time;
     }
