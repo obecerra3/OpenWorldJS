@@ -9,10 +9,13 @@ const PLAYER_MASS = 50.0;
 const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
-
 const MAZE_INFLATION = 10;
 
+var chunkSize;
+
 var camera, scene, renderer, controls, theta;
+
+
 
 var walls = [];
 var intersections = [];
@@ -42,13 +45,15 @@ var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0,
 var player = new Player ("boris");
 var socket = new WebSocket("ws://localhost:8000");
 socket.onopen = () => { socket.send(player.username); }
-socket.onmessage = (event) => { console.log(event.data); }
+socket.onmessage = (event) => { 
+  console.log(event.data); 
+  receive(JSON.parse(event.data));
+}
 
 init();
 animate();
 
 function init() {
-
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   camera.position.y = PLAYER_HEIGHT;
   
@@ -104,7 +109,6 @@ function init() {
   var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
   var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
   
-  
   var material = new THREE.MeshBasicMaterial(  );
   var wall1 = new THREE.Mesh( geometry1, material );
   var wall2 = new THREE.Mesh( geometry2, material );
@@ -127,6 +131,7 @@ function init() {
   } );
   window.addEventListener( 'resize', onWindowResize, false );
 }
+
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -179,6 +184,7 @@ function onKeyUp ( event ) {
         break;
     }
 }
+
 
 function animate() {
   requestAnimationFrame(animate);
@@ -251,14 +257,28 @@ function animate() {
     
   
     if (time - prevUpdateTime > updateDelta && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
-      console.log(player.position);
-      socket.send(player.state);
-      prevUpdateTime = time;
+      if (chunkSize) {
+        var state = player.state;
+        state["currentChunk"] = {x: Math.round(player.position.x / (MAZE_INFLATION*chunkSize)), z: Math.round(player.position.z / (MAZE_INFLATION*chunkSize))};
+        socket.send(JSON.stringify(state));
+        prevUpdateTime = time;
+      }
     }
-    
     prevPosition.copy(player.position);
     prevLookDirection.copy(player.lookDirection);
   }
   renderer.render( scene, camera );
 }
 
+
+
+function receive (json) {
+  if (json["chunkSize"]) {
+    chunkSize = json["chunkSize"];
+  } else if (json["chunk"]) {
+    console.log("received chunk");
+  }
+  
+  
+  
+}

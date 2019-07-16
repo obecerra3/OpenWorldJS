@@ -9,7 +9,7 @@ export class Player {
   }
   
   get state() {
-    return JSON.stringify({position: this.position, velocity: this.velocity, lookDirection: this.lookDirection});
+    return {position: this.position, velocity: this.velocity, lookDirection: this.lookDirection};
   }
 }
 
