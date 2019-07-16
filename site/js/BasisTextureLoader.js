@@ -13,7 +13,7 @@ import {
 	RGB_ETC1_Format,
 	RGB_PVRTC_4BPPV1_Format,
 	UnsignedByteType
-} from "./three.module.js";
+} from './THREE.js';
 
 /* global Module, createBasisModule */
 

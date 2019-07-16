@@ -10,10 +10,10 @@ session_start();
 /* DEBUG */
 
 
-if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
-  header("location: login.php");
-  exit;
-}
+//if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
+//  header("location: login.php");
+//  exit;
+//}
 
 
 
@@ -52,7 +52,7 @@ if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
     
     
 
-    <script type="module" src="js/maze.js"></script>
+    <script type="module" src="maze.js"></script>
   </body>
 </html>
 
