@@ -2,6 +2,7 @@ import * as THREE from './js/THREE.js';
 import { PointerLockControls } from './js/PointerLockControls.js';
 import { BasisTextureLoader } from './js/BasisTextureLoader.js';
 import { Player } from './js/Player.js';
+import { MazeBuilder } from './js/MazeBuilder.js'
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
@@ -10,12 +11,11 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
+const UPDATE_DELTA = 1000;
 
 var chunkSize;
 
 var camera, scene, renderer, controls, theta;
-
-
 
 var walls = [];
 var intersections = [];
@@ -25,8 +25,6 @@ var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
 var canJump = false;
-
-var updateDelta = 1000; // millisecond update interval
 
 var prevUpdateTime = 0;
 var prevPosition = new THREE.Vector3();
@@ -41,6 +39,8 @@ var X_Z = (new THREE.Vector3(1,0,-1)).normalize();
 var _X_Z = (new THREE.Vector3(-1,0,-1)).normalize();
 
 var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, PLAYER_SIZE);
+
+var mazeBuilder = new MazeBuilder();
 
 var player = new Player ("boris");
 var socket = new WebSocket("ws://localhost:8000");
@@ -256,7 +256,7 @@ function animate() {
     player.position.copy(camera.position);
     
   
-    if (time - prevUpdateTime > updateDelta && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
+    if (time - prevUpdateTime > UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
       if (chunkSize) {
         var state = player.state;
         state["currentChunk"] = {x: Math.round(player.position.x / (MAZE_INFLATION*chunkSize)), z: Math.round(player.position.z / (MAZE_INFLATION*chunkSize))};
@@ -276,9 +276,15 @@ function receive (json) {
   if (json["chunkSize"]) {
     chunkSize = json["chunkSize"];
   } else if (json["chunk"]) {
-    console.log("received chunk");
-  }
-  
-  
-  
+    var map = json["chunk"].split("").reduce((array, curr, idx) => { 
+      if (idx % chunkSize == 0) {
+        array.push([parseInt(curr)]);
+        return array;
+      } else {
+        array[Math.floor(idx / chunkSize)].push(parseInt(curr));
+        return array; 
+      }
+    }, []);
+    mazeBuilder.build(json["origin"], map);
+  }  
 }

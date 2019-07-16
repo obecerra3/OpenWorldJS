@@ -1,16 +1,11 @@
 import * as THREE from './THREE.js';
 
+const MAZE_INFLATION = 10;
+
 export class MazeBuilder {
-  constructor (inflation) {
-    this.inflation = inflation;
-  }
   
+  build (origin, chunkArray) {
   
-  
-  
-  
-  generateChunkWalls (origin, chunkArray) {
-    
   
   
   
