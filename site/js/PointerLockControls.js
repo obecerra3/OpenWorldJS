@@ -7,7 +7,7 @@ import {
 	Euler,
 	EventDispatcher,
 	Vector3
-} from './THREE.js';
+} from './three.min.js';
 
 var PointerLockControls = function ( camera, domElement ) {
 

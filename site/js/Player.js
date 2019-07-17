@@ -1,4 +1,4 @@
-import * as THREE from './THREE.js';
+import * as THREE from './three.min.js';
 
 export class Player {
   constructor(username,position=new THREE.Vector3(),velocity=new THREE.Vector3(),lookDirection=new THREE.Vector3()) {

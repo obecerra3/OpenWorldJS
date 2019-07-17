@@ -1,8 +1,11 @@
-import * as THREE from './js/THREE.js';
+import * as THREE from './js/three.min.js';
 import { PointerLockControls } from './js/PointerLockControls.js';
 import { BasisTextureLoader } from './js/BasisTextureLoader.js';
 import { Player } from './js/Player.js';
-import { MazeBuilder } from './js/MazeBuilder.js'
+import { MazeBuilder } from './js/MazeBuilder.js';
+import { Collider } from './js/Collider.js';
+
+const Peer = window.SimplePeer;
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
@@ -13,12 +16,15 @@ const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
 const UPDATE_DELTA = 1000;
 
+const Y = new THREE.Vector3(0,1,0);
+
+username = makeid(5);
+
 var chunkSize;
 
 var camera, scene, renderer, controls, theta;
 
 var walls = [];
-var intersections = [];
 
 var moveForward = false;
 var moveBackward = false;
@@ -32,23 +38,17 @@ var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
 var moveDirection = new THREE.Vector3();
 
-var Y = new THREE.Vector3(0,1,0);
-var XZ = (new THREE.Vector3(1,0,1)).normalize();
-var _XZ = (new THREE.Vector3(-1,0,1)).normalize();
-var X_Z = (new THREE.Vector3(1,0,-1)).normalize();
-var _X_Z = (new THREE.Vector3(-1,0,-1)).normalize();
-
-var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, PLAYER_SIZE);
-
 var mazeBuilder = new MazeBuilder();
-
-var player = new Player ("boris");
+var collider = new Collider(PLAYER_SIZE);
+var player = new Player (username);
 var socket = new WebSocket("ws://localhost:8000");
+
 socket.onopen = () => { socket.send(player.username); }
 socket.onmessage = (event) => { 
   console.log(event.data); 
   receive(JSON.parse(event.data));
 }
+
 
 init();
 animate();
@@ -219,27 +219,7 @@ function animate() {
     player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
     player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
     
-    
-    raycaster.ray.origin.copy(camera.position);
-  
-    raycaster.ray.direction.copy(XZ);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-    raycaster.ray.direction.copy(X_Z);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-    raycaster.ray.direction.copy(_XZ);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-    raycaster.ray.direction.copy(_X_Z);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-
-    if (intersections.length > 0) {
-      intersections.forEach((x)=> {
-        if (x.face.normal.dot(player.velocity) < 0) {
-          player.velocity.projectOnPlane(x.face.normal);
-        }
-      });
-    }  
-    
-    intersections = [];
+    collider.collide(player, walls);  
   
     camera.position.x += player.velocity.x*delta;
     camera.position.y += player.velocity.y*delta;
@@ -255,7 +235,6 @@ function animate() {
     
     player.position.copy(camera.position);
     
-  
     if (time - prevUpdateTime > UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
       if (chunkSize) {
         var state = player.state;
@@ -287,4 +266,14 @@ function receive (json) {
     }, []);
     mazeBuilder.build(json["origin"], map);
   }  
+}
+
+function makeid(length) {
+   var result           = '';
+   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+   var charactersLength = characters.length;
+   for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return result;
 }

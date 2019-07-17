@@ -6,7 +6,7 @@ import (
         "log"
         "net/http"
         "encoding/json"
-        //"math"
+        "sync"
         "github.com/gorilla/websocket"
 )
 
@@ -16,17 +16,22 @@ const NUM_CHUNKS = (MAZE_SIZE/CHUNK_SIZE)*(MAZE_SIZE/CHUNK_SIZE)
 
 
 var MAZE []byte
+var players Players
+
+type Players struct {
+  sync.RWMutex
+  array []*Player
+}
 
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
     WriteBufferSize: 1024,
 }
 
-type Cartesian struct {
-  X float64             `json:"x"`
-  Z float64             `json:"z"`
+type Vec2 struct {
+  X float64          `json:"x"`
+  Z float64          `json:"z"`
 }
-
 
 type Vec3 struct {
   X float64         `json:"x"`
@@ -34,30 +39,29 @@ type Vec3 struct {
   Z float64         `json:"z"`
 }
 
-type Player struct {
-  Username string         `json:"username"`
-  Position Vec3           `json:"position"`
-  CurrentChunk Cartesian  `json:"currentChunk"`
-  Velocity Vec3           `json:"velocity"`
-  LookDirection Vec3      `json:"lookDirection"`
-  deliveredChunks map[Cartesian]struct{}
-}
-
 type Chunk struct {
-  Origin Cartesian    `json:"origin"`
+  Origin Vec2         `json:"origin"`
   Data string         `json:"chunk"`
 }
 
-
-
-func getChunkOrigin(center Cartesian) Cartesian {
-  var origin Cartesian
-  origin.X = center.X*CHUNK_SIZE - CHUNK_SIZE/2 - 0.5;
-  origin.Z = center.Z*CHUNK_SIZE - CHUNK_SIZE/2 - 0.5;
-  return origin
+type Player struct {
+  Username string         `json:"username"`
+  Position Vec3           `json:"position"`
+  CurrentChunk Vec2       `json:"currentChunk"`
+  Velocity Vec3           `json:"velocity"`
+  LookDirection Vec3      `json:"lookDirection"`
+  deliveredChunks map[Vec2]struct{}
 }
 
-func getChunk(coord Cartesian) Chunk {
+
+func (players *Players) add (player *Player) {
+  players.Lock();
+  players.array = append(players.array, player); 
+  players.Unlock();
+}
+
+
+func getChunk(coord Vec2) Chunk {
   col := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.X;
   row := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.Z;
   idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col);
@@ -71,7 +75,8 @@ func getChunk(coord Cartesian) Chunk {
   }
   var chunk Chunk
   chunk.Data = string(matrix)
-  chunk.Origin = getChunkOrigin(coord)
+  chunk.Origin.X = coord.X*CHUNK_SIZE - CHUNK_SIZE/2-0.5;
+  chunk.Origin.Z = coord.Z*CHUNK_SIZE - CHUNK_SIZE/2-0.5;
   return chunk
 }
 
@@ -83,22 +88,31 @@ func handler(w http.ResponseWriter, r *http.Request) {
     _, usernameData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
     player.Username = string(usernameData)
-    chunkSizeData, _ := json.Marshal(struct {ChunkSize int `json:"chunkSize"`}{CHUNK_SIZE});
-    conn.WriteMessage(websocket.TextMessage, chunkSizeData);
-    player.deliveredChunks = make(map[Cartesian]struct{});    
+    chunkSizeData, _ := json.Marshal(struct {ChunkSize int `json:"chunkSize"`}{CHUNK_SIZE})
+    conn.WriteMessage(websocket.TextMessage, chunkSizeData)
+    player.deliveredChunks = make(map[Vec2]struct{})
+    players.add(&player);
     for {
       _, playerStateData, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
       json.Unmarshal(playerStateData, &player)
       if _, has := player.deliveredChunks[player.CurrentChunk]; !has {
         player.deliveredChunks[player.CurrentChunk] = struct{}{}
-        // _, chunkData := json.Marshal(getChunk(player.CurrentChunk));
-        chunkData, _ := json.Marshal(getChunk(player.CurrentChunk));
-        conn.WriteMessage(websocket.TextMessage, chunkData);
+        chunkData, _ := json.Marshal(getChunk(player.CurrentChunk))
+        conn.WriteMessage(websocket.TextMessage, chunkData)
       }
+      
+      /* CHECK IF PLAYER COMES OUT OF CONTACT WITH OTHER PLAYERS, set timer to end peer-to-peer
+       * CHECK IF PLAYER COMES INTO CONTACT WITH NEW PLAYERS
+       * Establish any new webRTC connections between the players
+       *
+      */
+      
+      
       
     }
 }
+
 
 func main () {
   maze, err := ioutil.ReadFile("maze.bin")
