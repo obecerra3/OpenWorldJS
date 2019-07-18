@@ -4,9 +4,9 @@ const MAZE_INFLATION = 10;
 
 export class MazeBuilder {
   
-  build (origin, chunkArray) {
+  buildChunk (center, chunkArray, chunkSize, inflation) {
   
-  
+    console.log(chunkArray);
   
   
   

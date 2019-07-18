@@ -4,6 +4,7 @@ import { BasisTextureLoader } from './js/BasisTextureLoader.js';
 import { Player } from './js/Player.js';
 import { MazeBuilder } from './js/MazeBuilder.js';
 import { Collider } from './js/Collider.js';
+import { MessageBuilder } from './js/MessageBuilder.js';
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
@@ -13,10 +14,10 @@ const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
 const UPDATE_DELTA = 5000;
+const CHUNK_SIZE = 27;
 
 const Y = new THREE.Vector3(0,1,0);
 
-var chunkSize;
 
 var camera, scene, renderer, controls, theta;
 
@@ -35,15 +36,19 @@ var prevTime = performance.now();
 var moveDirection = new THREE.Vector3();
 
 var mazeBuilder = new MazeBuilder();
+var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 var player = new Player (makeid(5));
 
+
+console.log(player.username); 
+
 var socket = new WebSocket("ws://localhost:8000");
 
-socket.onopen = () => { socket.send(player.username); }
+socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
 socket.onmessage = (event) => { 
   console.log(event.data); 
-  receive(JSON.parse(event.data));
+  receive(event.data);
 }
 
 
@@ -233,12 +238,10 @@ function animate() {
     player.position.copy(camera.position);
     
     if (time - prevUpdateTime > UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
-      if (chunkSize) {
-        var state = player.state;
-        state["currentChunk"] = {x: Math.round(player.position.x / (MAZE_INFLATION*chunkSize)), z: Math.round(player.position.z / (MAZE_INFLATION*chunkSize))};
-        socket.send(JSON.stringify(state));
-        prevUpdateTime = time;
+      if (CHUNK_SIZE) {
+        socket.send(messageBuilder.chunkRequest(player, MAZE_INFLATION, CHUNK_SIZE));
       }
+      prevUpdateTime = time;
     }
     prevPosition.copy(player.position);
     prevLookDirection.copy(player.lookDirection);
@@ -246,23 +249,31 @@ function animate() {
   renderer.render( scene, camera );
 }
 
+function processChunk (data) {
+  var chunkArray = data.slice(2).reduce((array, curr, idx) => { 
+    if (idx % CHUNK_SIZE == 0) {
+      array.push([parseInt(curr)]);
+      return array;
+    } else {
+      array[Math.floor(idx / CHUNK_SIZE)].push(parseInt(curr));
+      return array; 
+    }
+  }, []);
+  mazeBuilder.buildChunk({x: data[0], z: data[1]}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
+}
 
 
-function receive (json) {
-  if (json["chunkSize"]) {
-    chunkSize = json["chunkSize"];
-  } else if (json["chunk"]) {
-    var map = json["chunk"].split("").reduce((array, curr, idx) => { 
-      if (idx % chunkSize == 0) {
-        array.push([parseInt(curr)]);
-        return array;
-      } else {
-        array[Math.floor(idx / chunkSize)].push(parseInt(curr));
-        return array; 
-      }
-    }, []);
-    mazeBuilder.build(json["origin"], map);
-  }  
+
+async function receive (blob) {
+  var arrayBuffer = await new Response(blob).arrayBuffer();
+  var byteView = new Uint8Array(arrayBuffer);
+  switch (byteView[0]) {
+    case 0:
+      processChunk(byteView.slice(1));
+      break;
+    default:
+      break;
+  }
 }
 
 function makeid(length) {

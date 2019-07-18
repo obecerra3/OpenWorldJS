@@ -49,7 +49,6 @@ session_start();
     <div id="blocker">
      <div id="info"><?php echo $_SESSION["username"]?></div>
     </div>
-    <script type="module" src="js/simplepeer.min.js"></script>
     <script>var username = "<?php echo $_SESSION["username"]?>" </script>
     <script type="module" src="maze.js"></script>
   </body>

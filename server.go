@@ -5,7 +5,8 @@ import (
         "fmt"
         "log"
         "net/http"
-        "encoding/json"
+        //"encoding/binary"
+        //"encoding/json"
         "sync"
         "math"
         "github.com/gorilla/websocket"
@@ -27,6 +28,8 @@ type Players struct {
   array []*Player
 }
 
+
+
 type Vec2 struct {
   X float64          `json:"x"`
   Z float64          `json:"z"`
@@ -39,20 +42,27 @@ type Vec3 struct {
 }
 
 type Chunk struct {
-  Origin Vec2         `json:"origin"`
-  Data string         `json:"chunk"`
+  X byte
+  Z byte
+  Data []byte         `json:"chunk"`
 }
 
 type Player struct {
   Username string         `json:"username"`
   Position Vec3           `json:"position"`
-  CurrentChunk Vec2       `json:"currentChunk"`
   Velocity Vec3           `json:"velocity"`
   LookDirection Vec3      `json:"lookDirection"`
   deliveredChunks map[Vec2]struct{}
-  nearbyPlayers map[*Player]struct{}
 }
 
+func (chunk *Chunk) encode () []byte {
+  resultBuf := make([]byte, CHUNK_SIZE*CHUNK_SIZE+3)
+  resultBuf[0] = 0
+  resultBuf[1] = chunk.X
+  resultBuf[2] = chunk.Z
+  copy(resultBuf[2:], chunk.Data)
+  return resultBuf
+}
 
 func (player *Player) findNearbyPlayers (players Players, delta float64) []*Player {
   var result []*Player
@@ -78,22 +88,21 @@ func (players *Players) add (player *Player) {
   players.Unlock();
 }
 
-func getChunk(coord Vec2) Chunk {
-  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.X;
-  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.Z;
-  idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col);
-  matrix := make([]byte, CHUNK_SIZE*CHUNK_SIZE)
-  start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE));
+func getChunk(X byte, Z byte) Chunk {
+  var chunk Chunk
+  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + X
+  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + Z
+  idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col)
+  chunk.Data = make([]byte, CHUNK_SIZE*CHUNK_SIZE)
+  start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE))
   for i := start; i < start + (CHUNK_SIZE * CHUNK_SIZE); i++ {
     ix := (i - start) / 27
     jx := (i - start) % 27
     mi := start + (ix * MAZE_SIZE) + jx
-    matrix[ix*CHUNK_SIZE + jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1 + 48
+    chunk.Data[ix*CHUNK_SIZE + jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1
   }
-  var chunk Chunk
-  chunk.Data = string(matrix)
-  chunk.Origin.X = coord.X*CHUNK_SIZE - CHUNK_SIZE/2-0.5;
-  chunk.Origin.Z = coord.Z*CHUNK_SIZE - CHUNK_SIZE/2-0.5;
+  chunk.X = X
+  chunk.Z = Z
   return chunk
 }
 
@@ -105,28 +114,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
     _, usernameData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
     player.Username = string(usernameData)
-    chunkSizeData, _ := json.Marshal(struct {ChunkSize int `json:"chunkSize"`}{CHUNK_SIZE})
-    conn.WriteMessage(websocket.TextMessage, chunkSizeData)
     player.deliveredChunks = make(map[Vec2]struct{})
-    player.nearbyPlayers = make(map[*Player]struct{})
-    players.add(&player);
+    players.add(&player)
     for {
-      _, playerStateData, err := conn.ReadMessage()
+      _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
-      json.Unmarshal(playerStateData, &player)
-      if _, has := player.deliveredChunks[player.CurrentChunk]; !has {
-        player.deliveredChunks[player.CurrentChunk] = struct{}{}
-        chunkData, _ := json.Marshal(getChunk(player.CurrentChunk))
-        conn.WriteMessage(websocket.TextMessage, chunkData)
+      switch (data[0]) {
+       case 0:
+         chunk := getChunk(data[1], data[2])
+         conn.WriteMessage(websocket.BinaryMessage, chunk.encode())
+        default:
+          panic("invalid message")
       }
+    
+    
+    
       
-      foundNearbyPlayers := player.findNearbyPlayers(players, 100.0)
-      for _, nearbyPlayer := range foundNearbyPlayers {
-         _, hasPlayer := player.nearbyPlayers[nearbyPlayer]
-         if !hasPlayer {
-            player.nearbyPlayers[nearbyPlayer] = struct{}{}
-         }
-      }
     }
 }
 
