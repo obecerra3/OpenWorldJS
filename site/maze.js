@@ -5,8 +5,6 @@ import { Player } from './js/Player.js';
 import { MazeBuilder } from './js/MazeBuilder.js';
 import { Collider } from './js/Collider.js';
 
-const Peer = window.SimplePeer;
-
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
 const PLAYER_MASS = 50.0;
