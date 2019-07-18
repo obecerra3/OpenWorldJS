@@ -7,6 +7,7 @@ import (
         "net/http"
         "encoding/json"
         "sync"
+        "math"
         "github.com/gorilla/websocket"
 )
 
@@ -14,18 +15,16 @@ const MAZE_SIZE = 405
 const CHUNK_SIZE = 27
 const NUM_CHUNKS = (MAZE_SIZE/CHUNK_SIZE)*(MAZE_SIZE/CHUNK_SIZE)
 
-
 var MAZE []byte
 var players Players
+var upgrader = websocket.Upgrader{
+    ReadBufferSize:  1024,
+    WriteBufferSize: 1024,
+}
 
 type Players struct {
   sync.RWMutex
   array []*Player
-}
-
-var upgrader = websocket.Upgrader{
-    ReadBufferSize:  1024,
-    WriteBufferSize: 1024,
 }
 
 type Vec2 struct {
@@ -51,15 +50,33 @@ type Player struct {
   Velocity Vec3           `json:"velocity"`
   LookDirection Vec3      `json:"lookDirection"`
   deliveredChunks map[Vec2]struct{}
+  nearbyPlayers map[*Player]struct{}
 }
 
+
+func (player *Player) findNearbyPlayers (players Players, delta float64) []*Player {
+  var result []*Player
+  players.RLock();
+  for _, p := range players.array {
+    distance := flatDistance(player.Position, p.Position)
+    if (distance > 0 && distance <= delta) {
+      result = append(result, p)  
+    } 
+  }
+  players.RUnlock() 
+  return result
+}
+
+
+func flatDistance (a Vec3, b Vec3) float64 {
+  return math.Sqrt(math.Pow(a.X - b.X, 2.0) + math.Pow(a.Z - b.Z, 2.0))
+}
 
 func (players *Players) add (player *Player) {
   players.Lock();
   players.array = append(players.array, player); 
   players.Unlock();
 }
-
 
 func getChunk(coord Vec2) Chunk {
   col := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.X;
@@ -91,6 +108,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
     chunkSizeData, _ := json.Marshal(struct {ChunkSize int `json:"chunkSize"`}{CHUNK_SIZE})
     conn.WriteMessage(websocket.TextMessage, chunkSizeData)
     player.deliveredChunks = make(map[Vec2]struct{})
+    player.nearbyPlayers = make(map[*Player]struct{})
     players.add(&player);
     for {
       _, playerStateData, err := conn.ReadMessage()
@@ -102,14 +120,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
         conn.WriteMessage(websocket.TextMessage, chunkData)
       }
       
-      /* CHECK IF PLAYER COMES OUT OF CONTACT WITH OTHER PLAYERS, set timer to end peer-to-peer
-       * CHECK IF PLAYER COMES INTO CONTACT WITH NEW PLAYERS
-       * Establish any new webRTC connections between the players
-       *
-      */
-      
-      
-      
+      foundNearbyPlayers := player.findNearbyPlayers(players, 100.0)
+      for _, nearbyPlayer := range foundNearbyPlayers {
+         _, hasPlayer := player.nearbyPlayers[nearbyPlayer]
+         if !hasPlayer {
+            player.nearbyPlayers[nearbyPlayer] = struct{}{}
+         }
+      }
     }
 }
 
@@ -125,3 +142,4 @@ func main () {
   http.ListenAndServe(":8000", nil)
 
 }
+

@@ -14,11 +14,9 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
-const UPDATE_DELTA = 1000;
+const UPDATE_DELTA = 5000;
 
 const Y = new THREE.Vector3(0,1,0);
-
-username = makeid(5);
 
 var chunkSize;
 
@@ -40,7 +38,8 @@ var moveDirection = new THREE.Vector3();
 
 var mazeBuilder = new MazeBuilder();
 var collider = new Collider(PLAYER_SIZE);
-var player = new Player (username);
+var player = new Player (makeid(5));
+
 var socket = new WebSocket("ws://localhost:8000");
 
 socket.onopen = () => { socket.send(player.username); }
