@@ -5,8 +5,10 @@ import (
         "fmt"
         "log"
         "net/http"
-        "encoding/json"
-        //"math"
+        "encoding/binary"
+        //"encoding/json"
+        "sync"
+        "math"
         "github.com/gorilla/websocket"
 )
 
@@ -14,91 +16,141 @@ const MAZE_SIZE = 405
 const CHUNK_SIZE = 27
 const NUM_CHUNKS = (MAZE_SIZE/CHUNK_SIZE)*(MAZE_SIZE/CHUNK_SIZE)
 
-
 var MAZE []byte
-
+var players Players
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
     WriteBufferSize: 1024,
 }
 
-type Cartesian struct {
-  X float64             `json:"x"`
-  Z float64             `json:"z"`
+type Players struct {
+  sync.RWMutex
+  set map[*Player]struct{}
 }
 
-
-type Vec3 struct {
-  X float64         `json:"x"`
-  Y float64         `json:"y"` 
-  Z float64         `json:"z"`
-}
-
-type Player struct {
-  Username string         `json:"username"`
-  Position Vec3           `json:"position"`
-  CurrentChunk Cartesian  `json:"currentChunk"`
-  Velocity Vec3           `json:"velocity"`
-  LookDirection Vec3      `json:"lookDirection"`
-  deliveredChunks map[Cartesian]struct{}
+type Vec2 struct {
+  x float32         
+  z float32                  
 }
 
 type Chunk struct {
-  Origin Cartesian    `json:"origin"`
-  Data string         `json:"chunk"`
+  x byte
+  z byte
+  Data []byte         
+}
+
+type Player struct {
+  sync.Mutex
+  conn *websocket.Conn
+  username []byte
+  position Vec2
+}
+
+func (chunk Chunk) encode () []byte {
+  buf := make([]byte, CHUNK_SIZE*CHUNK_SIZE+3)
+  buf[0] = 0
+  buf[1] = chunk.x
+  buf[2] = chunk.z
+  copy(buf[2:], chunk.Data)
+  return buf
+}
+
+func (player *Player) findNearbyPlayers (players Players, delta float32) []*Player {
+  var result []*Player
+  players.RLock();
+  for p := range players.set {
+    distance := distance(player.position, p.position)
+    if (distance > 0 && distance <= delta) {
+      result = append(result, p)  
+    } 
+  }
+  players.RUnlock() 
+  return result
+}
+
+func (dstPlayer *Player) sendState(srcPlayer *Player, data []byte) {
+  dstPlayer.Lock();
+  dstPlayer.conn.WriteMessage(websocket.BinaryMessage, append([]byte{1, byte(len(srcPlayer.username))}, append(srcPlayer.username, data...)...))
+  dstPlayer.Unlock();
 }
 
 
-
-func getChunkOrigin(center Cartesian) Cartesian {
-  var origin Cartesian
-  origin.X = center.X*CHUNK_SIZE - CHUNK_SIZE/2 - 0.5;
-  origin.Z = center.Z*CHUNK_SIZE - CHUNK_SIZE/2 - 0.5;
-  return origin
+func (players *Players) add (player *Player) {
+  players.Lock()
+  players.set[player] = struct{}{}
+  players.Unlock()
 }
 
-func getChunk(coord Cartesian) Chunk {
-  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.X;
-  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.Z;
-  idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col);
-  matrix := make([]byte, CHUNK_SIZE*CHUNK_SIZE)
-  start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE));
+func (players *Players) remove (player * Player) {
+  players.Lock()
+  delete(players.set, player)
+  players.Unlock()  
+}
+
+func bytesToFloat32(bytes []byte) float32 {
+    bits := binary.BigEndian.Uint32(bytes)
+    float := math.Float32frombits(bits)
+    return float
+}
+
+func distance (a Vec2, b Vec2) float32 {
+  return float32(math.Sqrt(math.Pow(float64(a.x) - float64(b.x), 2.0) + math.Pow(float64(a.z) - float64(b.z), 2.0)))
+}
+
+func processPlayerState(stateData []byte, player *Player) {
+  player.position.x = bytesToFloat32(stateData[0:4]);
+  player.position.z = bytesToFloat32(stateData[4:8]);
+  nearbyPlayers := player.findNearbyPlayers(players, 100.0);
+  for _, nearbyPlayer := range nearbyPlayers {
+    nearbyPlayer.sendState(player, stateData);
+  }
+}
+
+
+func getChunk(x byte, z byte) Chunk {
+  var chunk Chunk
+  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + x
+  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + z
+  idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col)
+  chunk.Data = make([]byte, CHUNK_SIZE*CHUNK_SIZE)
+  start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE))
   for i := start; i < start + (CHUNK_SIZE * CHUNK_SIZE); i++ {
     ix := (i - start) / 27
     jx := (i - start) % 27
     mi := start + (ix * MAZE_SIZE) + jx
-    matrix[ix*CHUNK_SIZE + jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1 + 48
+    chunk.Data[ix*CHUNK_SIZE + jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1
   }
-  var chunk Chunk
-  chunk.Data = string(matrix)
-  chunk.Origin = getChunkOrigin(coord)
+  chunk.x = x
+  chunk.z = z
   return chunk
 }
+
 
 func handler(w http.ResponseWriter, r *http.Request) {
     upgrader.CheckOrigin = func(r *http.Request) bool { return true }
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil { log.Println(err); return }
-    var player Player
     _, usernameData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
-    player.Username = string(usernameData)
-    chunkSizeData, _ := json.Marshal(struct {ChunkSize int `json:"chunkSize"`}{CHUNK_SIZE});
-    conn.WriteMessage(websocket.TextMessage, chunkSizeData);
-    player.deliveredChunks = make(map[Cartesian]struct{});    
+    var player Player
+    player.conn = conn
+    player.username = usernameData
+    players.add(&player)
+    defer players.remove(&player)
     for {
-      _, playerStateData, err := conn.ReadMessage()
+      _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
-      json.Unmarshal(playerStateData, &player)
-      if _, has := player.deliveredChunks[player.CurrentChunk]; !has {
-        player.deliveredChunks[player.CurrentChunk] = struct{}{}
-        // _, chunkData := json.Marshal(getChunk(player.CurrentChunk));
-        chunkData, _ := json.Marshal(getChunk(player.CurrentChunk));
-        conn.WriteMessage(websocket.TextMessage, chunkData);
+      switch (data[0]) {
+       case 0:
+         conn.WriteMessage(websocket.BinaryMessage, getChunk(data[1], data[2]).encode())
+       case 1:  
+         processPlayerState(data[1:], &player)
+        default:
+          panic("invalid message")
       }
-      
     }
 }
+
 
 func main () {
   maze, err := ioutil.ReadFile("maze.bin")
@@ -106,8 +158,10 @@ func main () {
     fmt.Print(err)
   }
   MAZE = maze
+  players.set = make(map[*Player]struct{})
 
   http.HandleFunc("/", handler)
   http.ListenAndServe(":8000", nil)
 
 }
+

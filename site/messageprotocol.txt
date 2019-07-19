@@ -1,0 +1,35 @@
+player->server
+  HELLO (username.length)
+    username
+  CHUNKREQUEST (3)
+    0
+    offsetX
+    offsetZ
+  MYSTATE (21)
+    1
+    positionX
+    positionZ
+    lookDirX
+    lookDirY
+    lookDirZ
+  JUMP (1)
+    2
+
+server->player
+  CHUNKRESPONSE (3 + CHUNK_SIZE*CHUNK_SIZE)
+    0
+    offsetX
+    offsetZ
+    data
+  NEARBYPLAYERSTATE (22+usernameLength)
+    1
+    usernameLength
+    username
+    positionX
+    positionZ
+    lookDirX
+    lookDirY
+    lookDirZ
+
+
+

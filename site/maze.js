@@ -1,8 +1,10 @@
-import * as THREE from './js/THREE.js';
+import * as THREE from './js/three.min.js';
 import { PointerLockControls } from './js/PointerLockControls.js';
 import { BasisTextureLoader } from './js/BasisTextureLoader.js';
 import { Player } from './js/Player.js';
-import { MazeBuilder } from './js/MazeBuilder.js'
+import { MazeBuilder } from './js/MazeBuilder.js';
+import { Collider } from './js/Collider.js';
+import { MessageBuilder } from './js/MessageBuilder.js';
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
@@ -11,14 +13,19 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
-const UPDATE_DELTA = 1000;
+const UPDATE_DELTA = 100;
+const CHUNK_REQUEST_DELTA = 5000;
+const CHUNK_SIZE = 27;
 
-var chunkSize;
+const Y = new THREE.Vector3(0,1,0);
+
 
 var camera, scene, renderer, controls, theta;
 
 var walls = [];
-var intersections = [];
+var chunks = new Set();
+var otherPlayers = {};
+
 
 var moveForward = false;
 var moveBackward = false;
@@ -27,28 +34,28 @@ var moveRight = false;
 var canJump = false;
 
 var prevUpdateTime = 0;
+var prevChunkRequestTime = 0;
 var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
 var moveDirection = new THREE.Vector3();
 
-var Y = new THREE.Vector3(0,1,0);
-var XZ = (new THREE.Vector3(1,0,1)).normalize();
-var _XZ = (new THREE.Vector3(-1,0,1)).normalize();
-var X_Z = (new THREE.Vector3(1,0,-1)).normalize();
-var _X_Z = (new THREE.Vector3(-1,0,-1)).normalize();
-
-var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, PLAYER_SIZE);
-
 var mazeBuilder = new MazeBuilder();
+var messageBuilder = new MessageBuilder();
+var collider = new Collider(PLAYER_SIZE);
+var player = new Player (makeid(5), new THREE.Vector3(0,0,0));
 
-var player = new Player ("boris");
+
+console.log(player.username); 
+
 var socket = new WebSocket("ws://localhost:8000");
-socket.onopen = () => { socket.send(player.username); }
+
+socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
 socket.onmessage = (event) => { 
   console.log(event.data); 
-  receive(JSON.parse(event.data));
+  receive(event.data);
 }
+
 
 init();
 animate();
@@ -109,7 +116,7 @@ function init() {
   var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
   var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
   
-  var material = new THREE.MeshBasicMaterial(  );
+  var material = new THREE.MeshBasicMaterial( );
   var wall1 = new THREE.Mesh( geometry1, material );
   var wall2 = new THREE.Mesh( geometry2, material );
   wall1.position.z = -100;
@@ -121,6 +128,8 @@ function init() {
   scene.add(wall1);
   scene.add(wall2);
   
+  scene.add(player.body);
+
   
   loader.load( '../textures/PavingStones.basis', function ( texture ) {
     texture.encoding = THREE.sRGBEncoding;
@@ -219,27 +228,7 @@ function animate() {
     player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
     player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
     
-    
-    raycaster.ray.origin.copy(camera.position);
-  
-    raycaster.ray.direction.copy(XZ);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-    raycaster.ray.direction.copy(X_Z);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-    raycaster.ray.direction.copy(_XZ);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-    raycaster.ray.direction.copy(_X_Z);
-    intersections = intersections.concat(raycaster.intersectObjects(walls));
-
-    if (intersections.length > 0) {
-      intersections.forEach((x)=> {
-        if (x.face.normal.dot(player.velocity) < 0) {
-          player.velocity.projectOnPlane(x.face.normal);
-        }
-      });
-    }  
-    
-    intersections = [];
+    collider.collide(player, walls);  
   
     camera.position.x += player.velocity.x*delta;
     camera.position.y += player.velocity.y*delta;
@@ -253,38 +242,98 @@ function animate() {
     
     prevTime = time;
     
-    player.position.copy(camera.position);
+    player.body.position.copy(camera.position);
     
-  
-    if (time - prevUpdateTime > UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
-      if (chunkSize) {
-        var state = player.state;
-        state["currentChunk"] = {x: Math.round(player.position.x / (MAZE_INFLATION*chunkSize)), z: Math.round(player.position.z / (MAZE_INFLATION*chunkSize))};
-        socket.send(JSON.stringify(state));
-        prevUpdateTime = time;
-      }
+    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE && (!prevPosition.equals(player.body.position) || !prevLookDirection.equals(player.lookDirection))) {
+        var chunkX = Math.round(player.body.position.x / (MAZE_INFLATION*CHUNK_SIZE));
+        var chunkZ = Math.round(player.body.position.z / (MAZE_INFLATION*CHUNK_SIZE));
+        if (!chunks.has(pair(chunkX, chunkZ))) {
+          prevChunkRequestTime = time;
+          socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, MAZE_INFLATION, CHUNK_SIZE));
+        }
+    } 
+    
+    if (time - prevUpdateTime >= UPDATE_DELTA && (!prevPosition.equals(player.body.position) || !prevLookDirection.equals(player.lookDirection))) {
+      socket.send(messageBuilder.state(player));
+      prevUpdateTime = time;
     }
-    prevPosition.copy(player.position);
+    prevPosition.copy(player.body.position);
     prevLookDirection.copy(player.lookDirection);
   }
   renderer.render( scene, camera );
 }
 
+function processChunk (buffer) {
+  var byteArray = new Uint8Array(buffer);
+  var chunkX = byteArray[0];
+  var chunkZ = byteArray[1];
+  chunks.add(pair(chunkX, chunkZ));
+  var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
+    if (idx % CHUNK_SIZE == 0) {
+      array.push([parseInt(curr)]);
+      return array;
+    } else {
+      array[Math.floor(idx / CHUNK_SIZE)].push(parseInt(curr));
+      return array; 
+    }
+  }, []);
+  mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
+}
+
+function processPlayerState (buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var positionX = dataView.getFloat32(usernameLength+1);
+  var positionZ = dataView.getFloat32(usernameLength+5);
+  var lookDirectionX = dataView.getFloat32(usernameLength+9);
+  var lookDirectionY = dataView.getFloat32(usernameLength+13);
+  var lookDirectionZ = dataView.getFloat32(usernameLength+17);
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.body.position.x = positionX;
+    player.body.position.z = positionZ;
+    player.lookDirection.x = lookDirectionX;
+    player.lookDirection.y = lookDirectionY;
+    player.lookDirection.z = lookDirectionZ;
+  } else {
+    otherPlayers[username] = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ));
+    scene.add(otherPlayers[username].body);
+  }
+}
 
 
-function receive (json) {
-  if (json["chunkSize"]) {
-    chunkSize = json["chunkSize"];
-  } else if (json["chunk"]) {
-    var map = json["chunk"].split("").reduce((array, curr, idx) => { 
-      if (idx % chunkSize == 0) {
-        array.push([parseInt(curr)]);
-        return array;
-      } else {
-        array[Math.floor(idx / chunkSize)].push(parseInt(curr));
-        return array; 
-      }
-    }, []);
-    mazeBuilder.build(json["origin"], map);
-  }  
+async function receive (blob) {
+  var arrayBuffer = await new Response(blob).arrayBuffer();
+  var dataView = new DataView(arrayBuffer);
+  switch (dataView.getUint8(0)) {
+    case 0:
+      processChunk(arrayBuffer.slice(1));
+      break;
+    case 1:
+      processPlayerState(arrayBuffer.slice(1));
+      break;
+    default: 
+      console.log("I got something weird");
+  }
+}
+
+
+/* http://szudzik.com/ElegantPairing.pdf */
+
+function pair (a, b) {
+  var A = a >= 0 ? 2 * a : -2 * a - 1;
+  var B = b >= 0 ? 2 * b : -2 * b - 1;
+  return A >= B ? A * A + A + B : A + B * B;
+}
+
+function makeid(length) {
+   var result           = '';
+   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+   var charactersLength = characters.length;
+   for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return result;
 }
