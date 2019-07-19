@@ -5,7 +5,7 @@ import (
         "fmt"
         "log"
         "net/http"
-        //"encoding/binary"
+        "encoding/binary"
         //"encoding/json"
         "sync"
         "math"
@@ -25,50 +25,41 @@ var upgrader = websocket.Upgrader{
 
 type Players struct {
   sync.RWMutex
-  array []*Player
+  set map[*Player]struct{}
 }
-
-
 
 type Vec2 struct {
-  X float64          `json:"x"`
-  Z float64          `json:"z"`
-}
-
-type Vec3 struct {
-  X float64         `json:"x"`
-  Y float64         `json:"y"` 
-  Z float64         `json:"z"`
+  x float32         
+  z float32                  
 }
 
 type Chunk struct {
-  X byte
-  Z byte
-  Data []byte         `json:"chunk"`
+  x byte
+  z byte
+  Data []byte         
 }
 
 type Player struct {
-  Username string         `json:"username"`
-  Position Vec3           `json:"position"`
-  Velocity Vec3           `json:"velocity"`
-  LookDirection Vec3      `json:"lookDirection"`
-  deliveredChunks map[Vec2]struct{}
+  sync.Mutex
+  conn *websocket.Conn
+  username []byte
+  position Vec2
 }
 
-func (chunk *Chunk) encode () []byte {
-  resultBuf := make([]byte, CHUNK_SIZE*CHUNK_SIZE+3)
-  resultBuf[0] = 0
-  resultBuf[1] = chunk.X
-  resultBuf[2] = chunk.Z
-  copy(resultBuf[2:], chunk.Data)
-  return resultBuf
+func (chunk Chunk) encode () []byte {
+  buf := make([]byte, CHUNK_SIZE*CHUNK_SIZE+3)
+  buf[0] = 0
+  buf[1] = chunk.x
+  buf[2] = chunk.z
+  copy(buf[2:], chunk.Data)
+  return buf
 }
 
-func (player *Player) findNearbyPlayers (players Players, delta float64) []*Player {
+func (player *Player) findNearbyPlayers (players Players, delta float32) []*Player {
   var result []*Player
   players.RLock();
-  for _, p := range players.array {
-    distance := flatDistance(player.Position, p.Position)
+  for p := range players.set {
+    distance := distance(player.position, p.position)
     if (distance > 0 && distance <= delta) {
       result = append(result, p)  
     } 
@@ -77,21 +68,50 @@ func (player *Player) findNearbyPlayers (players Players, delta float64) []*Play
   return result
 }
 
-
-func flatDistance (a Vec3, b Vec3) float64 {
-  return math.Sqrt(math.Pow(a.X - b.X, 2.0) + math.Pow(a.Z - b.Z, 2.0))
+func (dstPlayer *Player) sendState(srcPlayer *Player, data []byte) {
+  dstPlayer.Lock();
+  dstPlayer.conn.WriteMessage(websocket.BinaryMessage, append([]byte{1, byte(len(srcPlayer.username))}, append(srcPlayer.username, data...)...))
+  dstPlayer.Unlock();
 }
+
 
 func (players *Players) add (player *Player) {
-  players.Lock();
-  players.array = append(players.array, player); 
-  players.Unlock();
+  players.Lock()
+  players.set[player] = struct{}{}
+  players.Unlock()
 }
 
-func getChunk(X byte, Z byte) Chunk {
+func (players *Players) remove (player * Player) {
+  players.Lock()
+  delete(players.set, player)
+  players.Unlock()  
+}
+
+func bytesToFloat32(bytes []byte) float32 {
+    bits := binary.BigEndian.Uint32(bytes)
+    float := math.Float32frombits(bits)
+    return float
+}
+
+func distance (a Vec2, b Vec2) float32 {
+  return float32(math.Sqrt(math.Pow(float64(a.x) - float64(b.x), 2.0) + math.Pow(float64(a.z) - float64(b.z), 2.0)))
+}
+
+func processPlayerState(stateData []byte, player *Player) {
+  player.position.x = bytesToFloat32(stateData[0:4]);
+  player.position.z = bytesToFloat32(stateData[4:8]);
+  nearbyPlayers := player.findNearbyPlayers(players, 100.0);
+  fmt.Println(nearbyPlayers);
+  for _, nearbyPlayer := range nearbyPlayers {
+    nearbyPlayer.sendState(player, stateData);
+  }
+}
+
+
+func getChunk(x byte, z byte) Chunk {
   var chunk Chunk
-  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + X
-  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + Z
+  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + x
+  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + z
   idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col)
   chunk.Data = make([]byte, CHUNK_SIZE*CHUNK_SIZE)
   start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE))
@@ -101,35 +121,34 @@ func getChunk(X byte, Z byte) Chunk {
     mi := start + (ix * MAZE_SIZE) + jx
     chunk.Data[ix*CHUNK_SIZE + jx] = (MAZE[mi / 8] >> uint(7-(mi%8))) & 1
   }
-  chunk.X = X
-  chunk.Z = Z
+  chunk.x = x
+  chunk.z = z
   return chunk
 }
+
 
 func handler(w http.ResponseWriter, r *http.Request) {
     upgrader.CheckOrigin = func(r *http.Request) bool { return true }
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil { log.Println(err); return }
-    var player Player
     _, usernameData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
-    player.Username = string(usernameData)
-    player.deliveredChunks = make(map[Vec2]struct{})
+    var player Player
+    player.conn = conn
+    player.username = usernameData
     players.add(&player)
+    defer players.remove(&player)
     for {
       _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
       switch (data[0]) {
        case 0:
-         chunk := getChunk(data[1], data[2])
-         conn.WriteMessage(websocket.BinaryMessage, chunk.encode())
+         conn.WriteMessage(websocket.BinaryMessage, getChunk(data[1], data[2]).encode())
+       case 1:  
+         processPlayerState(data[1:], &player)
         default:
           panic("invalid message")
       }
-    
-    
-    
-      
     }
 }
 
@@ -140,6 +159,7 @@ func main () {
     fmt.Print(err)
   }
   MAZE = maze
+  players.set = make(map[*Player]struct{})
 
   http.HandleFunc("/", handler)
   http.ListenAndServe(":8000", nil)

@@ -13,7 +13,8 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
-const UPDATE_DELTA = 5000;
+const UPDATE_DELTA = 2500;
+const CHUNK_REQUEST_DELTA = 5000;
 const CHUNK_SIZE = 27;
 
 const Y = new THREE.Vector3(0,1,0);
@@ -22,6 +23,8 @@ const Y = new THREE.Vector3(0,1,0);
 var camera, scene, renderer, controls, theta;
 
 var walls = [];
+var chunks = new Set();
+
 
 var moveForward = false;
 var moveBackward = false;
@@ -30,6 +33,7 @@ var moveRight = false;
 var canJump = false;
 
 var prevUpdateTime = 0;
+var prevChunkRequestTime = 0;
 var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
@@ -237,10 +241,18 @@ function animate() {
     
     player.position.copy(camera.position);
     
-    if (time - prevUpdateTime > UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
-      if (CHUNK_SIZE) {
-        socket.send(messageBuilder.chunkRequest(player, MAZE_INFLATION, CHUNK_SIZE));
-      }
+    
+    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
+        var chunkX = Math.round(player.position.x / (MAZE_INFLATION*CHUNK_SIZE));
+        var chunkZ = Math.round(player.position.z / (MAZE_INFLATION*CHUNK_SIZE));
+        if (!chunks.has(pair(chunkX, chunkZ))) {
+          prevChunkRequestTime = time;
+          socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, MAZE_INFLATION, CHUNK_SIZE));
+        }
+    } 
+    
+    if (time - prevUpdateTime >= UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
+      socket.send(messageBuilder.state(player));
       prevUpdateTime = time;
     }
     prevPosition.copy(player.position);
@@ -249,8 +261,12 @@ function animate() {
   renderer.render( scene, camera );
 }
 
-function processChunk (data) {
-  var chunkArray = data.slice(2).reduce((array, curr, idx) => { 
+function processChunk (buffer) {
+  var byteArray = new Uint8Array(buffer);
+  var chunkX = byteArray[0];
+  var chunkZ = byteArray[1];
+  chunks.add(pair(chunkX, chunkZ));
+  var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
     if (idx % CHUNK_SIZE == 0) {
       array.push([parseInt(curr)]);
       return array;
@@ -259,21 +275,42 @@ function processChunk (data) {
       return array; 
     }
   }, []);
-  mazeBuilder.buildChunk({x: data[0], z: data[1]}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
+  mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
 }
 
+function processPlayerState (buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  console.log(username);
+  
+  
+}
 
 
 async function receive (blob) {
   var arrayBuffer = await new Response(blob).arrayBuffer();
-  var byteView = new Uint8Array(arrayBuffer);
-  switch (byteView[0]) {
+  var dataView = new DataView(arrayBuffer);
+  switch (dataView.getUint8(0)) {
     case 0:
-      processChunk(byteView.slice(1));
+      processChunk(arrayBuffer.slice(1));
       break;
-    default:
+    case 1:
+      processPlayerState(arrayBuffer.slice(1));
       break;
+    default: 
+      console.log("I got something weird");
   }
+}
+
+
+/* http://szudzik.com/ElegantPairing.pdf */
+
+function pair (a, b) {
+  var A = a >= 0 ? 2 * a : -2 * a - 1;
+  var B = b >= 0 ? 2 * b : -2 * b - 1;
+  return A >= B ? A * A + A + B : A + B * B;
 }
 
 function makeid(length) {
