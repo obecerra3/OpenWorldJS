@@ -13,7 +13,7 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
-const UPDATE_DELTA = 2500;
+const UPDATE_DELTA = 100;
 const CHUNK_REQUEST_DELTA = 5000;
 const CHUNK_SIZE = 27;
 
@@ -24,6 +24,7 @@ var camera, scene, renderer, controls, theta;
 
 var walls = [];
 var chunks = new Set();
+var otherPlayers = {};
 
 
 var moveForward = false;
@@ -42,7 +43,7 @@ var moveDirection = new THREE.Vector3();
 var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
-var player = new Player (makeid(5));
+var player = new Player (makeid(5), new THREE.Vector3(0,0,0));
 
 
 console.log(player.username); 
@@ -115,7 +116,7 @@ function init() {
   var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
   var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
   
-  var material = new THREE.MeshBasicMaterial(  );
+  var material = new THREE.MeshBasicMaterial( );
   var wall1 = new THREE.Mesh( geometry1, material );
   var wall2 = new THREE.Mesh( geometry2, material );
   wall1.position.z = -100;
@@ -127,6 +128,8 @@ function init() {
   scene.add(wall1);
   scene.add(wall2);
   
+  scene.add(player.body);
+
   
   loader.load( '../textures/PavingStones.basis', function ( texture ) {
     texture.encoding = THREE.sRGBEncoding;
@@ -239,23 +242,22 @@ function animate() {
     
     prevTime = time;
     
-    player.position.copy(camera.position);
+    player.body.position.copy(camera.position);
     
-    
-    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
-        var chunkX = Math.round(player.position.x / (MAZE_INFLATION*CHUNK_SIZE));
-        var chunkZ = Math.round(player.position.z / (MAZE_INFLATION*CHUNK_SIZE));
+    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE && (!prevPosition.equals(player.body.position) || !prevLookDirection.equals(player.lookDirection))) {
+        var chunkX = Math.round(player.body.position.x / (MAZE_INFLATION*CHUNK_SIZE));
+        var chunkZ = Math.round(player.body.position.z / (MAZE_INFLATION*CHUNK_SIZE));
         if (!chunks.has(pair(chunkX, chunkZ))) {
           prevChunkRequestTime = time;
           socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, MAZE_INFLATION, CHUNK_SIZE));
         }
     } 
     
-    if (time - prevUpdateTime >= UPDATE_DELTA && (!prevPosition.equals(player.position) || !prevLookDirection.equals(player.lookDirection))) {
+    if (time - prevUpdateTime >= UPDATE_DELTA && (!prevPosition.equals(player.body.position) || !prevLookDirection.equals(player.lookDirection))) {
       socket.send(messageBuilder.state(player));
       prevUpdateTime = time;
     }
-    prevPosition.copy(player.position);
+    prevPosition.copy(player.body.position);
     prevLookDirection.copy(player.lookDirection);
   }
   renderer.render( scene, camera );
@@ -283,9 +285,22 @@ function processPlayerState (buffer) {
   var dataView = new DataView(buffer);
   var usernameLength = dataView.getUint8(0);
   var username = decoder.decode(buffer.slice(1, usernameLength+1));
-  console.log(username);
-  
-  
+  var positionX = dataView.getFloat32(usernameLength+1);
+  var positionZ = dataView.getFloat32(usernameLength+5);
+  var lookDirectionX = dataView.getFloat32(usernameLength+9);
+  var lookDirectionY = dataView.getFloat32(usernameLength+13);
+  var lookDirectionZ = dataView.getFloat32(usernameLength+17);
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.body.position.x = positionX;
+    player.body.position.z = positionZ;
+    player.lookDirection.x = lookDirectionX;
+    player.lookDirection.y = lookDirectionY;
+    player.lookDirection.z = lookDirectionZ;
+  } else {
+    otherPlayers[username] = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ));
+    scene.add(otherPlayers[username].body);
+  }
 }
 
 

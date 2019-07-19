@@ -101,7 +101,6 @@ func processPlayerState(stateData []byte, player *Player) {
   player.position.x = bytesToFloat32(stateData[0:4]);
   player.position.z = bytesToFloat32(stateData[4:8]);
   nearbyPlayers := player.findNearbyPlayers(players, 100.0);
-  fmt.Println(nearbyPlayers);
   for _, nearbyPlayer := range nearbyPlayers {
     nearbyPlayer.sendState(player, stateData);
   }

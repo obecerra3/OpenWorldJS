@@ -11,7 +11,7 @@ export class Collider {
   }
   collide (player, walls) {
     var intersections = [];
-    this.raycaster.ray.origin.copy(player.position);
+    this.raycaster.ray.origin.copy(player.body.position);
   
     this.raycaster.ray.direction.copy(XZ);
     intersections = intersections.concat(this.raycaster.intersectObjects(walls));

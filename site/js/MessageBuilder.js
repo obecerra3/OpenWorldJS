@@ -19,16 +19,14 @@ export class MessageBuilder {
   }
   
   state (player) {
-    var buffer = new ArrayBuffer(29);
+    var buffer = new ArrayBuffer(21);
     var dataView = new DataView(buffer);
     dataView.setInt8(0, 1);
-    dataView.setFloat32(1, player.position.x);
-    dataView.setFloat32(5, player.position.z);
-    dataView.setFloat32(9, player.velocity.x);
-    dataView.setFloat32(13, player.velocity.z);
-    dataView.setFloat32(17, player.lookDirection.x);
-    dataView.setFloat32(21, player.lookDirection.y)
-    dataView.setFloat32(25, player.lookDirection.z);
+    dataView.setFloat32(1, player.body.position.x);
+    dataView.setFloat32(5, player.body.position.z);
+    dataView.setFloat32(9, player.lookDirection.x);
+    dataView.setFloat32(13, player.lookDirection.y)
+    dataView.setFloat32(17, player.lookDirection.z);
     return buffer;
   }
 

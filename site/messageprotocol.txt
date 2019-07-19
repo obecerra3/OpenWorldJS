@@ -5,12 +5,10 @@ player->server
     0
     offsetX
     offsetZ
-  MYSTATE (29)
+  MYSTATE (21)
     1
     positionX
     positionZ
-    velocityX
-    velocityZ
     lookDirX
     lookDirY
     lookDirZ
@@ -23,14 +21,12 @@ server->player
     offsetX
     offsetZ
     data
-  NEARBYPLAYERSTATE (29 + username.length)
+  NEARBYPLAYERSTATE (22+usernameLength)
     1
     usernameLength
     username
     positionX
     positionZ
-    velocityX
-    velocityZ
     lookDirX
     lookDirY
     lookDirZ
