@@ -13,12 +13,14 @@ const PLAYER_SPEED = 500.0;
 const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
-const UPDATE_DELTA = 100;
+const UPDATE_DELTA = 100.0;
+const VELOCITY_DELTA = 0.0001;
 const CHUNK_REQUEST_DELTA = 5000;
 const CHUNK_SIZE = 27;
 
-const Y = new THREE.Vector3(0,1,0);
+const DAMPING = 1.05;
 
+const Y = new THREE.Vector3(0,1,0);
 
 var camera, scene, renderer, controls, theta;
 
@@ -52,7 +54,6 @@ var socket = new WebSocket("ws://localhost:8000");
 
 socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
 socket.onmessage = (event) => { 
-  console.log(event.data); 
   receive(event.data);
 }
 
@@ -194,13 +195,11 @@ function onKeyUp ( event ) {
     }
 }
 
-
 function animate() {
   requestAnimationFrame(animate);
+  var time = performance.now();
+  var delta = (time - prevTime) / 1000;
   if ( controls.isLocked === true ) {
-    var time = performance.now();
-    var delta = (time - prevTime) / 1000;
-    
     player.velocity.x -= player.velocity.x * 10.0 * delta;
     player.velocity.z -= player.velocity.z * 10.0 * delta;
     player.velocity.y -= GRAVITY * PLAYER_MASS * delta; 
@@ -234,17 +233,16 @@ function animate() {
     camera.position.y += player.velocity.y*delta;
     camera.position.z += player.velocity.z*delta;
     
+    
     if (camera.position.y < PLAYER_HEIGHT) {
       player.velocity.y = 0;
       camera.position.y = PLAYER_HEIGHT;
       canJump = true;
     }
     
-    prevTime = time;
-    
     player.body.position.copy(camera.position);
     
-    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE && (!prevPosition.equals(player.body.position) || !prevLookDirection.equals(player.lookDirection))) {
+    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE) {
         var chunkX = Math.round(player.body.position.x / (MAZE_INFLATION*CHUNK_SIZE));
         var chunkZ = Math.round(player.body.position.z / (MAZE_INFLATION*CHUNK_SIZE));
         if (!chunks.has(pair(chunkX, chunkZ))) {
@@ -253,13 +251,17 @@ function animate() {
         }
     } 
     
-    if (time - prevUpdateTime >= UPDATE_DELTA && (!prevPosition.equals(player.body.position) || !prevLookDirection.equals(player.lookDirection))) {
+    if (time - prevUpdateTime >= UPDATE_DELTA) {
       socket.send(messageBuilder.state(player));
       prevUpdateTime = time;
     }
-    prevPosition.copy(player.body.position);
-    prevLookDirection.copy(player.lookDirection);
+  
   }
+  Object.values(otherPlayers).forEach((p) => {
+    p.body.position.x += p.velocity.x*delta;
+    p.body.position.z += p.velocity.z*delta;
+  });
+  prevTime = time;
   renderer.render( scene, camera );
 }
 
@@ -280,6 +282,14 @@ function processChunk (buffer) {
   mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
 }
 
+function updatePlayer (player, positionX, positionZ, lookDirectionX, lookDirectionY, lookDirectionZ) {
+  var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
+  player.velocity.copy(newVelocity);
+  player.lookDirection.x = lookDirectionX;
+  player.lookDirection.y = lookDirectionY;
+  player.lookDirection.z = lookDirectionZ;
+}
+
 function processPlayerState (buffer) {
   var decoder = new TextDecoder("utf-8");
   var dataView = new DataView(buffer);
@@ -292,11 +302,7 @@ function processPlayerState (buffer) {
   var lookDirectionZ = dataView.getFloat32(usernameLength+17);
   var player;
   if ((player = otherPlayers[username]) != undefined) {
-    player.body.position.x = positionX;
-    player.body.position.z = positionZ;
-    player.lookDirection.x = lookDirectionX;
-    player.lookDirection.y = lookDirectionY;
-    player.lookDirection.z = lookDirectionZ;
+    updatePlayer(player, positionX, positionZ, lookDirectionX, lookDirectionY, lookDirectionZ);
   } else {
     otherPlayers[username] = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ));
     scene.add(otherPlayers[username].body);
@@ -321,7 +327,6 @@ async function receive (blob) {
 
 
 /* http://szudzik.com/ElegantPairing.pdf */
-
 function pair (a, b) {
   var A = a >= 0 ? 2 * a : -2 * a - 1;
   var B = b >= 0 ? 2 * b : -2 * b - 1;
