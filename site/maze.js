@@ -14,11 +14,8 @@ const PLAYER_JUMP = 100;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
 const UPDATE_DELTA = 100.0;
-const VELOCITY_DELTA = 0.0001;
 const CHUNK_REQUEST_DELTA = 5000;
 const CHUNK_SIZE = 27;
-
-const DAMPING = 1.05;
 
 const Y = new THREE.Vector3(0,1,0);
 
@@ -258,8 +255,8 @@ function animate() {
   
   }
   Object.values(otherPlayers).forEach((p) => {
-    p.body.position.x += p.velocity.x*delta;
-    p.body.position.z += p.velocity.z*delta;
+    p.body.position.x += p.velocity.x*delta*1000;
+    p.body.position.z += p.velocity.z*delta*1000;
   });
   prevTime = time;
   renderer.render( scene, camera );
