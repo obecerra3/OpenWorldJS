@@ -148,6 +148,9 @@ function onWindowResize() {
 
 function onKeyDown( event ) {
     switch ( event.keyCode ) {
+      case 16:
+        player.isCrouched = true;
+        break;
       case 38: // up
       case 87: // w
         moveForward = true;
@@ -173,6 +176,8 @@ function onKeyDown( event ) {
 
 function onKeyUp ( event ) {
     switch ( event.keyCode ) {
+      case 16:
+        player.isCrouched = false;
       case 38: // up
       case 87: // w
         moveForward = false;
@@ -199,7 +204,9 @@ function animate() {
   if ( controls.isLocked === true ) {
     player.velocity.x -= player.velocity.x * 10.0 * delta;
     player.velocity.z -= player.velocity.z * 10.0 * delta;
-    player.velocity.y -= GRAVITY * PLAYER_MASS * delta; 
+    
+    
+     
 
     moveDirection.z = Number(moveForward) - Number(moveBackward);
     moveDirection.x = Number(moveLeft) - Number(moveRight);
@@ -229,12 +236,20 @@ function animate() {
     camera.position.x += player.velocity.x*delta;
     camera.position.y += player.velocity.y*delta;
     camera.position.z += player.velocity.z*delta;
+  
     
-    
-    if (camera.position.y < PLAYER_HEIGHT) {
+    if (camera.position.y <= (player.isCrouched ? PLAYER_HEIGHT / 2 : PLAYER_HEIGHT)) {
       player.velocity.y = 0;
-      camera.position.y = PLAYER_HEIGHT;
-      canJump = true;
+      if (!player.isCrouched) {
+        canJump = true;
+      }
+    } else {
+      player.velocity.y -= GRAVITY * PLAYER_MASS * delta;
+    }
+    
+    
+    if (!player.isCrouched && camera.position.y < PLAYER_HEIGHT) { 
+      camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
     }
     
     player.body.position.copy(camera.position);
