@@ -32,8 +32,8 @@ var moveLeft = false;
 var moveRight = false;
 var canJump = false;
 
-var prevUpdateTime = 0;
-var prevChunkRequestTime = 0;
+var prevUpdateTime = -UPDATE_DELTA;
+var prevChunkRequestTime = -CHUNK_REQUEST_DELTA;
 var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
