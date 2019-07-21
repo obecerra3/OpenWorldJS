@@ -14,6 +14,10 @@ player->server
     lookDirZ
   JUMP (1)
     2
+  CROUCH (1)
+    3
+  UNCROUCH(1)
+    4
 
 server->player
   CHUNKRESPONSE (3 + CHUNK_SIZE*CHUNK_SIZE)
@@ -30,6 +34,18 @@ server->player
     lookDirX
     lookDirY
     lookDirZ
+  NEARBYJUMP (2+usernameLength)
+    2
+    usernameLength
+    username
+  NEARBYCROUCH (2+usernameLength)
+    3
+    usernameLength
+    username
+  NEARBYUNCROUCH (2+usernameLength)
+    4
+    usernameLength
+    username
 
 
 

@@ -8,9 +8,9 @@ import { MessageBuilder } from './js/MessageBuilder.js';
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
-const PLAYER_MASS = 50.0;
-const PLAYER_SPEED = 500.0;
-const PLAYER_JUMP = 100;
+const PLAYER_MASS = 0.00005;
+const PLAYER_SPEED = 0.0005;
+const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
 const UPDATE_DELTA = 100.0;
@@ -32,8 +32,8 @@ var moveLeft = false;
 var moveRight = false;
 var canJump = false;
 
-var prevUpdateTime = 0;
-var prevChunkRequestTime = 0;
+var prevUpdateTime = -UPDATE_DELTA;
+var prevChunkRequestTime = -CHUNK_REQUEST_DELTA;
 var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
@@ -148,6 +148,10 @@ function onWindowResize() {
 
 function onKeyDown( event ) {
     switch ( event.keyCode ) {
+      case 16:
+        player.isCrouched = true;
+        socket.send(messageBuilder.crouch());
+        break;
       case 38: // up
       case 87: // w
         moveForward = true;
@@ -165,14 +169,20 @@ function onKeyDown( event ) {
         moveRight = true;
         break;
       case 32: // space
-        if ( canJump === true ) player.velocity.y += PLAYER_JUMP;
-        canJump = false;
+        if ( canJump === true ) {
+          player.velocity.y += PLAYER_JUMP;
+          canJump = false;
+          socket.send(messageBuilder.jump());
+        } 
         break;
     }
 }
 
 function onKeyUp ( event ) {
     switch ( event.keyCode ) {
+      case 16:
+        player.isCrouched = false;
+        socket.send(messageBuilder.unCrouch());
       case 38: // up
       case 87: // w
         moveForward = false;
@@ -195,11 +205,10 @@ function onKeyUp ( event ) {
 function animate() {
   requestAnimationFrame(animate);
   var time = performance.now();
-  var delta = (time - prevTime) / 1000;
+  var delta = (time - prevTime);
   if ( controls.isLocked === true ) {
-    player.velocity.x -= player.velocity.x * 10.0 * delta;
-    player.velocity.z -= player.velocity.z * 10.0 * delta;
-    player.velocity.y -= GRAVITY * PLAYER_MASS * delta; 
+    player.velocity.x -= player.velocity.x * 0.01 * delta;
+    player.velocity.z -= player.velocity.z * 0.01 * delta;
 
     moveDirection.z = Number(moveForward) - Number(moveBackward);
     moveDirection.x = Number(moveLeft) - Number(moveRight);
@@ -218,9 +227,8 @@ function animate() {
         theta = -Math.PI/2 - Math.atan(-player.lookDirection.z/-player.lookDirection.x);
       }
     }
-    
     moveDirection.applyAxisAngle(Y, theta);
-    
+  
     player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
     player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
     
@@ -229,12 +237,20 @@ function animate() {
     camera.position.x += player.velocity.x*delta;
     camera.position.y += player.velocity.y*delta;
     camera.position.z += player.velocity.z*delta;
+  
     
-    
-    if (camera.position.y < PLAYER_HEIGHT) {
+    if (camera.position.y <= (player.isCrouched ? PLAYER_HEIGHT / 2 : PLAYER_HEIGHT)) {
       player.velocity.y = 0;
-      camera.position.y = PLAYER_HEIGHT;
-      canJump = true;
+      if (!player.isCrouched) {
+        canJump = true;
+      }
+    } else {
+      player.velocity.y -= GRAVITY * PLAYER_MASS*delta;
+    }
+    
+    
+    if (!player.isCrouched && camera.position.y < PLAYER_HEIGHT) { 
+      camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
     }
     
     player.body.position.copy(camera.position);
@@ -255,8 +271,30 @@ function animate() {
   
   }
   Object.values(otherPlayers).forEach((p) => {
-    p.body.position.x += p.velocity.x*delta*1000;
-    p.body.position.z += p.velocity.z*delta*1000;
+    p.body.position.x += p.velocity.x*delta;
+    p.body.position.z += p.velocity.z*delta;
+    p.body.position.y += p.velocity.y*delta;
+  
+    if (p.isCrouched) {
+      p.body.scale.y = 0.5;
+    } else {
+      p.body.scale.y = 1.0;
+    }
+    
+    if (p.body.position.y <= PLAYER_HEIGHT) {
+      p.velocity.y = 0;
+      p.body.position.y = PLAYER_HEIGHT;
+    } else {
+      p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
+    }
+    
+//    if (!p.isCrouched && p.body.position.y < PLAYER_HEIGHT) { 
+//      p.body.position.y += Math.min(0.75, PLAYER_HEIGHT-p.body.position.y);
+//    }
+    
+    
+    
+    
   });
   prevTime = time;
   renderer.render( scene, camera );
@@ -280,8 +318,10 @@ function processChunk (buffer) {
 }
 
 function updatePlayer (player, positionX, positionZ, lookDirectionX, lookDirectionY, lookDirectionZ) {
+  var yVelocity = player.velocity.y;
   var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
   player.velocity.copy(newVelocity);
+  player.velocity.y = yVelocity;
   player.lookDirection.x = lookDirectionX;
   player.lookDirection.y = lookDirectionY;
   player.lookDirection.z = lookDirectionZ;
@@ -307,6 +347,41 @@ function processPlayerState (buffer) {
 }
 
 
+function processJump(buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.velocity.y += PLAYER_JUMP;
+  }
+}
+
+function processCrouch (buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.isCrouched = true;
+  }
+}
+
+
+function processUnCrouch(buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.isCrouched = false;
+  }  
+}
+
+
 async function receive (blob) {
   var arrayBuffer = await new Response(blob).arrayBuffer();
   var dataView = new DataView(arrayBuffer);
@@ -316,6 +391,15 @@ async function receive (blob) {
       break;
     case 1:
       processPlayerState(arrayBuffer.slice(1));
+      break;
+    case 2:
+      processJump(arrayBuffer.slice(1));
+      break;
+    case 3:
+      processCrouch(arrayBuffer.slice(1));
+      break;
+    case 4:
+      processUnCrouch(arrayBuffer.slice(1));
       break;
     default: 
       console.log("I got something weird");

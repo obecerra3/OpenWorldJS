@@ -18,6 +18,7 @@ export class Player {
     this.lookDirection = lookDirection;
     this.body = new THREE.Mesh(new THREE.BoxGeometry(5,30,5), new THREE.MeshBasicMaterial({color: getRandomColor()}));
     this.body.position.copy(position);
+    this.isCrouched = false;
   }
 
   
