@@ -75,8 +75,6 @@ func (dstPlayer *Player) sendStateChange(code byte, srcPlayer *Player, data []by
 }
 
 
-
-
 func (players *Players) add (player *Player) {
   players.Lock()
   players.set[player] = struct{}{}
@@ -151,6 +149,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
           nearbyPlayers := player.findNearbyPlayers(players, 100.0);
           for _, nearbyPlayer := range nearbyPlayers {
             nearbyPlayer.sendStateChange(2, &player, []byte{});
+          }
+        case 3:
+          nearbyPlayers := player.findNearbyPlayers(players, 100.0);
+          for _, nearbyPlayer := range nearbyPlayers {
+            nearbyPlayer.sendStateChange(3, &player, []byte{});
+          }
+        case 4:
+          nearbyPlayers := player.findNearbyPlayers(players, 100.0);
+          for _, nearbyPlayer := range nearbyPlayers {
+            nearbyPlayer.sendStateChange(4, &player, []byte{});
           }
        default:
           panic("invalid message")

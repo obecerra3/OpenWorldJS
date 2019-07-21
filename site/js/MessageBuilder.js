@@ -30,6 +30,23 @@ export class MessageBuilder {
     return buffer;
   }
   
+  
+  crouch () {
+    var buffer = new ArrayBuffer(1);
+    var dataView = new DataView(buffer);
+    dataView.setInt8(0, 3);
+    return buffer;
+  }
+  
+  unCrouch () {
+    var buffer = new ArrayBuffer(1);
+    var dataView = new DataView(buffer);
+    dataView.setInt8(0, 4);
+    return buffer;
+  }
+  
+  
+  
   jump () {
     var buffer = new ArrayBuffer(1);
     var dataView = new DataView(buffer);

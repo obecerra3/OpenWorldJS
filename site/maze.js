@@ -8,9 +8,9 @@ import { MessageBuilder } from './js/MessageBuilder.js';
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
-const PLAYER_MASS = 50.0;
-const PLAYER_SPEED = 500.0;
-const PLAYER_JUMP = 100;
+const PLAYER_MASS = 0.00005;
+const PLAYER_SPEED = 0.0005;
+const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
 const MAZE_INFLATION = 10;
 const UPDATE_DELTA = 100.0;
@@ -150,6 +150,7 @@ function onKeyDown( event ) {
     switch ( event.keyCode ) {
       case 16:
         player.isCrouched = true;
+        socket.send(messageBuilder.crouch());
         break;
       case 38: // up
       case 87: // w
@@ -181,6 +182,7 @@ function onKeyUp ( event ) {
     switch ( event.keyCode ) {
       case 16:
         player.isCrouched = false;
+        socket.send(messageBuilder.unCrouch());
       case 38: // up
       case 87: // w
         moveForward = false;
@@ -203,10 +205,10 @@ function onKeyUp ( event ) {
 function animate() {
   requestAnimationFrame(animate);
   var time = performance.now();
-  var delta = (time - prevTime) / 1000;
+  var delta = (time - prevTime);
   if ( controls.isLocked === true ) {
-    player.velocity.x -= player.velocity.x * 10.0 * delta;
-    player.velocity.z -= player.velocity.z * 10.0 * delta;
+    player.velocity.x -= player.velocity.x * 0.01 * delta;
+    player.velocity.z -= player.velocity.z * 0.01 * delta;
 
     moveDirection.z = Number(moveForward) - Number(moveBackward);
     moveDirection.x = Number(moveLeft) - Number(moveRight);
@@ -225,9 +227,8 @@ function animate() {
         theta = -Math.PI/2 - Math.atan(-player.lookDirection.z/-player.lookDirection.x);
       }
     }
-    
     moveDirection.applyAxisAngle(Y, theta);
-    
+  
     player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
     player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
     
@@ -244,7 +245,7 @@ function animate() {
         canJump = true;
       }
     } else {
-      player.velocity.y -= GRAVITY * PLAYER_MASS * delta;
+      player.velocity.y -= GRAVITY * PLAYER_MASS*delta;
     }
     
     
@@ -270,15 +271,30 @@ function animate() {
   
   }
   Object.values(otherPlayers).forEach((p) => {
-    console.log(p.velocity);
-    p.body.position.x += p.velocity.x*delta*1000;
-    p.body.position.z += p.velocity.z*delta*1000;
+    p.body.position.x += p.velocity.x*delta;
+    p.body.position.z += p.velocity.z*delta;
     p.body.position.y += p.velocity.y*delta;
-    p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
-    if (p.body.position.y < PLAYER_HEIGHT) {
+  
+    if (p.isCrouched) {
+      p.body.scale.y = 0.5;
+    } else {
+      p.body.scale.y = 1.0;
+    }
+    
+    if (p.body.position.y <= PLAYER_HEIGHT) {
       p.velocity.y = 0;
       p.body.position.y = PLAYER_HEIGHT;
+    } else {
+      p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
     }
+    
+//    if (!p.isCrouched && p.body.position.y < PLAYER_HEIGHT) { 
+//      p.body.position.y += Math.min(0.75, PLAYER_HEIGHT-p.body.position.y);
+//    }
+    
+    
+    
+    
   });
   prevTime = time;
   renderer.render( scene, camera );
@@ -342,6 +358,28 @@ function processJump(buffer) {
   }
 }
 
+function processCrouch (buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.isCrouched = true;
+  }
+}
+
+
+function processUnCrouch(buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.isCrouched = false;
+  }  
+}
 
 
 async function receive (blob) {
@@ -356,6 +394,12 @@ async function receive (blob) {
       break;
     case 2:
       processJump(arrayBuffer.slice(1));
+      break;
+    case 3:
+      processCrouch(arrayBuffer.slice(1));
+      break;
+    case 4:
+      processUnCrouch(arrayBuffer.slice(1));
       break;
     default: 
       console.log("I got something weird");
