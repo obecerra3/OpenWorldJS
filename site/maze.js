@@ -168,8 +168,11 @@ function onKeyDown( event ) {
         moveRight = true;
         break;
       case 32: // space
-        if ( canJump === true ) player.velocity.y += PLAYER_JUMP;
-        canJump = false;
+        if ( canJump === true ) {
+          player.velocity.y += PLAYER_JUMP;
+          canJump = false;
+          socket.send(messageBuilder.jump());
+        } 
         break;
     }
 }
@@ -204,9 +207,6 @@ function animate() {
   if ( controls.isLocked === true ) {
     player.velocity.x -= player.velocity.x * 10.0 * delta;
     player.velocity.z -= player.velocity.z * 10.0 * delta;
-    
-    
-     
 
     moveDirection.z = Number(moveForward) - Number(moveBackward);
     moveDirection.x = Number(moveLeft) - Number(moveRight);
@@ -270,8 +270,15 @@ function animate() {
   
   }
   Object.values(otherPlayers).forEach((p) => {
+    console.log(p.velocity);
     p.body.position.x += p.velocity.x*delta*1000;
     p.body.position.z += p.velocity.z*delta*1000;
+    p.body.position.y += p.velocity.y*delta;
+    p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
+    if (p.body.position.y < PLAYER_HEIGHT) {
+      p.velocity.y = 0;
+      p.body.position.y = PLAYER_HEIGHT;
+    }
   });
   prevTime = time;
   renderer.render( scene, camera );
@@ -295,8 +302,10 @@ function processChunk (buffer) {
 }
 
 function updatePlayer (player, positionX, positionZ, lookDirectionX, lookDirectionY, lookDirectionZ) {
+  var yVelocity = player.velocity.y;
   var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
   player.velocity.copy(newVelocity);
+  player.velocity.y = yVelocity;
   player.lookDirection.x = lookDirectionX;
   player.lookDirection.y = lookDirectionY;
   player.lookDirection.z = lookDirectionZ;
@@ -322,6 +331,19 @@ function processPlayerState (buffer) {
 }
 
 
+function processJump(buffer) {
+  var decoder = new TextDecoder("utf-8");
+  var dataView = new DataView(buffer);
+  var usernameLength = dataView.getUint8(0);
+  var username = decoder.decode(buffer.slice(1, usernameLength+1));
+  var player;
+  if ((player = otherPlayers[username]) != undefined) {
+    player.velocity.y += PLAYER_JUMP;
+  }
+}
+
+
+
 async function receive (blob) {
   var arrayBuffer = await new Response(blob).arrayBuffer();
   var dataView = new DataView(arrayBuffer);
@@ -331,6 +353,9 @@ async function receive (blob) {
       break;
     case 1:
       processPlayerState(arrayBuffer.slice(1));
+      break;
+    case 2:
+      processJump(arrayBuffer.slice(1));
       break;
     default: 
       console.log("I got something weird");

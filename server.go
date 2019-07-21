@@ -68,11 +68,13 @@ func (player *Player) findNearbyPlayers (players Players, delta float32) []*Play
   return result
 }
 
-func (dstPlayer *Player) sendState(srcPlayer *Player, data []byte) {
+func (dstPlayer *Player) sendStateChange(code byte, srcPlayer *Player, data []byte) {
   dstPlayer.Lock();
-  dstPlayer.conn.WriteMessage(websocket.BinaryMessage, append([]byte{1, byte(len(srcPlayer.username))}, append(srcPlayer.username, data...)...))
+  dstPlayer.conn.WriteMessage(websocket.BinaryMessage, append([]byte{code, byte(len(srcPlayer.username))}, append(srcPlayer.username, data...)...))
   dstPlayer.Unlock();
 }
+
+
 
 
 func (players *Players) add (player *Player) {
@@ -102,7 +104,7 @@ func processPlayerState(stateData []byte, player *Player) {
   player.position.z = bytesToFloat32(stateData[4:8]);
   nearbyPlayers := player.findNearbyPlayers(players, 100.0);
   for _, nearbyPlayer := range nearbyPlayers {
-    nearbyPlayer.sendState(player, stateData);
+    nearbyPlayer.sendStateChange(1, player, stateData);
   }
 }
 
@@ -145,7 +147,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
          conn.WriteMessage(websocket.BinaryMessage, getChunk(data[1], data[2]).encode())
        case 1:  
          processPlayerState(data[1:], &player)
-        default:
+       case 2:
+          nearbyPlayers := player.findNearbyPlayers(players, 100.0);
+          for _, nearbyPlayer := range nearbyPlayers {
+            nearbyPlayer.sendStateChange(2, &player, []byte{});
+          }
+       default:
           panic("invalid message")
       }
     }
