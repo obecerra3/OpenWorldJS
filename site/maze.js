@@ -33,7 +33,7 @@ var moveRight = false;
 var canJump = false;
 
 var prevUpdateTime = -UPDATE_DELTA;
-var prevChunkRequestTime = -CHUNK_REQUEST_DELTA;
+var prevChunkRequestTime = 0;
 var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
@@ -42,7 +42,7 @@ var moveDirection = new THREE.Vector3();
 var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
-var player = new Player (makeid(5), new THREE.Vector3(0,0,0));
+var player = new Player (makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
 
 console.log(player.username); 
@@ -150,7 +150,6 @@ function onKeyDown( event ) {
     switch ( event.keyCode ) {
       case 16:
         player.isCrouched = true;
-        socket.send(messageBuilder.crouch());
         break;
       case 38: // up
       case 87: // w
@@ -182,7 +181,6 @@ function onKeyUp ( event ) {
     switch ( event.keyCode ) {
       case 16:
         player.isCrouched = false;
-        socket.send(messageBuilder.unCrouch());
       case 38: // up
       case 87: // w
         moveForward = false;
@@ -206,70 +204,72 @@ function animate() {
   requestAnimationFrame(animate);
   var time = performance.now();
   var delta = (time - prevTime);
-  if ( controls.isLocked === true ) {
-    player.velocity.x -= player.velocity.x * 0.01 * delta;
-    player.velocity.z -= player.velocity.z * 0.01 * delta;
+  player.velocity.x -= player.velocity.x * 0.01 * delta;
+  player.velocity.z -= player.velocity.z * 0.01 * delta;
 
-    moveDirection.z = Number(moveForward) - Number(moveBackward);
-    moveDirection.x = Number(moveLeft) - Number(moveRight);
-    moveDirection.normalize(); 
-    
-    controls.getDirection(player.lookDirection);
-    
-    if (player.lookDirection.z > 0) {
-      theta = Math.atan(player.lookDirection.x / player.lookDirection.z);
-    } else if (player.lookDirection.x > 0) {
-      theta = Math.PI/2 + Math.atan(-player.lookDirection.z/player.lookDirection.x);
+  moveDirection.z = Number(moveForward) - Number(moveBackward);
+  moveDirection.x = Number(moveLeft) - Number(moveRight);
+  moveDirection.normalize(); 
+  
+  controls.getDirection(player.lookDirection);
+  
+  if (player.lookDirection.z > 0) {
+    theta = Math.atan(player.lookDirection.x / player.lookDirection.z);
+  } else if (player.lookDirection.x > 0) {
+    theta = Math.PI/2 + Math.atan(-player.lookDirection.z/player.lookDirection.x);
+  } else {
+    if (player.lookDirection.x == 0) {
+      theta = Math.PI;
     } else {
-      if (player.lookDirection.x == 0) {
-        theta = Math.PI;
-      } else {
-        theta = -Math.PI/2 - Math.atan(-player.lookDirection.z/-player.lookDirection.x);
-      }
+      theta = -Math.PI/2 - Math.atan(-player.lookDirection.z/-player.lookDirection.x);
     }
-    moveDirection.applyAxisAngle(Y, theta);
-  
-    player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
-    player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
-    
-    collider.collide(player, walls);  
-  
-    camera.position.x += player.velocity.x*delta;
-    camera.position.y += player.velocity.y*delta;
-    camera.position.z += player.velocity.z*delta;
-  
-    
-    if (camera.position.y <= (player.isCrouched ? PLAYER_HEIGHT / 2 : PLAYER_HEIGHT)) {
-      player.velocity.y = 0;
-      if (!player.isCrouched) {
-        canJump = true;
-      }
-    } else {
-      player.velocity.y -= GRAVITY * PLAYER_MASS*delta;
-    }
-    
-    
-    if (!player.isCrouched && camera.position.y < PLAYER_HEIGHT) { 
-      camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
-    }
-    
-    player.body.position.copy(camera.position);
-    
-    if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA && CHUNK_SIZE) {
-        var chunkX = Math.round(player.body.position.x / (MAZE_INFLATION*CHUNK_SIZE));
-        var chunkZ = Math.round(player.body.position.z / (MAZE_INFLATION*CHUNK_SIZE));
-        if (!chunks.has(pair(chunkX, chunkZ))) {
-          prevChunkRequestTime = time;
-          socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, MAZE_INFLATION, CHUNK_SIZE));
-        }
-    } 
-    
-    if (time - prevUpdateTime >= UPDATE_DELTA) {
-      socket.send(messageBuilder.state(player));
-      prevUpdateTime = time;
-    }
-  
   }
+  moveDirection.applyAxisAngle(Y, theta);
+
+  player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
+  player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
+  
+  collider.collide(player, walls);  
+
+  player.body.position.x += player.velocity.x*delta;
+  player.body.position.y += player.velocity.y*delta;
+  player.body.position.z += player.velocity.z*delta;
+  
+  camera.position.x = player.body.position.x;
+  camera.position.z = player.body.position.z;
+  
+  
+  if (player.isCrouched) {
+    camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
+  } else {
+    camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
+  }
+  
+  if (player.body.position.y <= PLAYER_HEIGHT) {
+    if (!player.isCrouched) {
+      canJump = true;
+    }
+    player.velocity.y = 0;
+  } else { 
+    player.velocity.y -= GRAVITY*PLAYER_MASS*delta;
+    camera.position.y = player.body.position.y;
+  }
+  
+
+  if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
+      var chunkX = Math.round(player.body.position.x / (MAZE_INFLATION*CHUNK_SIZE));
+      var chunkZ = Math.round(player.body.position.z / (MAZE_INFLATION*CHUNK_SIZE));
+      if (!chunks.has(pair(chunkX, chunkZ))) {
+        prevChunkRequestTime = time;
+        socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, MAZE_INFLATION, CHUNK_SIZE));
+      }
+  } 
+  
+  if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
+    socket.send(messageBuilder.state(player));
+    prevUpdateTime = time;
+  }
+  
   Object.values(otherPlayers).forEach((p) => {
     p.body.position.x += p.velocity.x*delta;
     p.body.position.z += p.velocity.z*delta;
@@ -287,14 +287,6 @@ function animate() {
     } else {
       p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
     }
-    
-//    if (!p.isCrouched && p.body.position.y < PLAYER_HEIGHT) { 
-//      p.body.position.y += Math.min(0.75, PLAYER_HEIGHT-p.body.position.y);
-//    }
-    
-    
-    
-    
   });
   prevTime = time;
   renderer.render( scene, camera );
@@ -317,67 +309,53 @@ function processChunk (buffer) {
   mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
 }
 
-function updatePlayer (player, positionX, positionZ, lookDirectionX, lookDirectionY, lookDirectionZ) {
-  var yVelocity = player.velocity.y;
-  var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
-  player.velocity.copy(newVelocity);
-  player.velocity.y = yVelocity;
-  player.lookDirection.x = lookDirectionX;
-  player.lookDirection.y = lookDirectionY;
-  player.lookDirection.z = lookDirectionZ;
+function processAction (buffer, code) {
+  var dataView = new DataView(buffer);
+  var id = dataView.getUint16(0);
+  var player = otherPlayers[id];
+  switch (code) {
+    case 3:
+      player.velocity.y += PLAYER_JUMP;
+      break;
+    default:
+      console.log("unrecognized action");
+  }
 }
 
-function processPlayerState (buffer) {
-  var decoder = new TextDecoder("utf-8");
-  var dataView = new DataView(buffer);
-  var usernameLength = dataView.getUint8(0);
-  var username = decoder.decode(buffer.slice(1, usernameLength+1));
-  var positionX = dataView.getFloat32(usernameLength+1);
-  var positionZ = dataView.getFloat32(usernameLength+5);
-  var lookDirectionX = dataView.getFloat32(usernameLength+9);
-  var lookDirectionY = dataView.getFloat32(usernameLength+13);
-  var lookDirectionZ = dataView.getFloat32(usernameLength+17);
-  var player;
-  if ((player = otherPlayers[username]) != undefined) {
-    updatePlayer(player, positionX, positionZ, lookDirectionX, lookDirectionY, lookDirectionZ);
+function processPlayerState (buffer, isNew) {
+  if (isNew) {
+    var decoder = new TextDecoder("utf-8");
+    var dataView = new DataView(buffer);
+    var id = dataView.getUint16(0);
+    var usernameLength = dataView.getUint8(2);
+    var username = decoder.decode(buffer.slice(3, usernameLength+3));
+    var isCrouched = dataView.getUint8(usernameLength+3);
+    var positionX = dataView.getFloat32(usernameLength+4);
+    var positionZ = dataView.getFloat32(usernameLength+8);
+    var lookDirectionX = dataView.getFloat32(usernameLength+12);
+    var lookDirectionY = dataView.getFloat32(usernameLength+16);
+    var lookDirectionZ = dataView.getFloat32(usernameLength+20);
+    var player = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ), isCrouched);
+    otherPlayers[id] = player;
+    scene.add(player.body);
   } else {
-    otherPlayers[username] = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ));
-    scene.add(otherPlayers[username].body);
-  }
-}
-
-
-function processJump(buffer) {
-  var decoder = new TextDecoder("utf-8");
-  var dataView = new DataView(buffer);
-  var usernameLength = dataView.getUint8(0);
-  var username = decoder.decode(buffer.slice(1, usernameLength+1));
-  var player;
-  if ((player = otherPlayers[username]) != undefined) {
-    player.velocity.y += PLAYER_JUMP;
-  }
-}
-
-function processCrouch (buffer) {
-  var decoder = new TextDecoder("utf-8");
-  var dataView = new DataView(buffer);
-  var usernameLength = dataView.getUint8(0);
-  var username = decoder.decode(buffer.slice(1, usernameLength+1));
-  var player;
-  if ((player = otherPlayers[username]) != undefined) {
-    player.isCrouched = true;
-  }
-}
-
-
-function processUnCrouch(buffer) {
-  var decoder = new TextDecoder("utf-8");
-  var dataView = new DataView(buffer);
-  var usernameLength = dataView.getUint8(0);
-  var username = decoder.decode(buffer.slice(1, usernameLength+1));
-  var player;
-  if ((player = otherPlayers[username]) != undefined) {
-    player.isCrouched = false;
+    var dataView = new DataView(buffer);
+    var id = dataView.getUint16(0);
+    var isCrouched = dataView.getUint8(2);
+    var positionX = dataView.getFloat32(3);
+    var positionZ = dataView.getFloat32(7);
+    var lookDirectionX = dataView.getFloat32(11);
+    var lookDirectionY = dataView.getFloat32(15);
+    var lookDirectionZ = dataView.getFloat32(19);
+    var player = otherPlayers[id];
+    var yVelocity = player.velocity.y;
+    var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
+    player.velocity.copy(newVelocity);
+    player.velocity.y = yVelocity;
+    player.lookDirection.x = lookDirectionX;
+    player.lookDirection.y = lookDirectionY;
+    player.lookDirection.z = lookDirectionZ;
+    player.isCrouched = isCrouched; 
   }  
 }
 
@@ -390,19 +368,14 @@ async function receive (blob) {
       processChunk(arrayBuffer.slice(1));
       break;
     case 1:
-      processPlayerState(arrayBuffer.slice(1));
+      processPlayerState(arrayBuffer.slice(1), true);
       break;
     case 2:
-      processJump(arrayBuffer.slice(1));
+      processPlayerState(arrayBuffer.slice(1), false);
       break;
     case 3:
-      processCrouch(arrayBuffer.slice(1));
+      processAction(arrayBuffer.slice(1), 3);
       break;
-    case 4:
-      processUnCrouch(arrayBuffer.slice(1));
-      break;
-    default: 
-      console.log("I got something weird");
   }
 }
 
