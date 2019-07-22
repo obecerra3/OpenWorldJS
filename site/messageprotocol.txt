@@ -5,19 +5,17 @@ player->server
     0
     offsetX
     offsetZ
-  MYSTATE (21)
+  MYSTATE
     1
+    isCrouched
     positionX
     positionZ
     lookDirX
     lookDirY
     lookDirZ
+actions
   JUMP (1)
-    2
-  CROUCH (1)
     3
-  UNCROUCH(1)
-    4
 
 server->player
   CHUNKRESPONSE (3 + CHUNK_SIZE*CHUNK_SIZE)
@@ -25,27 +23,30 @@ server->player
     offsetX
     offsetZ
     data
-  NEARBYPLAYERSTATE (22+usernameLength)
-    1
-    usernameLength
-    username
-    positionX
-    positionZ
-    lookDirX
-    lookDirY
-    lookDirZ
-  NEARBYJUMP (2+usernameLength)
-    2
-    usernameLength
-    username
-  NEARBYCROUCH (2+usernameLength)
-    3
-    usernameLength
-    username
-  NEARBYUNCROUCH (2+usernameLength)
-    4
-    usernameLength
-    username
+  NEWNEARBYPLAYERSTATE
+    1                   (1)
+    id                  (2)
+    usernameLength      (1)
+    username            (...)
+    isCrouched          (1)
+    positionX           (4)
+    positionZ           (4)
+    lookDirX            (4)
+    lookDirY            (4)
+    lookDirZ            (4)
+  NEARBYPLAYERSTATE
+    2                   (1)
+    id                  (2)
+    isCrouched          (1)
+    positionX           (4)
+    positionZ           (4)
+    lookDirX            (4)
+    lookDirY            (4)
+    lookDirZ            (4)
+actions
+  NEARBYJUMP 
+    3                   (1)
+    id                  (2)
 
 
 

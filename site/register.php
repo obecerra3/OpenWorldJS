@@ -31,6 +31,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         if ($userMan->exists_username($username)) {
           $username_err = "This username is already taken";
         }
+      
         
         if ($userMan->exists_email($email)) {
           $email_err = "There is already an account associated with this email";
