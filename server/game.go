@@ -1,9 +1,9 @@
 package game
 
 import (
-  //"fmt"
   "sync"
   "math"
+  "encoding/binary"
   "github.com/gorilla/websocket"
 )
 
@@ -11,6 +11,19 @@ const MAZE_SIZE = 405
 const CHUNK_SIZE = 27
 const NUM_CHUNKS = (MAZE_SIZE/CHUNK_SIZE)*(MAZE_SIZE/CHUNK_SIZE)
 var Maze []byte
+
+type IDGenerator struct {
+  sync.Mutex
+  nextID uint16
+}
+
+func (idGenerator *IDGenerator) GetNextID () uint16 {
+  idGenerator.Lock()
+  id := idGenerator.nextID
+  idGenerator.nextID++
+  idGenerator.Unlock()
+  return id
+}
 
 type Players struct {
   sync.RWMutex
@@ -21,10 +34,11 @@ type Player struct {
   sync.Mutex
   Conn *websocket.Conn
   Username []byte
+  ID uint16
   Position Vec2
+  KnowsAboutMe map[*Player]struct{}
   NearbyPlayers map[*Player]struct{}
 }
-
 
 func (players Players) Add (player *Player) {
   players.Lock()
@@ -38,27 +52,57 @@ func (players Players) Remove (player *Player) {
   players.Unlock()  
 }
 
-
 func distance (a Vec2, b Vec2) float32 {
   return float32(math.Sqrt(math.Pow(float64(a.X) - float64(b.X), 2.0) + math.Pow(float64(a.Z) - float64(b.Z), 2.0)))
 }
 
 func (player *Player) UpdateNearbyPlayers (players Players, delta float32) {
   players.RLock()
-  player.NearbyPlayers = make(map[*Player]struct{})
   for p := range players.Set {
     distance := distance(player.Position, p.Position)
     if (distance > 0 && distance <= delta) {
-      player.NearbyPlayers[p] = struct{}{}
+      if _,has := player.NearbyPlayers[p]; !has {
+        player.NearbyPlayers[p] = struct{}{}
+      }
+    } else {
+      if _,has := player.NearbyPlayers[p]; has {
+        delete(player.NearbyPlayers, p)
+      }
     } 
   }
   players.RUnlock()
 }
+
+func (dstPlayer *Player) SendAction (code byte, srcPlayer *Player) {
+  payload := make([]byte, 3)
+  payload[0] = code
+  binary.BigEndian.PutUint16(payload[1:], srcPlayer.ID)
+  dstPlayer.Lock()
+  dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
+  dstPlayer.Unlock()
+}
+
     
-func (dstPlayer *Player) SendData (code byte, srcPlayer *Player, data []byte) {
-  dstPlayer.Lock();
-  dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, append([]byte{code, byte(len(srcPlayer.Username))}, append(srcPlayer.Username, data...)...))
-  dstPlayer.Unlock();
+func (dstPlayer *Player) SendState (srcPlayer *Player, data []byte) {
+  if _, has := srcPlayer.KnowsAboutMe[dstPlayer]; !has {
+    payload := make([]byte, 4+len(srcPlayer.Username)+len(data))
+    payload[0] = 1
+    binary.BigEndian.PutUint16(payload[1:3], srcPlayer.ID)
+    payload[3] = byte(len(srcPlayer.Username))
+    copy(payload[4:], srcPlayer.Username)
+    copy(payload[4+len(srcPlayer.Username):], data)
+    srcPlayer.KnowsAboutMe[dstPlayer] = struct{}{}
+    dstPlayer.Lock()
+    dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
+  } else {
+    payload := make([]byte, 3+len(data))
+    payload[0] = 2
+    binary.BigEndian.PutUint16(payload[1:3], srcPlayer.ID)
+    copy(payload[3:], data)
+    dstPlayer.Lock()
+    dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
+  } 
+  dstPlayer.Unlock()
 }
 
 
