@@ -44,13 +44,15 @@ session_start();
       }
   
     </style>
+    <script data-main="js/maze.js" src="js/require.js"></script>
+    <script>var username = "<?php echo $_SESSION["username"]?>" </script>
+    <script type="module" src="js/maze.js"></script>
   </head>
   <body>
     <div id="blocker">
      <div id="info"><?php echo $_SESSION["username"]?></div>
     </div>
-    <script>var username = "<?php echo $_SESSION["username"]?>" </script>
-    <script type="module" src="js/maze.js"></script>
+    
   </body>
 </html>
 
