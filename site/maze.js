@@ -265,7 +265,7 @@ function animate() {
       }
   } 
   
-  if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN) {
+  if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
     socket.send(messageBuilder.state(player));
     prevUpdateTime = time;
   }
@@ -368,9 +368,7 @@ async function receive (blob) {
       processChunk(arrayBuffer.slice(1));
       break;
     case 1:
-      console.log("received new player");
       processPlayerState(arrayBuffer.slice(1), true);
-      console.log(otherPlayers);
       break;
     case 2:
       processPlayerState(arrayBuffer.slice(1), false);
