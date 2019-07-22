@@ -1,10 +1,10 @@
-import * as THREE from './js/three.min.js';
-import { PointerLockControls } from './js/PointerLockControls.js';
-import { BasisTextureLoader } from './js/BasisTextureLoader.js';
-import { Player } from './js/Player.js';
-import { MazeBuilder } from './js/MazeBuilder.js';
-import { Collider } from './js/Collider.js';
-import { MessageBuilder } from './js/MessageBuilder.js';
+import * as THREE from './three.js';
+import { PointerLockControls } from './pointerlock.js';
+import { Player } from './Player.js';
+import { MazeBuilder } from './MazeBuilder.js';
+import { Collider } from './Collider.js';
+import { MessageBuilder } from './MessageBuilder.js';
+
 
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
@@ -106,10 +106,7 @@ function init() {
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
   document.body.appendChild( renderer.domElement );
-  
-  var loader = new BasisTextureLoader();
-  loader.setTranscoderPath( '../textures/' );
-  loader.detectSupport( renderer );
+
   
   var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
   var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
@@ -128,14 +125,6 @@ function init() {
   
   scene.add(player.body);
 
-  
-  loader.load( '../textures/PavingStones.basis', function ( texture ) {
-    texture.encoding = THREE.sRGBEncoding;
-    material.map = texture;
-    material.needsUpdate = true;
-  }, undefined, function ( error ) {
-    console.error( error );
-  } );
   window.addEventListener( 'resize', onWindowResize, false );
 }
 

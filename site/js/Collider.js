@@ -1,4 +1,4 @@
-import * as THREE from './three.min.js';
+import * as THREE from './three.js';
 
 const XZ = (new THREE.Vector3(1,0,1)).normalize();
 const _XZ = (new THREE.Vector3(-1,0,1)).normalize();

@@ -1,4 +1,4 @@
-import * as THREE from './three.min.js';
+import * as THREE from './three.js';
 
 const MAZE_INFLATION = 10;
 

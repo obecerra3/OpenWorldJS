@@ -50,7 +50,7 @@ session_start();
      <div id="info"><?php echo $_SESSION["username"]?></div>
     </div>
     <script>var username = "<?php echo $_SESSION["username"]?>" </script>
-    <script type="module" src="maze.js"></script>
+    <script type="module" src="js/maze.js"></script>
   </body>
 </html>
 
