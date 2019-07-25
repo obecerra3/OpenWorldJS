@@ -12,7 +12,7 @@ export class MessageBuilder {
   chunkRequest(chunk) {
     var buffer = new ArrayBuffer(3);
     var dataView = new DataView(buffer);
-    dataView.setInt8(0, 0);
+    dataView.setInt8(0, 0); 
     dataView.setInt8(1, chunk.x);
     dataView.setInt8(2, chunk.z);
     return buffer;

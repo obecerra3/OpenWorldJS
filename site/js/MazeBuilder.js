@@ -17,7 +17,6 @@ export class MazeBuilder {
     var worldCenter = {x: center.x * worldChunkSize, z: center.z * worldChunkSize};
     var chunkOrigin = {x: worldCenter.x - (worldChunkSize/2), z: worldCenter.z - (worldChunkSize/2)};
     
-    console.log(chunkOrigin);
     
     var i,j;
     

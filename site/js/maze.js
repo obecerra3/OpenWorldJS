@@ -23,7 +23,8 @@ const Y = new THREE.Vector3(0,1,0);
 
 var camera, scene, renderer, controls, theta;
 
-var walls = [];
+var walls = new Map();
+var collisionWalls = [];
 var chunks = new Set();
 var otherPlayers = {};
 
@@ -117,7 +118,7 @@ function init() {
   document.body.appendChild( renderer.domElement );
   
   spotLight = new THREE.SpotLight( 0xffffff, 1 );
-  spotLight.position.set( 0, 300, 0 );
+  spotLight.position.set( 0, 100, 0 );
   spotLight.penumbra = 0.05;
   spotLight.decay = 1;
   spotLight.distance = 500;
@@ -235,7 +236,7 @@ function animate() {
   player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
-  collider.collide(player, walls);  
+  collider.collide(player, collisionWalls);  
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -263,11 +264,10 @@ function animate() {
   
 
   if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-      var chunkX = Math.round(player.body.position.x / (CELL_SIZE*CHUNK_SIZE));
-      var chunkZ = Math.round(player.body.position.z / (CELL_SIZE*CHUNK_SIZE));
-      if (!chunks.has(Utils.pair(chunkX, chunkZ))) {
+      var currentChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
+      if (!chunks.has(Utils.pair(currentChunk.x, currentChunk.z))) {
         prevChunkRequestTime = time;
-        socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, CELL_SIZE, CHUNK_SIZE));
+        socket.send(messageBuilder.chunkRequest({x: currentChunk.x, z: currentChunk.z}, player, CELL_SIZE, CHUNK_SIZE));
       }
   } 
   
@@ -299,7 +299,7 @@ function animate() {
 }
 
 function processChunk (buffer) {
-  var byteArray = new Uint8Array(buffer);
+  var byteArray = new Int8Array(buffer);
   var chunkX = byteArray[0];
   var chunkZ = byteArray[1];
   chunks.add(Utils.pair(chunkX, chunkZ));
@@ -312,7 +312,9 @@ function processChunk (buffer) {
       return array; 
     }
   }, []);
-  mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE).forEach((wall)=>{scene.add(wall);});
+  walls.set(Utils.pair(chunkX, chunkZ), mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE));
+  walls.get(Utils.pair(chunkX, chunkZ)).forEach((wall)=>{scene.add(wall);})
+  collisionWalls = walls.get(Utils.pair(chunkX, chunkZ));
 }
 
 function processAction (buffer, code) {

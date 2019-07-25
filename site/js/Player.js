@@ -11,6 +11,14 @@ export class Player {
     this.body.position.copy(position);
     this.isCrouched = isCrouched;
   }
+  
+  getCurrentChunk (cellSize, chunkSize) {
+    return {x:  Math.round(this.body.position.x / (cellSize*chunkSize)), z: Math.round(this.body.position.z / (cellSize*chunkSize)) }
+  }
+  
+  
+  
+  
 }
 
 
