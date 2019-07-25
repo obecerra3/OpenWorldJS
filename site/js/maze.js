@@ -14,9 +14,9 @@ const PLAYER_MASS = 0.00005;
 const PLAYER_SPEED = 0.0005;
 const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
-const CELL_SIZE = 30;
+const CELL_SIZE = 10;
 const UPDATE_DELTA = 100.0;
-const CHUNK_REQUEST_DELTA = 5000;
+const CHUNK_REQUEST_DELTA = 1000;
 const CHUNK_SIZE = 27;
 
 const Y = new THREE.Vector3(0,1,0);
@@ -46,6 +46,7 @@ var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 var player = new Player (Utils.makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
+var spotLight;
 
 console.log(player.username); 
 
@@ -111,21 +112,15 @@ function init() {
 
   renderer.gammaInput = true;
   renderer.gammaOutput = true;
-  
-  var size = CELL_SIZE * CHUNK_SIZE;
-  var divisions = CELL_SIZE;
-
-  var gridHelper = new THREE.GridHelper( size, divisions );
-  scene.add( gridHelper );
 
 
   document.body.appendChild( renderer.domElement );
   
-  var spotLight = new THREE.SpotLight( 0xffffff, 1 );
-  spotLight.position.set( 0, 100, 0 );
+  spotLight = new THREE.SpotLight( 0xffffff, 1 );
+  spotLight.position.set( 0, 300, 0 );
   spotLight.penumbra = 0.05;
   spotLight.decay = 1;
-  spotLight.distance = 300;
+  spotLight.distance = 500;
 
   spotLight.castShadow = true;
   spotLight.shadow.mapSize.width = 1024;
@@ -134,23 +129,13 @@ function init() {
   spotLight.shadow.camera.far = 200;
   scene.add( spotLight );
   
-//  var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
-//  var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
+//  var geometry1 = new THREE.BoxGeometry( 1, 80, 1 );
 //  var material = new THREE.MeshPhongMaterial( { color: 0x4080ff, dithering: true } );
-//  material.color = new THREE.Color(0xd3d3d3);
 //  var wall1 = new THREE.Mesh( geometry1, material );
-//  var wall2 = new THREE.Mesh( geometry2, material );
-//  wall1.position.z = -100;
-//  wall2.position.z = -50;
-//  wall2.position.x = 25;
-//  
-//  wall1.castShadow = true;
-//  wall2.castShadow = true;
-//  
-//  walls.push(wall1);
-//  walls.push(wall2);
+//  wall1.position.x = -120;
+//  wall1.position.z = -120;
+
 //  scene.add(wall1);
-//  scene.add(wall2);
   
   scene.add(player.body);
 
@@ -185,7 +170,7 @@ function onKeyDown( event ) {
       case 68: // d
         moveRight = true;
         break;
-      case 32: // space
+      case 32: // space 
         if ( canJump === true ) {
           player.velocity.y += PLAYER_JUMP;
           //canJump = false;
@@ -219,6 +204,7 @@ function onKeyUp ( event ) {
 }
 
 function animate() {
+
   requestAnimationFrame(animate);
   var time = performance.now();
   var delta = (time - prevTime);
@@ -316,7 +302,6 @@ function processChunk (buffer) {
   var byteArray = new Uint8Array(buffer);
   var chunkX = byteArray[0];
   var chunkZ = byteArray[1];
-  console.log(byteArray);
   chunks.add(Utils.pair(chunkX, chunkZ));
   var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
     if (idx % CHUNK_SIZE == 0) {
@@ -327,7 +312,6 @@ function processChunk (buffer) {
       return array; 
     }
   }, []);
-  console.log(chunkArray);
   mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE).forEach((wall)=>{scene.add(wall);});
 }
 

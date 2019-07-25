@@ -1,6 +1,7 @@
 package game
 
 import (
+  "fmt"
   "sync"
   "math"
   "encoding/binary"
@@ -122,7 +123,7 @@ func (chunk Chunk) Encode () []byte {
   buf[0] = 0
   buf[1] = chunk.X
   buf[2] = chunk.Z
-  copy(buf[2:], chunk.Data)
+  copy(buf[3:], chunk.Data)
   return buf
 }
 
@@ -140,6 +141,7 @@ func GetChunk(x byte, z byte) Chunk {
     mi := start + (ix * MAZE_SIZE) + jx
     chunk.Data[ix*CHUNK_SIZE + jx] = (Maze[mi / 8] >> uint(7-(mi%8))) & 1
   }
+  fmt.Println(chunk.Data)
   chunk.X = x
   chunk.Z = z
   return chunk
