@@ -12,7 +12,9 @@ export class MazeBuilder {
   
     var material = new THREE.MeshPhongMaterial( { color: 0x4080ff, dithering: true } );
     material.color = new THREE.Color(0xd3d3d3);
-    var walls = [];
+    
+    var group = new THREE.Group();
+    
     var worldChunkSize = cellSize * chunkSize;
     var worldCenter = {x: center.x * worldChunkSize, z: center.z * worldChunkSize};
     var chunkOrigin = {x: worldCenter.x - (worldChunkSize/2), z: worldCenter.z - (worldChunkSize/2)};
@@ -34,7 +36,7 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(wallLength, WALL_HEIGHT, WALL_WIDTH);
           var wall = new THREE.Mesh(geometry, material);
           wall.position.copy(wallCenter);
-          walls.push(wall);
+          group.add(wall);
           j = k;
         }
       }
@@ -54,13 +56,13 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, wallLength);
           var wall = new THREE.Mesh(geometry, material);
           wall.position.copy(wallCenter);
-          walls.push(wall);
+          group.add(wall);
           i = k;
         }
       }
     }
     
-    return walls;
+    return group;
   
   }
   

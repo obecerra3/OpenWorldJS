@@ -23,11 +23,10 @@ const Y = new THREE.Vector3(0,1,0);
 
 var camera, scene, renderer, controls, theta;
 
-var walls = new Map();
-var collisionWalls = [];
-var chunks = new Set();
-var otherPlayers = {};
+var chunks = new Map();
+var currentChunk = new THREE.Object3D();
 
+var otherPlayers = {};
 
 var moveForward = false;
 var moveBackward = false;
@@ -63,6 +62,11 @@ init();
 animate();
 
 function init() {
+  
+//  var currentChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
+//  chunks.set(Utils.pair(currentChunk.x, currentChunk.z), []);
+  
+  
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   camera.position.y = PLAYER_HEIGHT;
   
@@ -236,7 +240,9 @@ function animate() {
   player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
-  collider.collide(player, collisionWalls);  
+  var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
+  var currentChunk = chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
+  if (currentChunk != undefined) collider.collide(player, currentChunk);  
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -302,7 +308,6 @@ function processChunk (buffer) {
   var byteArray = new Int8Array(buffer);
   var chunkX = byteArray[0];
   var chunkZ = byteArray[1];
-  chunks.add(Utils.pair(chunkX, chunkZ));
   var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
     if (idx % CHUNK_SIZE == 0) {
       array.push([parseInt(curr)]);
@@ -312,9 +317,11 @@ function processChunk (buffer) {
       return array; 
     }
   }, []);
-  walls.set(Utils.pair(chunkX, chunkZ), mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE));
-  walls.get(Utils.pair(chunkX, chunkZ)).forEach((wall)=>{scene.add(wall);})
-  collisionWalls = walls.get(Utils.pair(chunkX, chunkZ));
+  var group = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
+  chunks.set(Utils.pair(chunkX, chunkZ), group);
+  scene.add(group);
+  console.log(group);
+  
 }
 
 function processAction (buffer, code) {
