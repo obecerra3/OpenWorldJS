@@ -1,5 +1,7 @@
 import * as THREE from './three.js';
 import { PointerLockControls } from './pointerlock.js';
+
+import * as Utils from './Utils.js'
 import { Player } from './Player.js';
 import { MazeBuilder } from './MazeBuilder.js';
 import { Collider } from './Collider.js';
@@ -12,18 +14,20 @@ const PLAYER_MASS = 0.00005;
 const PLAYER_SPEED = 0.0005;
 const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
-const MAZE_INFLATION = 10;
+const CELL_SIZE = 12;
 const UPDATE_DELTA = 100.0;
-const CHUNK_REQUEST_DELTA = 5000;
+const CHUNK_REQUEST_DELTA = 3000;
 const CHUNK_SIZE = 27;
 
 const Y = new THREE.Vector3(0,1,0);
 
 var camera, scene, renderer, controls, theta;
 
-var walls = [];
-var chunks = new Set();
+var currentChunk = new THREE.Object3D();
+var onDisplay = new Set();
+
 var otherPlayers = {};
+
 
 
 var moveForward = false;
@@ -42,8 +46,9 @@ var moveDirection = new THREE.Vector3();
 var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
-var player = new Player (makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
+var player = new Player (Utils.makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
+var spotLight;
 
 console.log(player.username); 
 
@@ -59,6 +64,8 @@ init();
 animate();
 
 function init() {
+  
+
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   camera.position.y = PLAYER_HEIGHT;
   
@@ -69,9 +76,8 @@ function init() {
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
 
-  var light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
-  light.position.set(0.5, 1, 0.75);
-  scene.add(light);
+  var light = new THREE.AmbientLight( 0x404040 );
+  scene.add( light );
 
   controls = new PointerLockControls( camera );
 
@@ -105,25 +111,38 @@ function init() {
   renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
-  document.body.appendChild( renderer.domElement );
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+  renderer.gammaInput = true;
+  renderer.gammaOutput = true;
+
+
+  document.body.appendChild( renderer.domElement );
   
-  var geometry1 = new THREE.BoxGeometry( 100, 50, 5 );
-  var geometry2 = new THREE.BoxGeometry( 5, 50, 100);
+  spotLight = new THREE.SpotLight( 0xffffff, 1 );
+  spotLight.position.set( 0, 100, 0 );
+  spotLight.penumbra = 0.05;
+  spotLight.decay = 1;
+  spotLight.distance = 500;
+
+  spotLight.castShadow = true;
+  spotLight.shadow.mapSize.width = 1024;
+  spotLight.shadow.mapSize.height = 1024;
+  spotLight.shadow.camera.near = 10;
+  spotLight.shadow.camera.far = 200;
+  scene.add( spotLight );
   
-  var material = new THREE.MeshBasicMaterial( );
-  var wall1 = new THREE.Mesh( geometry1, material );
-  var wall2 = new THREE.Mesh( geometry2, material );
-  wall1.position.z = -100;
-  wall2.position.z = -50;
-  wall2.position.x = 25;
-  
-  walls.push(wall1);
-  walls.push(wall2);
-  scene.add(wall1);
-  scene.add(wall2);
+//  var geometry1 = new THREE.BoxGeometry( 1, 80, 1 );
+//  var material = new THREE.MeshPhongMaterial( { color: 0x4080ff, dithering: true } );
+//  var wall1 = new THREE.Mesh( geometry1, material );
+//  wall1.position.x = -120;
+//  wall1.position.z = -120;
+
+//  scene.add(wall1);
   
   scene.add(player.body);
+  
 
   window.addEventListener( 'resize', onWindowResize, false );
 }
@@ -139,6 +158,7 @@ function onKeyDown( event ) {
     switch ( event.keyCode ) {
       case 16:
         player.isCrouched = true;
+        player.velocity.y -= PLAYER_JUMP;
         break;
       case 38: // up
       case 87: // w
@@ -156,10 +176,10 @@ function onKeyDown( event ) {
       case 68: // d
         moveRight = true;
         break;
-      case 32: // space
+      case 32: // space 
         if ( canJump === true ) {
           player.velocity.y += PLAYER_JUMP;
-          canJump = false;
+          //canJump = false;
           socket.send(messageBuilder.jump());
         } 
         break;
@@ -189,13 +209,29 @@ function onKeyUp ( event ) {
     }
 }
 
+function inRange (c) {
+  return [{x: c.x-1, z: c.z-1},
+          {x: c.x-1, z: c.z},
+          {x: c.x-1, z: c.z+1},
+          {x: c.x,   z: c.z-1},
+          {x: c.x,   z: c.z},
+          {x: c.x,   z: c.z+1},
+          {x: c.x+1, z: c.z-1},
+          {x: c.x+1, z: c.z},
+          {x: c.x+1, z: c.z+1}];
+}
+
+
 function animate() {
+
   requestAnimationFrame(animate);
   var time = performance.now();
   var delta = (time - prevTime);
   player.velocity.x -= player.velocity.x * 0.01 * delta;
   player.velocity.z -= player.velocity.z * 0.01 * delta;
-
+  player.velocity.y -= player.velocity.y * 0.01 * delta;
+  
+  
   moveDirection.z = Number(moveForward) - Number(moveBackward);
   moveDirection.x = Number(moveLeft) - Number(moveRight);
   moveDirection.normalize(); 
@@ -218,7 +254,9 @@ function animate() {
   player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
-  collider.collide(player, walls);  
+  var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
+  var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
+  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);  
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -240,19 +278,36 @@ function animate() {
     }
     player.velocity.y = 0;
   } else { 
-    player.velocity.y -= GRAVITY*PLAYER_MASS*delta;
+//    player.velocity.y -= GRAVITY*PLAYER_MASS*delta;
     camera.position.y = player.body.position.y;
   }
   
 
   if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-      var chunkX = Math.round(player.body.position.x / (MAZE_INFLATION*CHUNK_SIZE));
-      var chunkZ = Math.round(player.body.position.z / (MAZE_INFLATION*CHUNK_SIZE));
-      if (!chunks.has(pair(chunkX, chunkZ))) {
-        prevChunkRequestTime = time;
-        socket.send(messageBuilder.chunkRequest({x: chunkX, z: chunkZ}, player, MAZE_INFLATION, CHUNK_SIZE));
-      }
+      var ir = inRange(playerChunk);
+      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
+      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
+      toRemove.forEach((key)=>{
+        var child = mazeBuilder.chunks.get(key).wallMesh;
+        scene.remove(child);
+        onDisplay.delete(key); 
+      })
+      
+      ir.forEach((coord)=>{
+        var key = Utils.pair(coord.x, coord.z);
+        var chunkObj = mazeBuilder.chunks.get(key);
+        if (chunkObj == undefined && socket.readyState == WebSocket.OPEN) {
+          socket.send(messageBuilder.chunkRequest(coord));
+        } else {
+          if (!onDisplay.has(key)) {
+            scene.add(chunkObj.wallMesh);
+            onDisplay.add(key);
+          }
+        }
+      });
+      prevChunkRequestTime = time;
   } 
+  
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
     socket.send(messageBuilder.state(player));
@@ -281,11 +336,11 @@ function animate() {
   renderer.render( scene, camera );
 }
 
+
 function processChunk (buffer) {
-  var byteArray = new Uint8Array(buffer);
+  var byteArray = new Int8Array(buffer);
   var chunkX = byteArray[0];
   var chunkZ = byteArray[1];
-  chunks.add(pair(chunkX, chunkZ));
   var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
     if (idx % CHUNK_SIZE == 0) {
       array.push([parseInt(curr)]);
@@ -295,7 +350,9 @@ function processChunk (buffer) {
       return array; 
     }
   }, []);
-  mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, MAZE_INFLATION);
+  var newWallMesh = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
+  onDisplay.add(Utils.pair(chunkX, chunkZ));
+  scene.add(newWallMesh);
 }
 
 function processAction (buffer, code) {
@@ -369,19 +426,4 @@ async function receive (blob) {
 }
 
 
-/* http://szudzik.com/ElegantPairing.pdf */
-function pair (a, b) {
-  var A = a >= 0 ? 2 * a : -2 * a - 1;
-  var B = b >= 0 ? 2 * b : -2 * b - 1;
-  return A >= B ? A * A + A + B : A + B * B;
-}
 
-function makeid(length) {
-   var result           = '';
-   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-   var charactersLength = characters.length;
-   for ( var i = 0; i < length; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-   }
-   return result;
-}

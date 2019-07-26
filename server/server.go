@@ -79,8 +79,7 @@ func main () {
   }
   game.Maze = maze
   players.Set = make(map[*game.Player]struct{})
-  
-  
+    
   http.HandleFunc("/", handler)
   http.ListenAndServe(":8000", nil)
 
