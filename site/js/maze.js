@@ -14,7 +14,7 @@ const PLAYER_MASS = 0.00005;
 const PLAYER_SPEED = 0.0005;
 const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
-const CELL_SIZE = 10;
+const CELL_SIZE = 12;
 const UPDATE_DELTA = 100.0;
 const CHUNK_REQUEST_DELTA = 1000;
 const CHUNK_SIZE = 27;
@@ -23,10 +23,11 @@ const Y = new THREE.Vector3(0,1,0);
 
 var camera, scene, renderer, controls, theta;
 
-var chunks = new Map();
 var currentChunk = new THREE.Object3D();
 
 var otherPlayers = {};
+
+
 
 var moveForward = false;
 var moveBackward = false;
@@ -63,10 +64,7 @@ animate();
 
 function init() {
   
-//  var currentChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
-//  chunks.set(Utils.pair(currentChunk.x, currentChunk.z), []);
-  
-  
+
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   camera.position.y = PLAYER_HEIGHT;
   
@@ -143,6 +141,8 @@ function init() {
 //  scene.add(wall1);
   
   scene.add(player.body);
+  
+  console.log(scene);
 
   window.addEventListener( 'resize', onWindowResize, false );
 }
@@ -241,8 +241,8 @@ function animate() {
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
   var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
-  var currentChunk = chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-  if (currentChunk != undefined) collider.collide(player, currentChunk);  
+  var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
+  if (currentChunk != undefined) collider.collide(player, currentChunk.group);  
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -271,7 +271,7 @@ function animate() {
 
   if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
       var currentChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
-      if (!chunks.has(Utils.pair(currentChunk.x, currentChunk.z))) {
+      if (!mazeBuilder.chunks.has(Utils.pair(currentChunk.x, currentChunk.z))) {
         prevChunkRequestTime = time;
         socket.send(messageBuilder.chunkRequest({x: currentChunk.x, z: currentChunk.z}, player, CELL_SIZE, CHUNK_SIZE));
       }
@@ -318,10 +318,7 @@ function processChunk (buffer) {
     }
   }, []);
   var group = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
-  chunks.set(Utils.pair(chunkX, chunkZ), group);
   scene.add(group);
-  console.log(group);
-  
 }
 
 function processAction (buffer, code) {
