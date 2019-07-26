@@ -9,6 +9,7 @@ import (
 
 const MAZE_SIZE = 405
 const CHUNK_SIZE = 27
+const CELL_SIZE = 12
 const NUM_CHUNKS = (MAZE_SIZE/CHUNK_SIZE)*(MAZE_SIZE/CHUNK_SIZE)
 var Maze []byte
 
@@ -36,8 +37,31 @@ type Player struct {
   Username []byte
   ID uint16
   Position Vec2
+  DeliveredChunks map[ChunkCoord]struct{}
   KnowsAboutMe map[*Player]struct{}
   NearbyPlayers map[*Player]struct{}
+}
+
+type ChunkCoord struct {
+  X int8
+  Z int8
+}
+
+func (player *Player) ComputeChunk () ChunkCoord {
+  return ChunkCoord {
+    X: int8(math.Round(float64(player.Position.X) / float64(CELL_SIZE * CHUNK_SIZE))), Z: int8(math.Round(float64(player.Position.Z) / float64(CELL_SIZE * CHUNK_SIZE)))}
+}
+
+func (c ChunkCoord) GetNeighbours () []ChunkCoord {
+  return []ChunkCoord{ChunkCoord {X: c.X-1, Z: c.Z-1 },
+    ChunkCoord {X: c.X-1, Z: c.Z},
+    ChunkCoord {X: c.X-1, Z: c.Z+1},
+    ChunkCoord {X: c.X, Z: c.Z-1},
+    ChunkCoord {X: c.X, Z: c.Z},
+    ChunkCoord {X: c.X, Z: c.Z+1},
+    ChunkCoord {X: c.X+1, Z: c.Z-1},
+    ChunkCoord {X: c.X+1, Z: c.Z},
+    ChunkCoord {X: c.X+1, Z: c.Z+1}}
 }
 
 func (players Players) Add (player *Player) {
@@ -112,25 +136,25 @@ type Vec2 struct {
 }
 
 type Chunk struct {
-  X int8
-  Z int8
+  coord ChunkCoord
   Data []byte         
 }
+
 
 func (chunk Chunk) Encode () []byte {
   buf := make([]byte, CHUNK_SIZE*CHUNK_SIZE+3)
   buf[0] = 0
-  buf[1] = byte(chunk.X)
-  buf[2] = byte(chunk.Z)
+  buf[1] = byte(chunk.coord.X)
+  buf[2] = byte(chunk.coord.Z)
   copy(buf[3:], chunk.Data)
   return buf
 }
 
 
-func GetChunk(x int8, z int8) Chunk {
+func GetChunk(coord ChunkCoord) Chunk {
   var chunk Chunk
-  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + x
-  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + z
+  col := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.X
+  row := (MAZE_SIZE / CHUNK_SIZE) / 2 + coord.Z
   idx := int(row) * (MAZE_SIZE / CHUNK_SIZE) + int(col)
   chunk.Data = make([]byte, CHUNK_SIZE*CHUNK_SIZE)
   start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE))
@@ -140,8 +164,8 @@ func GetChunk(x int8, z int8) Chunk {
     mi := start + (ix * MAZE_SIZE) + jx
     chunk.Data[ix*CHUNK_SIZE + jx] = (Maze[mi / 8] >> uint(7-(mi%8))) & 1
   }
-  chunk.X = x
-  chunk.Z = z
+  chunk.coord.X = coord.X
+  chunk.coord.Z = coord.Z
   return chunk
 }
 

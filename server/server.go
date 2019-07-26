@@ -26,11 +26,23 @@ func bytesToFloat32(bytes []byte) float32 {
     return float
 }
 
-func nearbyPlayerUpdateLoop(player * game.Player) {
+func nearbyPlayerUpdateLoop(player *game.Player) {
   for {
     player.UpdateNearbyPlayers(players, 100);
     time.Sleep(5*time.Second);
   }
+}
+
+func chunkSendLoop (player *game.Player) {
+  for {
+    for _,neighbour := range player.ComputeChunk().GetNeighbours() {
+      if _, has := player.DeliveredChunks[neighbour]; !has {
+        player.Conn.WriteMessage(websocket.BinaryMessage, game.GetChunk(neighbour).Encode())
+        player.DeliveredChunks[neighbour] = struct{}{}
+      }
+    }
+  }
+  time.Sleep(10*time.Second);
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -44,21 +56,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
     player.Username = usernameData
     player.NearbyPlayers = make(map[*game.Player]struct{})
     player.KnowsAboutMe = make(map[*game.Player]struct{})
+    player.DeliveredChunks = make(map[game.ChunkCoord]struct{})
     player.ID = idGenerator.GetNextID()
     fmt.Println(string(player.Username), ": ", player.ID)
     go nearbyPlayerUpdateLoop(&player);
+    go chunkSendLoop(&player);
     players.Add(&player)
     defer players.Remove(&player)
     for {
       _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
       switch (data[0]) {
-       case 0:
-         fmt.Println("requested: ", int8(data[1]), int8(data[2]))
-         conn.WriteMessage(websocket.BinaryMessage, game.GetChunk(int8(data[1]), int8(data[2])).Encode())
-       case 1:  
-         player.Position.X = bytesToFloat32(data[2:6]);
-         player.Position.Z = bytesToFloat32(data[6:10]);
+       case 0:  
+         player.Position.X = bytesToFloat32(data[2:6])
+         player.Position.Z = bytesToFloat32(data[6:10])
          for nearbyPlayer := range player.NearbyPlayers {
            nearbyPlayer.SendState(&player, data[1:]);
          }

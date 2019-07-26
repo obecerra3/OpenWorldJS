@@ -1,12 +1,8 @@
 player->server
   HELLO (username.length)
     username
-  CHUNKREQUEST (3)
-    0
-    offsetX
-    offsetZ
   MYSTATE
-    1
+    0
     isCrouched
     positionX
     positionZ
