@@ -9,6 +9,7 @@ export class MazeBuilder {
   
   constructor () {
     this.chunks = new Map();
+    this.geometries = new Map();
     this.wallMaterial = new THREE.MeshPhongMaterial( { color: 0xd3d3d3, dithering: true } );
   }
   
@@ -33,8 +34,7 @@ export class MazeBuilder {
           }
           var wallLength = cellSize * (k-j-1) + WALL_WIDTH;
           var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize) + (wallLength/2) - WALL_WIDTH/2, 0, chunkOrigin.z + (i * cellSize) + (cellSize/2));
-          var geometry = new THREE.BoxGeometry(wallLength, WALL_HEIGHT, WALL_WIDTH);
-          var wall = new THREE.Mesh(geometry, this.wallMaterial);
+          var wall = new THREE.Mesh(this.getGeometry(wallLength, WALL_WIDTH), this.wallMaterial);
           wall.position.copy(wallCenter);
           wall.name = "wall";
           walls.push(wall);
@@ -54,8 +54,7 @@ export class MazeBuilder {
           }
           var wallLength = cellSize * (k-i-1);
           var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), 0, chunkOrigin.z + (i * cellSize) + (cellSize/2) + (wallLength/2));
-          var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, wallLength);
-          var wall = new THREE.Mesh(geometry, this.wallMaterial);
+          var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, wallLength), this.wallMaterial);
           wall.position.copy(wallCenter);
           wall.name = "wall";
           walls.push(wall);
@@ -64,13 +63,24 @@ export class MazeBuilder {
       }
     }
   
-    
     this.addGlue(center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, walls);
     
     this.chunks.set(Utils.pair(center.x, center.z), {array: chunkArray, walls: walls});
     
     return walls;
   
+  }
+  
+  getGeometry(xLength, zLength) {
+    var geoLookup = this.geometries.get(Utils.pair(xLength, zLength));
+    if (geoLookup == undefined) {
+      var geometry = new THREE.BoxGeometry(xLength, WALL_HEIGHT, zLength);
+      this.geometries.set(Utils.pair(xLength, zLength), geometry);
+      return geometry;
+    } else {
+      console.log("overlap!")
+      return geoLookup;
+    }
   }
   
   addGlue (center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, walls) {
@@ -82,8 +92,7 @@ export class MazeBuilder {
       for (j = 0; j < chunkSize; j++) {
         if (below.array[0][j] == 1 && chunkArray[chunkSize-1][j] == 1) {
           var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), 0, chunkOrigin.z + worldChunkSize);
-          var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, cellSize);
-          var wall = new THREE.Mesh(geometry, testMaterial);
+          var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize), testMaterial);
           wall.position.copy(wallCenter);
           wall.name = "glue"
           walls.push(wall);
@@ -99,8 +108,7 @@ export class MazeBuilder {
       for (j = 0; j < chunkSize; j++) {
         if (above.array[chunkSize-1][j] == 1 && chunkArray[0][j] == 1) {
           var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), 0, chunkOrigin.z);
-          var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, cellSize);
-          var wall = new THREE.Mesh(geometry, testMaterial);
+          var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize), testMaterial);
           wall.position.copy(wallCenter);
           wall.name = "glue"
           walls.push(wall);
@@ -115,8 +123,7 @@ export class MazeBuilder {
       for (i = 0; i < chunkSize; i++) {
         if (left.array[i][chunkSize-1] == 1 && chunkArray[i][0] == 1) {
           var wallCenter = new THREE.Vector3(chunkOrigin.x - cellSize/2, 0, chunkOrigin.z + (i*cellSize) + cellSize/2);
-          var geometry = new THREE.BoxGeometry(cellSize + WALL_WIDTH, WALL_HEIGHT, WALL_WIDTH);
-          var wall = new THREE.Mesh(geometry, testMaterial);
+          var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH), testMaterial);
           wall.position.copy(wallCenter);
           wall.name = "glue"
           walls.push(wall);
@@ -132,8 +139,7 @@ export class MazeBuilder {
       for (i = 0; i < chunkSize; i++) {
         if (right.array[i][0] == 1 && chunkArray[i][chunkSize-1] == 1) {
           var wallCenter = new THREE.Vector3(chunkOrigin.x + worldChunkSize - cellSize/2, 0, chunkOrigin.z + (i*cellSize) + cellSize/2);
-          var geometry = new THREE.BoxGeometry(cellSize + WALL_WIDTH, WALL_HEIGHT, WALL_WIDTH);
-          var wall = new THREE.Mesh(geometry, testMaterial);
+          var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH), testMaterial);
           wall.position.copy(wallCenter);
           wall.name = "glue"
           walls.push(wall);
