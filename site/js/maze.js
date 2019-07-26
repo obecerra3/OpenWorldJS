@@ -242,7 +242,7 @@ function animate() {
   
   var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
   var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-  if (currentChunk != undefined) collider.collide(player, currentChunk.walls);  
+  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);  
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -317,8 +317,8 @@ function processChunk (buffer) {
       return array; 
     }
   }, []);
-  var newWalls = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
-  newWalls.forEach((wall)=>scene.add(wall));
+  var newWallMesh = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
+  scene.add(newWallMesh);
 }
 
 function processAction (buffer, code) {
