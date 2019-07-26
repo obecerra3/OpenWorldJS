@@ -75,7 +75,7 @@ function init() {
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
 
-  var light = new THREE.AmbientLight( 0x404040 ); // soft white light
+  var light = new THREE.AmbientLight( 0x404040 );
   scene.add( light );
 
   controls = new PointerLockControls( camera );
@@ -242,7 +242,7 @@ function animate() {
   
   var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
   var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-  if (currentChunk != undefined) collider.collide(player, currentChunk.group);  
+  if (currentChunk != undefined) collider.collide(player, currentChunk.walls);  
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -317,8 +317,8 @@ function processChunk (buffer) {
       return array; 
     }
   }, []);
-  var group = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
-  scene.add(group);
+  var newWalls = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
+  newWalls.forEach((wall)=>scene.add(wall));
 }
 
 function processAction (buffer, code) {

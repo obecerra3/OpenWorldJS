@@ -15,15 +15,14 @@ export class MazeBuilder {
   
   buildChunk (center, chunkArray, chunkSize, cellSize) {
     
+    var walls = [];
     var wallGroup = new THREE.Group(); 
     var worldChunkSize = cellSize * chunkSize;
     var worldCenter = {x: center.x * worldChunkSize, z: center.z * worldChunkSize};
     var chunkOrigin = {x: worldCenter.x - (worldChunkSize/2), z: worldCenter.z - (worldChunkSize/2)};
     
-    
     var i,j;
     
-
     for (i = 0; i < chunkSize; i++) {
       for (j = 0; j < chunkSize-1; j++) {
         if (!chunkArray[i][j]) continue;
@@ -37,7 +36,8 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(wallLength, WALL_HEIGHT, WALL_WIDTH);
           var wall = new THREE.Mesh(geometry, this.wallMaterial);
           wall.position.copy(wallCenter);
-          wallGroup.add(wall);
+          wall.name = "wall";
+          walls.push(wall);
           j = k;
         }
       }
@@ -57,22 +57,23 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, wallLength);
           var wall = new THREE.Mesh(geometry, this.wallMaterial);
           wall.position.copy(wallCenter);
-          wallGroup.add(wall);
+          wall.name = "wall";
+          walls.push(wall);
           i = k;
         }
       }
     }
+  
     
-    this.addGlue(center, chunkArray, wallGroup, worldChunkSize, chunkOrigin, cellSize, chunkSize);
-    this.chunks.set(Utils.pair(center.x, center.z), {array: chunkArray, group: wallGroup});
+    this.addGlue(center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, walls);
     
+    this.chunks.set(Utils.pair(center.x, center.z), {array: chunkArray, walls: walls});
     
-    
-    return wallGroup;
+    return walls;
   
   }
   
-  addGlue (center, chunkArray, group, worldChunkSize, chunkOrigin, cellSize, chunkSize) {
+  addGlue (center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, walls) {
     var testMaterial = new THREE.MeshPhongMaterial( { color: 0xffff00, dithering: true } );
     
     var below = this.chunks.get(Utils.pair(center.x, center.z+1));
@@ -84,8 +85,9 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, cellSize);
           var wall = new THREE.Mesh(geometry, testMaterial);
           wall.position.copy(wallCenter);
-          group.add(wall);
-          below.group.add(wall);
+          wall.name = "glue"
+          walls.push(wall);
+          below.walls.push(wall);
         }
       }
     }
@@ -100,14 +102,14 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, cellSize);
           var wall = new THREE.Mesh(geometry, testMaterial);
           wall.position.copy(wallCenter);
-          group.add(wall);
-          above.group.add(wall);
+          wall.name = "glue"
+          walls.push(wall);
+          above.walls.push(wall);
         }
       }
     }
     
     var left = this.chunks.get(Utils.pair(center.x-1, center.z));
-    console.log(this.chunks);
     if (left != undefined) {
       var i;
       for (i = 0; i < chunkSize; i++) {
@@ -116,8 +118,9 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(cellSize + WALL_WIDTH, WALL_HEIGHT, WALL_WIDTH);
           var wall = new THREE.Mesh(geometry, testMaterial);
           wall.position.copy(wallCenter);
-          group.add(wall);
-          left.group.add(wall);
+          wall.name = "glue"
+          walls.push(wall);
+          left.walls.push(wall);
         }
       }
     }
@@ -132,15 +135,15 @@ export class MazeBuilder {
           var geometry = new THREE.BoxGeometry(cellSize + WALL_WIDTH, WALL_HEIGHT, WALL_WIDTH);
           var wall = new THREE.Mesh(geometry, testMaterial);
           wall.position.copy(wallCenter);
-          group.add(wall);
-          right.group.add(wall);
+          wall.name = "glue"
+          walls.push(wall);
+          right.walls.push(wall);
         }
       }
     }
     
     
-    
-    
+    return walls; 
     
   }
   
