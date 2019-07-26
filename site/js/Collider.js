@@ -23,8 +23,6 @@ export class Collider {
     intersections = intersections.concat(this.raycaster.intersectObject(wallMesh));
     
     
-    
-    
     if (intersections.length > 0) {
       intersections.sort((x,y)=>x.distance > y.distance);
       intersections.slice(0,2).forEach((x)=> {

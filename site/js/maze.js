@@ -16,7 +16,7 @@ const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
 const CELL_SIZE = 12;
 const UPDATE_DELTA = 100.0;
-const CHUNK_REQUEST_DELTA = 1000;
+const CHUNK_REQUEST_DELTA = 3000;
 const CHUNK_SIZE = 27;
 
 const Y = new THREE.Vector3(0,1,0);
@@ -24,6 +24,7 @@ const Y = new THREE.Vector3(0,1,0);
 var camera, scene, renderer, controls, theta;
 
 var currentChunk = new THREE.Object3D();
+var onDisplay = new Set();
 
 var otherPlayers = {};
 
@@ -142,7 +143,6 @@ function init() {
   
   scene.add(player.body);
   
-  console.log(scene);
 
   window.addEventListener( 'resize', onWindowResize, false );
 }
@@ -209,6 +209,19 @@ function onKeyUp ( event ) {
     }
 }
 
+function inRange (c) {
+  return [{x: c.x-1, z: c.z-1},
+          {x: c.x-1, z: c.z},
+          {x: c.x-1, z: c.z+1},
+          {x: c.x,   z: c.z-1},
+          {x: c.x,   z: c.z},
+          {x: c.x,   z: c.z+1},
+          {x: c.x+1, z: c.z-1},
+          {x: c.x+1, z: c.z},
+          {x: c.x+1, z: c.z+1}];
+}
+
+
 function animate() {
 
   requestAnimationFrame(animate);
@@ -271,12 +284,30 @@ function animate() {
   
 
   if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-      var currentChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
-      if (!mazeBuilder.chunks.has(Utils.pair(currentChunk.x, currentChunk.z))) {
-        prevChunkRequestTime = time;
-        socket.send(messageBuilder.chunkRequest({x: currentChunk.x, z: currentChunk.z}, player, CELL_SIZE, CHUNK_SIZE));
-      }
+      var ir = inRange(playerChunk);
+      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
+      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
+      toRemove.forEach((key)=>{
+        var child = mazeBuilder.chunks.get(key).wallMesh;
+        scene.remove(child);
+        onDisplay.delete(key); 
+      })
+      
+      ir.forEach((coord)=>{
+        var key = Utils.pair(coord.x, coord.z);
+        var chunkObj = mazeBuilder.chunks.get(key);
+        if (chunkObj == undefined && socket.readyState == WebSocket.OPEN) {
+          socket.send(messageBuilder.chunkRequest(coord));
+        } else {
+          if (!onDisplay.has(key)) {
+            scene.add(chunkObj.wallMesh);
+            onDisplay.add(key);
+          }
+        }
+      });
+      prevChunkRequestTime = time;
   } 
+  
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
     socket.send(messageBuilder.state(player));
@@ -305,6 +336,7 @@ function animate() {
   renderer.render( scene, camera );
 }
 
+
 function processChunk (buffer) {
   var byteArray = new Int8Array(buffer);
   var chunkX = byteArray[0];
@@ -319,6 +351,7 @@ function processChunk (buffer) {
     }
   }, []);
   var newWallMesh = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
+  onDisplay.add(Utils.pair(chunkX, chunkZ));
   scene.add(newWallMesh);
 }
 
