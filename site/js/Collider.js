@@ -23,8 +23,11 @@ export class Collider {
     intersections = intersections.concat(this.raycaster.intersectObject(wallMesh));
     
     
+    
+    
     if (intersections.length > 0) {
-      intersections.forEach((x)=> {
+      intersections.sort((x,y)=>x.distance > y.distance);
+      intersections.slice(0,2).forEach((x)=> {
         if (x.face.normal.dot(player.velocity) < 0) {
           player.velocity.projectOnPlane(x.face.normal);
         }

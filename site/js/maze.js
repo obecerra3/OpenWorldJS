@@ -158,6 +158,7 @@ function onKeyDown( event ) {
     switch ( event.keyCode ) {
       case 16:
         player.isCrouched = true;
+        player.velocity.y -= PLAYER_JUMP;
         break;
       case 38: // up
       case 87: // w
