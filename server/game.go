@@ -1,7 +1,6 @@
 package game
 
 import (
-  "fmt"
   "sync"
   "math"
   "encoding/binary"
@@ -113,26 +112,26 @@ type Vec2 struct {
 }
 
 type Chunk struct {
-  X byte
-  Z byte
+  X int8
+  Z int8
   Data []byte         
 }
 
 func (chunk Chunk) Encode () []byte {
   buf := make([]byte, CHUNK_SIZE*CHUNK_SIZE+3)
   buf[0] = 0
-  buf[1] = chunk.X
-  buf[2] = chunk.Z
+  buf[1] = byte(chunk.X)
+  buf[2] = byte(chunk.Z)
   copy(buf[3:], chunk.Data)
   return buf
 }
 
 
-func GetChunk(x byte, z byte) Chunk {
+func GetChunk(x int8, z int8) Chunk {
   var chunk Chunk
   col := (MAZE_SIZE / CHUNK_SIZE) / 2 + x
   row := (MAZE_SIZE / CHUNK_SIZE) / 2 + z
-  idx := int(row * (MAZE_SIZE / CHUNK_SIZE) + col)
+  idx := int(row) * (MAZE_SIZE / CHUNK_SIZE) + int(col)
   chunk.Data = make([]byte, CHUNK_SIZE*CHUNK_SIZE)
   start := ((idx % (MAZE_SIZE/CHUNK_SIZE)) * CHUNK_SIZE) + ((idx / (MAZE_SIZE/CHUNK_SIZE)) * (MAZE_SIZE * CHUNK_SIZE))
   for i := start; i < start + (CHUNK_SIZE * CHUNK_SIZE); i++ {
@@ -141,7 +140,6 @@ func GetChunk(x byte, z byte) Chunk {
     mi := start + (ix * MAZE_SIZE) + jx
     chunk.Data[ix*CHUNK_SIZE + jx] = (Maze[mi / 8] >> uint(7-(mi%8))) & 1
   }
-  fmt.Println(chunk.Data)
   chunk.X = x
   chunk.Z = z
   return chunk

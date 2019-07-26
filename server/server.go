@@ -54,7 +54,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
       if err != nil { log.Println(err); return }
       switch (data[0]) {
        case 0:
-         conn.WriteMessage(websocket.BinaryMessage, game.GetChunk(data[1], data[2]).Encode())
+         fmt.Println("requested: ", int8(data[1]), int8(data[2]))
+         conn.WriteMessage(websocket.BinaryMessage, game.GetChunk(int8(data[1]), int8(data[2])).Encode())
        case 1:  
          player.Position.X = bytesToFloat32(data[2:6]);
          player.Position.Z = bytesToFloat32(data[6:10]);
@@ -79,6 +80,7 @@ func main () {
   }
   game.Maze = maze
   players.Set = make(map[*game.Player]struct{})
+
     
   http.HandleFunc("/", handler)
   http.ListenAndServe(":8000", nil)
