@@ -28,8 +28,6 @@ var onDisplay = new Set();
 
 var otherPlayers = {};
 
-
-
 var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
@@ -296,9 +294,7 @@ function animate() {
       ir.forEach((coord)=>{
         var key = Utils.pair(coord.x, coord.z);
         var chunkObj = mazeBuilder.chunks.get(key);
-        if (chunkObj == undefined && socket.readyState == WebSocket.OPEN) {
-          socket.send(messageBuilder.chunkRequest(coord));
-        } else {
+        if (chunkObj) {
           if (!onDisplay.has(key)) {
             scene.add(chunkObj.wallMesh);
             onDisplay.add(key);
@@ -351,7 +347,7 @@ function processChunk (buffer) {
     }
   }, []);
   var newWallMesh = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
-  onDisplay.add(Utils.pair(chunkX, chunkZ));
+  onDisplay.add(Utils.pair(chunkX, chunkZ)); // TODO: check if in range
   scene.add(newWallMesh);
 }
 
