@@ -41,8 +41,8 @@ func chunkSendLoop (player *game.Player) {
         player.DeliveredChunks[neighbour] = struct{}{}
       }
     }
+    time.Sleep(5*time.Second);
   }
-  time.Sleep(10*time.Second);
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {

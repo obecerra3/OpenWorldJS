@@ -1,6 +1,7 @@
 package game
 
 import (
+  //"fmt"
   "sync"
   "math"
   "encoding/binary"
@@ -26,6 +27,22 @@ func (idGenerator *IDGenerator) GetNextID () uint16 {
   return id
 }
 
+
+type Vec2 struct {
+  X float32         
+  Z float32                  
+}
+
+type ChunkCoord struct {
+  X int8
+  Z int8
+}
+
+type Chunk struct {
+  coord ChunkCoord
+  Data []byte         
+}
+
 type Players struct {
   sync.RWMutex
   Set map[*Player]struct{}
@@ -42,18 +59,13 @@ type Player struct {
   NearbyPlayers map[*Player]struct{}
 }
 
-type ChunkCoord struct {
-  X int8
-  Z int8
-}
-
 func (player *Player) ComputeChunk () ChunkCoord {
   return ChunkCoord {
     X: int8(math.Round(float64(player.Position.X) / float64(CELL_SIZE * CHUNK_SIZE))), Z: int8(math.Round(float64(player.Position.Z) / float64(CELL_SIZE * CHUNK_SIZE)))}
 }
 
 func (c ChunkCoord) GetNeighbours () []ChunkCoord {
-  return []ChunkCoord{ChunkCoord {X: c.X-1, Z: c.Z-1 },
+  chunkCoords := []ChunkCoord{ChunkCoord {X: c.X-1, Z: c.Z-1 },
     ChunkCoord {X: c.X-1, Z: c.Z},
     ChunkCoord {X: c.X-1, Z: c.Z+1},
     ChunkCoord {X: c.X, Z: c.Z-1},
@@ -62,6 +74,17 @@ func (c ChunkCoord) GetNeighbours () []ChunkCoord {
     ChunkCoord {X: c.X+1, Z: c.Z-1},
     ChunkCoord {X: c.X+1, Z: c.Z},
     ChunkCoord {X: c.X+1, Z: c.Z+1}}
+  min := int8(-MAZE_SIZE/CHUNK_SIZE/2)
+  max := int8(-min-1)
+  i := 0
+  for _, c := range chunkCoords {
+    if !(c.X < min || c.X > max || c.Z < min || c.X > max) {
+      chunkCoords[i] = c
+      i++
+    }
+  }
+  chunkCoords = chunkCoords[:i]
+  return chunkCoords
 }
 
 func (players Players) Add (player *Player) {
@@ -129,16 +152,6 @@ func (dstPlayer *Player) SendState (srcPlayer *Player, data []byte) {
   dstPlayer.Unlock()
 }
 
-
-type Vec2 struct {
-  X float32         
-  Z float32                  
-}
-
-type Chunk struct {
-  coord ChunkCoord
-  Data []byte         
-}
 
 
 func (chunk Chunk) Encode () []byte {

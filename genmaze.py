@@ -2,8 +2,9 @@
 import numpy as np
 from bitarray import bitarray
 from PIL import Image
+import sys
 np.set_printoptions(threshold=np.inf)
-im = Image.open("maze.png")
+im = Image.open(sys.argv[1])
 
 data = np.asarray(im)
 
@@ -30,7 +31,7 @@ for x in bitmap.flatten():
 
 bits = bitarray(bitstring)
 
-with open('maze.bin', 'wb') as fh:
+with open(sys.argv[1].split(".")[0] + ".bin", 'wb') as fh:
   bits.tofile(fh)
  
 
