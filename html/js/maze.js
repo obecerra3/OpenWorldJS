@@ -254,7 +254,9 @@ function animate() {
   
   var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
   var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);  
+  if (currentChunk != undefined) {
+    collider.collide(player, currentChunk.wallMesh); 
+  }
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
@@ -280,29 +282,6 @@ function animate() {
     camera.position.y = player.body.position.y;
   }
   
-
-  if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-      var ir = inRange(playerChunk);
-      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
-      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
-      toRemove.forEach((key)=>{
-        var child = mazeBuilder.chunks.get(key).wallMesh;
-        scene.remove(child);
-        onDisplay.delete(key); 
-      })
-      
-      ir.forEach((coord)=>{
-        var key = Utils.pair(coord.x, coord.z);
-        var chunkObj = mazeBuilder.chunks.get(key);
-        if (chunkObj) {
-          if (!onDisplay.has(key)) {
-            scene.add(chunkObj.wallMesh);
-            onDisplay.add(key);
-          }
-        }
-      });
-      prevChunkRequestTime = time;
-  } 
   
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {

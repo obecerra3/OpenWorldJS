@@ -60,9 +60,11 @@ export class MazeBuilder {
       }
     }
   
-    this.addGlue(center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, wallGeometry);
+    //this.addGlue(center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, wallGeometry);
     
-    var wallMesh = new THREE.Mesh (wallGeometry, this.wallMaterial);
+    var bufGeometry = new THREE.BufferGeometry().fromGeometry(wallGeometry);
+    
+    var wallMesh = new THREE.Mesh (bufGeometry, this.wallMaterial);
     
     this.chunks.set(Utils.pair(center.x, center.z), {array: chunkArray, wallMesh: wallMesh});
     
