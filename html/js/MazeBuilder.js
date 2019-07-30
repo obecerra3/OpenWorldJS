@@ -94,6 +94,9 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
+          var geo = new THREE.Geometry().fromBufferGeometry(below.wallMesh.geometry);
+          geo.mergeMesh(wall);
+          below.wallMesh.geometry.fromGeometry(geo);
         }
       }
     }
@@ -108,6 +111,9 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
+          var geo = new THREE.Geometry().fromBufferGeometry(above.wallMesh.geometry);
+          geo.mergeMesh(wall);
+          above.wallMesh.geometry.fromGeometry(geo);
         }
       }
     }
@@ -121,6 +127,9 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
+          var geo = new THREE.Geometry().fromBufferGeometry(left.wallMesh.geometry);
+          geo.mergeMesh(wall);
+          left.wallMesh.geometry.fromGeometry(geo);
         }
       }
     }
@@ -135,6 +144,9 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
+          var geo = new THREE.Geometry().fromBufferGeometry(right.wallMesh.geometry);
+          geo.mergeMesh(wall);
+          right.wallMesh.geometry.fromGeometry(geo);
         }
       }
     }

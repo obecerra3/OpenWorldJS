@@ -257,9 +257,9 @@ function animate() {
   player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
-  var collidableCoords = collider.getCollidableChunkCoords(player, CELL_SIZE, CHUNK_SIZE);
-  var collidableMeshes = collidableCoords.map((coord)=>mazeBuilder.chunks.get(Utils.pair(coord.x, coord.z))).filter((x)=>x != undefined).map((chunk)=>chunk.wallMesh);
-  collider.collide(player, collidableMeshes);
+  var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
+  var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
+  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);  
   
 
   player.body.position.x += player.velocity.x*delta;
