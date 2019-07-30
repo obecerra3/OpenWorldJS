@@ -45,6 +45,7 @@ session_start();
   
     </style>
     <script>var username = "<?php echo $_SESSION["username"]?>" </script>
+    <script src="js/stats.js"></script>
     <script type="module" src="js/maze.js"></script>
   </head>
   <body>

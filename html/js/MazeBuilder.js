@@ -60,7 +60,7 @@ export class MazeBuilder {
       }
     }
   
-    //this.addGlue(center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, wallGeometry);
+    this.addGlue(center, chunkArray, chunkSize, cellSize, worldChunkSize, chunkOrigin, wallGeometry);
     
     var bufGeometry = new THREE.BufferGeometry().fromGeometry(wallGeometry);
     
@@ -94,7 +94,6 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
-          below.wallMesh.geometry.mergeMesh(wall);
         }
       }
     }
@@ -109,7 +108,6 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
-          above.wallMesh.geometry.mergeMesh(wall);
         }
       }
     }
@@ -123,7 +121,6 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
-          left.wallMesh.geometry.mergeMesh(wall);
         }
       }
     }
@@ -138,7 +135,6 @@ export class MazeBuilder {
           var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
-          right.wallMesh.geometry.mergeMesh(wall);
         }
       }
     }

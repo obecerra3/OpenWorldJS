@@ -2,6 +2,7 @@ import * as THREE from './three.js';
 
 import * as Utils from './Utils.js';
 
+
 export class Player {
   constructor(username,position,velocity=new THREE.Vector3(),lookDirection=new THREE.Vector3(), isCrouched=false) {
     this.username = username; 
@@ -12,9 +13,6 @@ export class Player {
     this.isCrouched = isCrouched;
   }
   
-  getCurrentChunk (cellSize, chunkSize) {
-    return {x:  Math.round(this.body.position.x / (cellSize*chunkSize)), z: Math.round(this.body.position.z / (cellSize*chunkSize)) }
-  }
   
   
   
