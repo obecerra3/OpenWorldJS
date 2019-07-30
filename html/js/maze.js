@@ -46,7 +46,7 @@ var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 var player = new Player (Utils.makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
-var spotLight;
+var flashLight;
 
 console.log(player.username); 
 
@@ -72,8 +72,8 @@ function init() {
   camera.position.y = PLAYER_HEIGHT;
   
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xd9edfa);
-  scene.fog = new THREE.Fog(0xd3d3d3, 0, 750);
+  scene.background = new THREE.Color(0x1f1e33);
+  scene.fog = new THREE.Fog(0xa3a3a3, 0, 200 );
   
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
@@ -122,18 +122,19 @@ function init() {
 
   document.body.appendChild( renderer.domElement );
   
-  spotLight = new THREE.SpotLight( 0xffffff, 1 );
-  spotLight.position.set( 0, 100, 0 );
-  spotLight.penumbra = 0.05;
-  spotLight.decay = 1;
-  spotLight.distance = 500;
+  flashLight = new THREE.SpotLight( 0xffffff, 1 );
+  flashLight.penumbra = 0.1;
+  flashLight.decay = 1;
+  flashLight.distance = 50;
+  flashLight.intensity = 1.0;
 
-  spotLight.castShadow = true;
-  spotLight.shadow.mapSize.width = 1024;
-  spotLight.shadow.mapSize.height = 1024;
-  spotLight.shadow.camera.near = 10;
-  spotLight.shadow.camera.far = 200;
-  scene.add( spotLight );
+  flashLight.castShadow = true;
+  flashLight.shadow.mapSize.width = 1024;
+  flashLight.shadow.mapSize.height = 1024;
+  flashLight.shadow.camera.near = 10;
+  flashLight.shadow.camera.far = 50;
+  scene.add( flashLight );
+  flashLight.visible = false;
   
 //  var geometry1 = new THREE.BoxGeometry( 1, 80, 1 );
 //  var material = new THREE.MeshPhongMaterial( { color: 0x4080ff, dithering: true } );
@@ -158,6 +159,9 @@ function onWindowResize() {
 
 function onKeyDown( event ) {
     switch ( event.keyCode ) {
+      case 70:
+        flashLight.visible = !flashLight.visible;
+        break;
       case 16:
         player.isCrouched = true;
         player.velocity.y -= PLAYER_JUMP;
@@ -269,6 +273,15 @@ function animate() {
   camera.position.x = player.body.position.x;
   camera.position.z = player.body.position.z;
   
+  flashLight.position.x = player.body.position.x;
+  flashLight.position.z = player.body.position.z;
+  flashLight.position.y = player.body.position.y;
+  
+  flashLight.target.position.set(flashLight.position.x + player.lookDirection.x,
+                                 flashLight.position.y + player.lookDirection.y,
+                                 flashLight.position.z + player.lookDirection.z);
+  
+  flashLight.target.updateMatrixWorld();
   
   if (player.isCrouched) {
     camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
@@ -288,26 +301,25 @@ function animate() {
   
   
   if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-
-//      var ir = inRange(playerChunk);
-//      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
-//      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
-//      toRemove.forEach((key)=>{
-//        var child = mazeBuilder.chunks.get(key).wallMesh;
-//        scene.remove(child);
-//        onDisplay.delete(key); 
-//      })
-//      
-//      ir.forEach((coord)=>{
-//        var key = Utils.pair(coord.x, coord.z);
-//        var chunkObj = mazeBuilder.chunks.get(key);
-//        if (chunkObj) {
-//          if (!onDisplay.has(key)) {
-//            scene.add(chunkObj.wallMesh);
-//            onDisplay.add(key);
-//          }
-//        }
-//      });
+      var ir = inRange(playerChunk);
+      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
+      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
+      toRemove.forEach((key)=>{
+        var child = mazeBuilder.chunks.get(key);
+        child.wallMesh.visible = false;
+        onDisplay.delete(key); 
+      })
+      
+      ir.forEach((coord)=>{
+        var key = Utils.pair(coord.x, coord.z);
+        var chunkObj = mazeBuilder.chunks.get(key);
+        if (chunkObj) {
+          if (!onDisplay.has(key)) {
+            chunkObj.wallMesh.visible = true;
+            onDisplay.add(key);
+          }
+        }
+      });
       prevChunkRequestTime = time;
   } 
 
