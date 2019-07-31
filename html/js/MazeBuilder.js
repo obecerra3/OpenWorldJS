@@ -1,11 +1,11 @@
-import * as THREE from './three.js';
+var THREE = require('three');
+var Utils = require('./Utils.js');
 
-import * as Utils from './Utils.js';
 
 const WALL_HEIGHT = 50;
 const WALL_WIDTH = 5;
 
-export class MazeBuilder {
+class MazeBuilder {
   
   constructor () {
     this.chunks = new Map();
@@ -149,8 +149,9 @@ export class MazeBuilder {
       }
     }
   }
-  
-  
 }
+
+
+module.exports = MazeBuilder;
 
 

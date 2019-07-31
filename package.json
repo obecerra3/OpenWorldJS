@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/bnwlkr/Maze#readme",
   "dependencies": {
+    "pointerlockcontrols": "^1.0.2",
+    "stats.js": "^0.17.0",
     "three": "^0.106.2"
   }
 }

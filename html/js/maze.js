@@ -1,11 +1,12 @@
-import * as THREE from './three.js';
-import { PointerLockControls } from './pointerlock.js';
+var THREE = require('three');
+var Utils = require('./Utils.js');
+var Player = require('./Player.js');
+var MazeBuilder = require('./MazeBuilder.js');
+var Collider = require('./Collider.js');
+var MessageBuilder = require('./MessageBuilder.js');
+var Stats = require('stats.js');
+var PointerLockControls = require('pointerlockcontrols');
 
-import * as Utils from './Utils.js'
-import { Player } from './Player.js';
-import { MazeBuilder } from './MazeBuilder.js';
-import { Collider } from './Collider.js';
-import { MessageBuilder } from './MessageBuilder.js';
 
 
 const PLAYER_HEIGHT = 10;
