@@ -2,7 +2,7 @@ var THREE = require('three');
 var Utils = require('./Utils.js');
 
 
-const WALL_HEIGHT = 50;
+const WALL_HEIGHT = 30;
 const WALL_WIDTH = 5;
 
 class MazeBuilder {
@@ -32,7 +32,7 @@ class MazeBuilder {
             k += 1;
           }
           var wallLength = cellSize * (k-j-1) + WALL_WIDTH;
-          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize) + (wallLength/2) - WALL_WIDTH/2, 0, chunkOrigin.z + (i * cellSize) + (cellSize/2));
+          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize) + (wallLength/2) - WALL_WIDTH/2, WALL_HEIGHT/2, chunkOrigin.z + (i * cellSize) + (cellSize/2));
           var wall = new THREE.Mesh(this.getGeometry(wallLength, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
@@ -51,7 +51,7 @@ class MazeBuilder {
             k += 1;
           }
           var wallLength = cellSize * (k-i-1);
-          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), 0, chunkOrigin.z + (i * cellSize) + (cellSize/2) + (wallLength/2));
+          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), WALL_HEIGHT/2, chunkOrigin.z + (i * cellSize) + (cellSize/2) + (wallLength/2));
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, wallLength));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
@@ -88,7 +88,7 @@ class MazeBuilder {
       var j;
       for (j = 0; j < chunkSize; j++) {
         if (below.array[0][j] == 1 && chunkArray[chunkSize-1][j] == 1) {
-          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), 0, chunkOrigin.z + worldChunkSize);
+          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), WALL_HEIGHT/2, chunkOrigin.z + worldChunkSize);
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
@@ -105,7 +105,7 @@ class MazeBuilder {
       var j;
       for (j = 0; j < chunkSize; j++) {
         if (above.array[chunkSize-1][j] == 1 && chunkArray[0][j] == 1) {
-          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), 0, chunkOrigin.z);
+          var wallCenter = new THREE.Vector3(chunkOrigin.x + (j*cellSize), WALL_HEIGHT/2, chunkOrigin.z);
           var wall = new THREE.Mesh(this.getGeometry(WALL_WIDTH, cellSize));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
@@ -121,7 +121,7 @@ class MazeBuilder {
       var i;
       for (i = 0; i < chunkSize; i++) {
         if (left.array[i][chunkSize-1] == 1 && chunkArray[i][0] == 1) {
-          var wallCenter = new THREE.Vector3(chunkOrigin.x - cellSize/2, 0, chunkOrigin.z + (i*cellSize) + cellSize/2);
+          var wallCenter = new THREE.Vector3(chunkOrigin.x - cellSize/2, WALL_HEIGHT/2, chunkOrigin.z + (i*cellSize) + cellSize/2);
           var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);
@@ -138,7 +138,7 @@ class MazeBuilder {
       var i;
       for (i = 0; i < chunkSize; i++) {
         if (right.array[i][0] == 1 && chunkArray[i][chunkSize-1] == 1) {
-          var wallCenter = new THREE.Vector3(chunkOrigin.x + worldChunkSize - cellSize/2, 0, chunkOrigin.z + (i*cellSize) + cellSize/2);
+          var wallCenter = new THREE.Vector3(chunkOrigin.x + worldChunkSize - cellSize/2, WALL_HEIGHT/2, chunkOrigin.z + (i*cellSize) + cellSize/2);
           var wall = new THREE.Mesh(this.getGeometry(cellSize+WALL_WIDTH, WALL_WIDTH));
           wall.position.copy(wallCenter);
           wallGeometry.mergeMesh(wall);

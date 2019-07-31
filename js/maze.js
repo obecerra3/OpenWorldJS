@@ -74,12 +74,12 @@ function init() {
   
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1f1e33);
-  scene.fog = new THREE.Fog(0xa3a3a3, 0, 200 );
+  scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000 );
   
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
 
-  var light = new THREE.AmbientLight( 0x404040 );
+  var light = new THREE.AmbientLight( 0x8f8f8f );
   scene.add( light );
 
   controls = new PointerLockControls( camera );
@@ -105,7 +105,7 @@ function init() {
 
   var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
   floorGeometry.rotateX(-Math.PI/2);
-  var floorMaterial = new THREE.MeshBasicMaterial( { vertexColors: THREE.NoColors } );
+  var floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
   floorMaterial.color = new THREE.Color(0x81a68c);
 
   var floor = new THREE.Mesh( floorGeometry, floorMaterial );
@@ -123,11 +123,7 @@ function init() {
 
   document.body.appendChild( renderer.domElement );
   
-  flashLight = new THREE.SpotLight( 0xffffff, 1 );
-  flashLight.penumbra = 0.1;
-  flashLight.decay = 1;
-  flashLight.distance = 50;
-  flashLight.intensity = 1.0;
+  flashLight = new THREE.SpotLight( 0xffffff, 1, 100, Math.PI/8, 0.1, 1 );
 
   flashLight.castShadow = true;
   flashLight.shadow.mapSize.width = 1024;
