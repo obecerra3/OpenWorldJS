@@ -135,14 +135,7 @@ function init() {
   flashLight.shadow.camera.far = 50;
   scene.add( flashLight );
   flashLight.visible = false;
-  
-//  var geometry1 = new THREE.BoxGeometry( 1, 80, 1 );
-//  var material = new THREE.MeshPhongMaterial( { color: 0x4080ff, dithering: true } );
-//  var wall1 = new THREE.Mesh( geometry1, material );
-//  wall1.position.x = -120;
-//  wall1.position.z = -120;
 
-//  scene.add(wall1);
   
   scene.add(player.body);
   
@@ -376,12 +369,14 @@ function processAction (buffer, code) {
   var dataView = new DataView(buffer);
   var id = dataView.getUint16(0);
   var player = otherPlayers[id];
-  switch (code) {
-    case 3:
-      player.velocity.y += PLAYER_JUMP;
-      break;
-    default:
-      console.log("unrecognized action");
+  if (player != undefined) {
+    switch (code) {
+      case 3:
+        player.velocity.y += PLAYER_JUMP;
+        break;
+      default:
+        console.log("unrecognized action"); 
+    }
   }
 }
 
