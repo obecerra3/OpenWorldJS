@@ -12,3 +12,6 @@ They slowly approach the human and then chase them at high-speed. If the human c
 inspiration:
 
 ￼<img width="300px" src="photos/dalek.jpg"></img>￼<img width="300px" src="photos/segway.png"></img>
+
+
+Robots light up the maze like [this](https://threejs.org/examples/#webgl_lights_pointlights2)
