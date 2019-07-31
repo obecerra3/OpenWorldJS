@@ -2,7 +2,7 @@ The game will be a multiplayer horror game.
 
 It will be a post-apocalyptic setting, the robots have taken over
 
-The maze is a dystopian colisuem, where robots hunt and kill humans for fun, with the promise that if the human escapes, they will get to live on happily
+The maze is a dystopian coliseum, where robots hunt and kill humans for fun, with the promise that if the human escapes, they will get to live on happily
 
 They are slow-moving and few and far between in the maze (they are not allowed in the center). They speak condescendingly to the humans while they hunt them. They taunt them, etc then rip them apart. 
 
