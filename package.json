@@ -1,0 +1,25 @@
+{
+  "name": "maze",
+  "version": "1.0.0",
+  "description": "Internet Maze",
+  "main": "js/maze.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bnwlkr/Maze.git"
+  },
+  "author": "Ben Walker",
+  "license": "ISC",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/bnwlkr/Maze/issues"
+  },
+  "homepage": "https://github.com/bnwlkr/Maze#readme",
+  "dependencies": {
+    "pointerlockcontrols": "^1.0.2",
+    "stats.js": "^0.17.0",
+    "three": "^0.106.2"
+  }
+}

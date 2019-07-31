@@ -1,9 +1,8 @@
-import * as THREE from './three.js';
+var THREE = require('three');
+var Utils = require('./Utils.js');
 
-import * as Utils from './Utils.js';
 
-
-export class Player {
+class Player {
   constructor(username,position,velocity=new THREE.Vector3(),lookDirection=new THREE.Vector3(), isCrouched=false) {
     this.username = username; 
     this.velocity = velocity;
@@ -24,9 +23,8 @@ export class Player {
     return current;
     
   }
-  
-  
-  
 }
+
+module.exports = Player;
 
 

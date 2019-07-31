@@ -1,6 +1,6 @@
-import * as THREE from './three.js';
+var THREE = require('three');
 
-export class MessageBuilder {
+class MessageBuilder {
   constructor () {
     this.encoder = new TextEncoder ();
   }
@@ -28,7 +28,7 @@ export class MessageBuilder {
     dataView.setInt8(0, 3);
     return buffer;
   }
-
-  
 }
+
+module.exports = MessageBuilder;
 

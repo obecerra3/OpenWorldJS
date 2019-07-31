@@ -1,7 +1,7 @@
 
 
 /* http://szudzik.com/ElegantPairing.pdf */
-export function pair (a, b) {
+exports.pair = function pair (a, b) {
   var A = a >= 0 ? 2 * a : -2 * a - 1;
   var B = b >= 0 ? 2 * b : -2 * b - 1;
   return A >= B ? A * A + A + B : A + B * B;
@@ -9,7 +9,7 @@ export function pair (a, b) {
 
 
 
-export function makeid(length) {
+exports.makeid = function makeid(length) {
    var result           = '';
    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
    var charactersLength = characters.length;
@@ -21,7 +21,7 @@ export function makeid(length) {
 
 
 
-export function getRandomColor() {
+exports.getRandomColor = function getRandomColor() {
   var letters = '0123456789ABCDEF';
   var color = '#';
   for (var i = 0; i < 6; i++) {
