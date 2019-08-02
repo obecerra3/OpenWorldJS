@@ -140,7 +140,7 @@ function init() {
   flashLight.visible = false;
   
   spotLightHelper = new THREE.SpotLightHelper( flashLight );
-  scene.add( spotLightHelper );
+  //scene.add( spotLightHelper );
 
   
   scene.add(player.body);
@@ -162,8 +162,8 @@ function onKeyDown( event ) {
         flashLight.visible = !flashLight.visible;
         break;
       case 16:
-        player.isCrouched = true;
-        player.velocity.y -= PLAYER_JUMP;
+        //player.isCrouched = true;
+        //player.velocity.y -= PLAYER_JUMP;
         break;
       case 38: // up
       case 87: // w
@@ -273,16 +273,18 @@ function animate() {
   camera.position.z = player.body.position.z;
   
   
-  flashLight.position.x = player.body.position.x + player.lookDirection.x;
-  flashLight.position.z = player.body.position.z + player.lookDirection.z;
-  flashLight.position.y = player.body.position.y + player.lookDirection.y;
+  flashLight.position.copy(player.body.position);
+  
+  flashLight.position.y -= 1;
+  flashLight.position.x += player.lookDirection.x*3.0;
+  flashLight.position.z += player.lookDirection.z*3.0;
   
   flashLight.target.position.set(flashLight.position.x + player.lookDirection.x,
                                  flashLight.position.y + player.lookDirection.y,
                                  flashLight.position.z + player.lookDirection.z);
   
   flashLight.target.updateMatrixWorld();
-  spotLightHelper.update();
+  
   
   if (player.isCrouched) {
     camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
