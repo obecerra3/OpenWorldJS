@@ -10,7 +10,7 @@ class MazeBuilder {
   constructor () {
     this.chunks = new Map();
     this.geometries = new Map();
-    this.wallMaterial = new THREE.MeshPhongMaterial( { color: 0xd3d3d3, dithering: true } );
+    this.wallMaterial = new THREE.MeshStandardMaterial( { color: 0xd3d3d3, dithering: true } );
   }
   
   

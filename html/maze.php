@@ -33,7 +33,7 @@ session_start();
     <div id="blocker">
      <div id="info"><?php echo $_SESSION["username"]?></div>
     </div>
-    <script src="build.js"></script>
+    <script src="bundle.js"></script>
   </body>
 </html>
 
