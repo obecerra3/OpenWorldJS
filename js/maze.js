@@ -47,7 +47,7 @@ var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 var player = new Player (Utils.makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
-var flashLight, spotLightHelper;
+var flashLight;
 
 console.log(player.username); 
 
@@ -123,24 +123,10 @@ function init() {
 
   document.body.appendChild( renderer.domElement );
   
-  flashLight = new THREE.SpotLight( 0xffffff, 1 );
-  flashLight.penumbra = 0.1;
-  flashLight.decay = 1;
-  flashLight.distance = 50;
-  flashLight.intensity = 1.0;
-  flashLight.angle = 0.5;
-
+  flashLight = new THREE.SpotLight( 0xffffff, 1, 100, 0.5, 0.1, 1 );
   flashLight.castShadow = true;
-  flashLight.shadow.mapSize.width = 1024;
-  flashLight.shadow.mapSize.height = 1024;
-  flashLight.shadow.camera.near = 10;
-  flashLight.shadow.camera.far = 50;
-  flashLight.rotateX(Math.PI/2);
   scene.add( flashLight );
   flashLight.visible = false;
-  
-  spotLightHelper = new THREE.SpotLightHelper( flashLight );
-  //scene.add( spotLightHelper );
 
   
   scene.add(player.body);
@@ -162,8 +148,8 @@ function onKeyDown( event ) {
         flashLight.visible = !flashLight.visible;
         break;
       case 16:
-        //player.isCrouched = true;
-        //player.velocity.y -= PLAYER_JUMP;
+        player.isCrouched = true;
+        if (player.body.position.y > PLAYER_HEIGHT) player.velocity.y -= PLAYER_JUMP;
         break;
       case 38: // up
       case 87: // w
@@ -273,7 +259,7 @@ function animate() {
   camera.position.z = player.body.position.z;
   
   
-  flashLight.position.copy(player.body.position);
+  flashLight.position.copy(camera.position);
   
   flashLight.position.y -= 1;
   flashLight.position.x += player.lookDirection.x*3.0;
@@ -291,6 +277,7 @@ function animate() {
   } else {
     camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
   }
+  
   
   if (player.body.position.y <= PLAYER_HEIGHT) {
     if (!player.isCrouched) {
