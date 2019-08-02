@@ -79,7 +79,7 @@ function init() {
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
 
-  var light = new THREE.AmbientLight( 0x8f8f8f );
+  var light = new THREE.AmbientLight( 0x404040 );
   scene.add( light );
 
   controls = new PointerLockControls( camera );
@@ -105,7 +105,7 @@ function init() {
 
   var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
   floorGeometry.rotateX(-Math.PI/2);
-  var floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
+  var floorMaterial = new THREE.MeshStandardMaterial( { vertexColors: THREE.NoColors } );
   floorMaterial.color = new THREE.Color(0x81a68c);
 
   var floor = new THREE.Mesh( floorGeometry, floorMaterial );
@@ -123,13 +123,8 @@ function init() {
 
   document.body.appendChild( renderer.domElement );
   
-  flashLight = new THREE.SpotLight( 0xffffff, 1, 100, Math.PI/8, 0.1, 1 );
-
+  flashLight = new THREE.SpotLight( 0xffffff, 1, 100, 0.5, 0.1, 1 );
   flashLight.castShadow = true;
-  flashLight.shadow.mapSize.width = 1024;
-  flashLight.shadow.mapSize.height = 1024;
-  flashLight.shadow.camera.near = 10;
-  flashLight.shadow.camera.far = 50;
   scene.add( flashLight );
   flashLight.visible = false;
 
@@ -154,7 +149,7 @@ function onKeyDown( event ) {
         break;
       case 16:
         player.isCrouched = true;
-        player.velocity.y -= PLAYER_JUMP;
+        if (player.body.position.y > PLAYER_HEIGHT) player.velocity.y -= PLAYER_JUMP;
         break;
       case 38: // up
       case 87: // w
@@ -263,9 +258,12 @@ function animate() {
   camera.position.x = player.body.position.x;
   camera.position.z = player.body.position.z;
   
-  flashLight.position.x = player.body.position.x;
-  flashLight.position.z = player.body.position.z;
-  flashLight.position.y = player.body.position.y;
+  
+  flashLight.position.copy(camera.position);
+  
+  flashLight.position.y -= 1;
+  flashLight.position.x += player.lookDirection.x*3.0;
+  flashLight.position.z += player.lookDirection.z*3.0;
   
   flashLight.target.position.set(flashLight.position.x + player.lookDirection.x,
                                  flashLight.position.y + player.lookDirection.y,
@@ -273,11 +271,13 @@ function animate() {
   
   flashLight.target.updateMatrixWorld();
   
+  
   if (player.isCrouched) {
     camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
   } else {
     camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
   }
+  
   
   if (player.body.position.y <= PLAYER_HEIGHT) {
     if (!player.isCrouched) {

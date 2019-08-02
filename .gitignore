@@ -1,4 +1,4 @@
 .DS_Store
 deploy/
-build.js
+bundle.js
 node_modules/
