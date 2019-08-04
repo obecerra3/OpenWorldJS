@@ -4,10 +4,12 @@ import (
         "io/ioutil"
         "fmt"
         "log"
+        "database/sql"
         "net/http"
         "encoding/binary"
         "math"
         "maze/game"
+        "maze/db"
         "time"
         "github.com/gorilla/websocket"
 )
@@ -27,21 +29,29 @@ func bytesToFloat32(bytes []byte) float32 {
 }
 
 func nearbyPlayerUpdateLoop(player *game.Player) {
-  for {
+  for player.Connected {
     player.UpdateNearbyPlayers(players, 100);
-    time.Sleep(5*time.Second);
+    time.Sleep(10*time.Second)
   }
 }
 
 func chunkSendLoop (player *game.Player) {
-  for {
+  for player.Connected {
     for _,neighbour := range player.ComputeChunk().GetNeighbours() {
       if _, has := player.DeliveredChunks[neighbour]; !has {
         player.Conn.WriteMessage(websocket.BinaryMessage, game.GetChunk(neighbour).Encode())
         player.DeliveredChunks[neighbour] = struct{}{}
+        time.Sleep(500*time.Millisecond)
       }
     }
-    time.Sleep(5*time.Second);
+    time.Sleep(5*time.Second)
+  }
+}
+
+func SavePlayerPositionLoop (player *game.Player, dbconn *sql.DB) {
+  for player.Connected {
+    db.SavePlayerPosition(player, dbconn)
+    time.Sleep(10*time.Second)
   }
 }
 
@@ -51,18 +61,24 @@ func handler(w http.ResponseWriter, r *http.Request) {
     if err != nil { log.Println(err); return }
     _, usernameData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
+    dbconn, err := db.Connect()
+    if err != nil {log.Println(err); return }
     var player game.Player
     player.Conn = conn
-    player.Username = usernameData
+    player.Connected = true
+    player.Username = string(usernameData)
+    player.Position = db.GetSavedPosition(&player, dbconn)
     player.NearbyPlayers = make(map[*game.Player]struct{})
     player.KnowsAboutMe = make(map[*game.Player]struct{})
     player.DeliveredChunks = make(map[game.ChunkCoord]struct{})
     player.ID = idGenerator.GetNextID()
     fmt.Println(string(player.Username), ": ", player.ID)
-    go nearbyPlayerUpdateLoop(&player);
-    go chunkSendLoop(&player);
+    go nearbyPlayerUpdateLoop(&player)
+    go chunkSendLoop(&player)
+    go SavePlayerPositionLoop(&player, dbconn)
     players.Add(&player)
     defer players.Remove(&player)
+    defer func () { player.Connected = false } ()
     for {
       _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
@@ -91,10 +107,9 @@ func main () {
   }
   game.Maze = maze
   players.Set = make(map[*game.Player]struct{})
-
-    
+      
   http.HandleFunc("/", handler)
-  http.ListenAndServe(":8000", nil)
+  http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/key.pem", nil)
 
 }
 

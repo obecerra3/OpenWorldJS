@@ -45,7 +45,10 @@ var moveDirection = new THREE.Vector3();
 var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
+
 var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPosition));
+
+console.log(xPosition, zPosition);
 
 var flashLight, floor;
 

@@ -7,19 +7,25 @@ import (
   _"github.com/go-sql-driver/mysql"
 )
 
-func Connect() *sql.DB {
-	db, err := sql.Open("mysql", "bnwlkr:88ae3cefb3@/Maze")
-	if err != nil { 	fmt.Println(err); return nil }
-	return db
+func Connect() (*sql.DB, error)  {
+	dbconn, err := sql.Open("mysql", "bnwlkr:88ae3cefb3@/Maze")
+	if err != nil { return nil, err }
+  if err = dbconn.Ping(); err != nil { return nil, err }
+	return dbconn, nil
 }
 
-func GetSavedPosition(player * game.Player, dbconn * sql.DB) game.Vec2 {
+func GetSavedPosition(player *game.Player, dbconn *sql.DB) game.Vec2 {
   var result game.Vec2
-  err := dbconn.QueryRow(fmt.Sprint("SELECT x, z FROM Users WHERE username='", player.Username, "'")).Scan(&result.X, &result.Z)
+  err := dbconn.QueryRow(`SELECT x, z FROM Users WHERE username=?`, player.Username).Scan(&result.X, &result.Z)
   if (err != nil) { fmt.Println(err) }
   return result
 }
 
+func SavePlayerPosition(player *game.Player, dbconn *sql.DB) {
+  updates, err := dbconn.Query(`UPDATE Users SET x=?, z=? WHERE username=?`, player.Position.X, player.Position.Z, player.Username)
+  if (err != nil) { fmt.Println(err) }
+  updates.Close()
+}
 
 func Test (db *sql.DB) {
   results, err := db.Query("SELECT email FROM Users")
