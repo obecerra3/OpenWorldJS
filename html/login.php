@@ -34,14 +34,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         $password = trim($_POST["password"]);
     }
     
-    $verification = $user_man->verify($username, $password);
-    
-    if ($verification->success) {
-      session_start();
+    if ($user_man->verify($username, $password)) {
       $_SESSION["auth"] = true;
-      $_SESSION["username"] = $username;
-      $_SESSION["x"] = $verification->x;
-      $_SESSION["y"] = $verificaiton->y;                            
+      $_SESSION["username"] = $username;                       
       header("location: maze.php");
     } else {
         $password_err = "Login failed, please try again.";

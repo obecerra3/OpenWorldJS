@@ -7,28 +7,30 @@ error_reporting(E_ALL);
 class UserManager {
     var $link;
     public function __construct () {
-        $this->link = new mysqli("127.0.0.1", "bnwlkr", "88ae3cefb3", "Maze");
+        $this->link = new mysqli("themaze.io", "bnwlkr", "88ae3cefb3", "Maze");
     }
     
     /* verify a user
      */ 
     public function verify ($username, $password) {
-      $query = $this->link->query("SELECT * FROM Users WHERE username='$username'");
-      if ($query->num_rows == 0) { return (object) array('success' => False); }
+      $query = $this->link->query("SELECT phash FROM Users WHERE username='$username'");
+      if ($query->num_rows == 0) { return False; }
       $result = $query->fetch_assoc();
-      if (password_verify($password, $result["phash"])) {
-        return (object) array('success' => True, 'x' => $result["x"], 'y' => $result["y"]);
-      } else {
-        return (object) array('success' => False);
-      }
+      return password_verify($password, $result["phash"]);
+    }
+    
+    public function getPosition ($username) {
+      $query = $this->link->query("SELECT x, z FROM Users WHERE username='$username'");
+      if ($query->num_rows == 0) { return False; }
+      $result = $query->fetch_assoc();
+      return  (object) array('x' => $result["x"], 'z' => $result["z"]);
     }
     
     /* create a new user
      */ 
     public function register ($email, $username, $password) {
       $phash = password_hash($password, PASSWORD_DEFAULT);
-      $query = $this->link->query("INSERT INTO Users (email, username, phash) VALUES ('$email', '$username', '$phash')");
-      return (object) array('success' => $query ? True : False);
+      return $this->link->query("INSERT INTO Users (email, username, phash) VALUES ('$email', '$username', '$phash')");
     }
     
     /* check if username or email already exists

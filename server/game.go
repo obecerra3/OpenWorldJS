@@ -51,7 +51,8 @@ type Players struct {
 type Player struct {
   sync.Mutex
   Conn *websocket.Conn
-  Username []byte
+  Connected bool
+  Username string
   ID uint16
   Position Vec2
   DeliveredChunks map[ChunkCoord]struct{}
@@ -136,7 +137,7 @@ func (dstPlayer *Player) SendState (srcPlayer *Player, data []byte) {
     payload[0] = 1
     binary.BigEndian.PutUint16(payload[1:3], srcPlayer.ID)
     payload[3] = byte(len(srcPlayer.Username))
-    copy(payload[4:], srcPlayer.Username)
+    copy(payload[4:], []byte(srcPlayer.Username))
     copy(payload[4+len(srcPlayer.Username):], data)
     srcPlayer.KnowsAboutMe[dstPlayer] = struct{}{}
     dstPlayer.Lock()

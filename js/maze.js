@@ -45,15 +45,18 @@ var moveDirection = new THREE.Vector3();
 var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
-var player = new Player (Utils.makeid(5), new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
-var flashLight;
+var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPosition));
+
+console.log(xPosition, zPosition);
+
+var flashLight, floor;
 
 console.log(player.username); 
 
-var socket = new WebSocket("ws://localhost:8000");
+var socket = new WebSocket("wss://themaze.io:8000");
 
-socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
+socket.onopåen = () => { socket.send(messageBuilder.introduction(player)); }
 socket.onmessage = (event) => { 
   receive(event.data);
 }
@@ -65,7 +68,7 @@ animate();
 
 function init() {
   
-  stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+  stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
   document.body.appendChild( stats.dom );
 
 
@@ -103,12 +106,12 @@ function init() {
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
 
-  var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
+  var floorGeometry = new THREE.PlaneBufferGeometry(CHUNK_SIZE*CELL_SIZE*3, CHUNK_SIZE*CELL_SIZE*3);
   floorGeometry.rotateX(-Math.PI/2);
-  var floorMaterial = new THREE.MeshStandardMaterial( { vertexColors: THREE.NoColors } );
+  var floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
   floorMaterial.color = new THREE.Color(0x81a68c);
 
-  var floor = new THREE.Mesh( floorGeometry, floorMaterial );
+  floor = new THREE.Mesh( floorGeometry, floorMaterial );
   scene.add(floor);
   
   renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -123,10 +126,10 @@ function init() {
 
   document.body.appendChild( renderer.domElement );
   
-  flashLight = new THREE.SpotLight( 0xffffff, 1, 100, 0.5, 0.1, 1 );
+  flashLight = new THREE.SpotLight( 0xffffff, 1, 300, 0.5, 0.1, 10.0 );
   flashLight.castShadow = true;
   scene.add( flashLight );
-  flashLight.visible = false;
+  flashLight.visible = true;
 
   
   scene.add(player.body);
@@ -143,60 +146,64 @@ function onWindowResize() {
 }
 
 function onKeyDown( event ) {
-    switch ( event.keyCode ) {
-      case 70:
-        flashLight.visible = !flashLight.visible;
-        break;
-      case 16:
-        player.isCrouched = true;
-        if (player.body.position.y > PLAYER_HEIGHT) player.velocity.y -= PLAYER_JUMP;
-        break;
-      case 38: // up
-      case 87: // w
-        moveForward = true;
-        break;
-      case 37: // left
-      case 65: // a
-        moveLeft = true;
-        break;
-      case 40: // down
-      case 83: // s
-        moveBackward = true;
-        break;
-      case 39: // right
-      case 68: // d
-        moveRight = true;
-        break;
-      case 32: // space 
-        if ( canJump === true ) {
-          player.velocity.y += PLAYER_JUMP;
-          //canJump = false;
-          socket.send(messageBuilder.jump());
-        } 
-        break;
+    if (controls.isLocked) {
+      switch ( event.keyCode ) {
+        case 70:
+          flashLight.visible = !flashLight.visible;
+          break;
+        case 16:
+          player.isCrouched = true;
+          if (player.body.position.y > PLAYER_HEIGHT) player.velocity.y -= PLAYER_JUMP;
+          break;
+        case 38: // up
+        case 87: // w
+          moveForward = true;
+          break;
+        case 37: // left
+        case 65: // a
+          moveLeft = true;
+          break;
+        case 40: // down
+        case 83: // s
+          moveBackward = true;
+          break;
+        case 39: // right
+        case 68: // d
+          moveRight = true;
+          break;
+        case 32: // space 
+          if ( canJump === true ) {
+            player.velocity.y += PLAYER_JUMP;
+            //canJump = false;
+            socket.send(messageBuilder.jump());
+          } 
+          break;
+      }
     }
 }
 
 function onKeyUp ( event ) {
-    switch ( event.keyCode ) {
-      case 16:
-        player.isCrouched = false;
-      case 38: // up
-      case 87: // w
-        moveForward = false;
-        break;
-      case 37: // left
-      case 65: // a
-        moveLeft = false;
-        break;
-      case 40: // down
-      case 83: // s
-        moveBackward = false;
-        break;
-      case 39: // right
-      case 68: // d
-        moveRight = false;
-        break;
+    if (controls.isLocked) {
+      switch ( event.keyCode ) {
+        case 16:
+          player.isCrouched = false;
+        case 38: // up
+        case 87: // w
+          moveForward = false;
+          break;
+        case 37: // left
+        case 65: // a
+          moveLeft = false;
+          break;
+        case 40: // down
+        case 83: // s
+          moveBackward = false;
+          break;
+        case 39: // right
+        case 68: // d
+          moveRight = false;
+          break;
+      }
     }
 }
 
@@ -222,7 +229,6 @@ function animate() {
   player.velocity.x -= player.velocity.x * 0.01 * delta;
   player.velocity.z -= player.velocity.z * 0.01 * delta;
   player.velocity.y -= player.velocity.y * 0.01 * delta;
-  
   
   moveDirection.z = Number(moveForward) - Number(moveBackward);
   moveDirection.x = Number(moveLeft) - Number(moveRight);
@@ -310,9 +316,10 @@ function animate() {
           }
         }
       });
+      floor.position.x = player.body.position.x;
+      floor.position.z = player.body.position.z;
       prevChunkRequestTime = time;
   } 
-
   
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
