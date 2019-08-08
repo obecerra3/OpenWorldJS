@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 class UserManager {
     var $link;
     public function __construct () {
-        $this->link = new mysqli("127.0.0.1", "bnwlkr", "88ae3cefb3", "Maze");
+        $this->link = new mysqli("themaze.io", "bnwlkr", "88ae3cefb3", "Maze");
     }
     
     /* verify a user

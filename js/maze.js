@@ -54,9 +54,9 @@ var flashLight, floor;
 
 console.log(player.username); 
 
-var socket = new WebSocket("ws://localhost:8000");
+var socket = new WebSocket("wss://themaze.io:8000");
 
-socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
+socket.onopåen = () => { socket.send(messageBuilder.introduction(player)); }
 socket.onmessage = (event) => { 
   receive(event.data);
 }
@@ -320,6 +320,7 @@ function animate() {
       floor.position.z = player.body.position.z;
       prevChunkRequestTime = time;
   } 
+  
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
     socket.send(messageBuilder.state(player));
