@@ -48,15 +48,13 @@ var collider = new Collider(PLAYER_SIZE);
 
 var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPosition));
 
-console.log(xPosition, zPosition);
-
 var flashLight, floor;
 
 console.log(player.username); 
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
-socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
+socket.onopen = () => { socket.send(messageBuilder.hello(username, secret)); }
 socket.onmessage = (event) => { 
   receive(event.data);
 }

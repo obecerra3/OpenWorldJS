@@ -59,14 +59,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
     upgrader.CheckOrigin = func(r *http.Request) bool { return true }
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil { log.Println(err); return }
-    _, usernameData, err := conn.ReadMessage()
+    _, helloData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
     dbconn, err := db.Connect()
     if err != nil {log.Println(err); return }
     var player game.Player
+    player.Username = string(helloData[40:])
+    secret := string(helloData[:40])
+    if !db.VerifyPlayer(&player, secret, dbconn) { return }
     player.Conn = conn
     player.Connected = true
-    player.Username = string(usernameData)
+    defer func () { player.Connected = false } ()
     player.Position = db.GetSavedPosition(&player, dbconn)
     player.NearbyPlayers = make(map[*game.Player]struct{})
     player.KnowsAboutMe = make(map[*game.Player]struct{})
@@ -78,7 +81,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
     go SavePlayerPositionLoop(&player, dbconn)
     players.Add(&player)
     defer players.Remove(&player)
-    defer func () { player.Connected = false } ()
     for {
       _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
@@ -112,4 +114,3 @@ func main () {
   http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/key.pem", nil)
 
 }
-

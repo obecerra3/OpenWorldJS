@@ -17,9 +17,9 @@ if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
 }
 
 $username = $_SESSION["username"];
+$secret = $_SESSION["secret"];
 $user_man = new UserManager();
 $position = $user_man->getPosition($username);
-
 
 ?>
 
@@ -34,6 +34,7 @@ $position = $user_man->getPosition($username);
     <script>
       console.log("here");
       var username = "<?php echo $username;?>"; 
+      var secret = "<?php echo $secret?>"; 
       var xPosition = parseFloat("<?php echo $position->x;?>");
       var zPosition = parseFloat("<?php echo $position->z;?>");
     </script>
