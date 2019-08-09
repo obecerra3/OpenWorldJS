@@ -1,5 +1,6 @@
 player->server
-  HELLO (username.length)
+  HELLO (40 + username.length)
+    secret (40)
     username
   MYSTATE
     0

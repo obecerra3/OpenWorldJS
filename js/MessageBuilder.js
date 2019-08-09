@@ -5,8 +5,11 @@ class MessageBuilder {
     this.encoder = new TextEncoder ();
   }
   
-  introduction(player) {
-    return this.encoder.encode(player.username);
+  hello(username, key) {
+    var resultArray = new Uint8Array(40 + username.length);
+    resultArray.set(this.encoder.encode(key), 0);
+    resultArray.set(this.encoder.encode(username), 40);
+    return resultArray;
   }
   
   state (player) {
