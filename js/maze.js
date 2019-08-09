@@ -56,7 +56,7 @@ console.log(player.username);
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
-socket.onopåen = () => { socket.send(messageBuilder.introduction(player)); }
+socket.onopen = () => { socket.send(messageBuilder.introduction(player)); }
 socket.onmessage = (event) => { 
   receive(event.data);
 }
