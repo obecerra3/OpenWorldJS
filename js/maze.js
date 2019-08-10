@@ -7,8 +7,6 @@ var MessageBuilder = require('./MessageBuilder.js');
 var Stats = require('stats.js');
 var PointerLockControls = require('pointerlockcontrols');
 
-
-
 const PLAYER_HEIGHT = 10;
 const PLAYER_SIZE = 5;
 const PLAYER_MASS = 0.00005;
@@ -50,12 +48,12 @@ var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPo
 
 var flashLight, floor;
 
-console.log(player.username); 
+console.log(player.username);
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username, secret)); }
-socket.onmessage = (event) => { 
+socket.onmessage = (event) => {
   receive(event.data);
 }
 
@@ -65,18 +63,18 @@ init();
 animate();
 
 function init() {
-  
+
   stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
   document.body.appendChild( stats.dom );
 
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   camera.position.y = PLAYER_HEIGHT;
-  
+
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1f1e33);
   scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000 );
-  
+
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
 
@@ -111,7 +109,7 @@ function init() {
 
   floor = new THREE.Mesh( floorGeometry, floorMaterial );
   scene.add(floor);
-  
+
   renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -123,15 +121,16 @@ function init() {
 
 
   document.body.appendChild( renderer.domElement );
-  
+
   flashLight = new THREE.SpotLight( 0xffffff, 1, 300, 0.5, 0.1, 10.0 );
   flashLight.castShadow = true;
   scene.add( flashLight );
   flashLight.visible = true;
 
-  
+
   scene.add(player.body);
-  
+  scene.add(player.model);
+
 
   window.addEventListener( 'resize', onWindowResize, false );
 }
@@ -169,12 +168,12 @@ function onKeyDown( event ) {
         case 68: // d
           moveRight = true;
           break;
-        case 32: // space 
+        case 32: // space
           if ( canJump === true ) {
             player.velocity.y += PLAYER_JUMP;
             //canJump = false;
             socket.send(messageBuilder.jump());
-          } 
+          }
           break;
       }
     }
@@ -227,13 +226,13 @@ function animate() {
   player.velocity.x -= player.velocity.x * 0.01 * delta;
   player.velocity.z -= player.velocity.z * 0.01 * delta;
   player.velocity.y -= player.velocity.y * 0.01 * delta;
-  
+
   moveDirection.z = Number(moveForward) - Number(moveBackward);
   moveDirection.x = Number(moveLeft) - Number(moveRight);
-  moveDirection.normalize(); 
-  
+  moveDirection.normalize();
+
   controls.getDirection(player.lookDirection);
-  
+
   if (player.lookDirection.z > 0) {
     theta = Math.atan(player.lookDirection.x / player.lookDirection.z);
   } else if (player.lookDirection.x > 0) {
@@ -249,51 +248,51 @@ function animate() {
 
   player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
-  
+
   var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
   var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);  
-  
+  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);
+
 
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
   player.body.position.z += player.velocity.z*delta;
-  
+
   camera.position.x = player.body.position.x;
   camera.position.z = player.body.position.z;
-  
-  
+
+
   flashLight.position.copy(camera.position);
-  
+
   flashLight.position.y -= 1;
   flashLight.position.x += player.lookDirection.x*3.0;
   flashLight.position.z += player.lookDirection.z*3.0;
-  
+
   flashLight.target.position.set(flashLight.position.x + player.lookDirection.x,
                                  flashLight.position.y + player.lookDirection.y,
                                  flashLight.position.z + player.lookDirection.z);
-  
+
   flashLight.target.updateMatrixWorld();
-  
-  
+
+
   if (player.isCrouched) {
     camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
   } else {
     camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
   }
-  
-  
+
+
   if (player.body.position.y <= PLAYER_HEIGHT) {
     if (!player.isCrouched) {
       canJump = true;
     }
     player.velocity.y = 0;
-  } else { 
+  } else {
 //    player.velocity.y -= GRAVITY*PLAYER_MASS*delta;
     camera.position.y = player.body.position.y;
   }
-  
-  
+
+
   if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
       var ir = inRange(playerChunk);
       var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
@@ -301,9 +300,9 @@ function animate() {
       toRemove.forEach((key)=>{
         var child = mazeBuilder.chunks.get(key);
         child.wallMesh.visible = false;
-        onDisplay.delete(key); 
+        onDisplay.delete(key);
       })
-      
+
       ir.forEach((coord)=>{
         var key = Utils.pair(coord.x, coord.z);
         var chunkObj = mazeBuilder.chunks.get(key);
@@ -317,25 +316,25 @@ function animate() {
       floor.position.x = player.body.position.x;
       floor.position.z = player.body.position.z;
       prevChunkRequestTime = time;
-  } 
-  
-  
+  }
+
+
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
     socket.send(messageBuilder.state(player));
     prevUpdateTime = time;
   }
-  
+
   Object.values(otherPlayers).forEach((p) => {
     p.body.position.x += p.velocity.x*delta;
     p.body.position.z += p.velocity.z*delta;
     p.body.position.y += p.velocity.y*delta;
-  
+
     if (p.isCrouched) {
       p.body.scale.y = 0.5;
     } else {
       p.body.scale.y = 1.0;
     }
-    
+
     if (p.body.position.y <= PLAYER_HEIGHT) {
       p.velocity.y = 0;
       p.body.position.y = PLAYER_HEIGHT;
@@ -353,13 +352,13 @@ function processChunk (buffer) {
   var byteArray = new Int8Array(buffer);
   var chunkX = byteArray[0];
   var chunkZ = byteArray[1];
-  var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
+  var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => {
     if (idx % CHUNK_SIZE == 0) {
       array.push([parseInt(curr)]);
       return array;
     } else {
       array[Math.floor(idx / CHUNK_SIZE)].push(parseInt(curr));
-      return array; 
+      return array;
     }
   }, []);
   var newWallMesh = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
@@ -377,7 +376,7 @@ function processAction (buffer, code) {
         player.velocity.y += PLAYER_JUMP;
         break;
       default:
-        console.log("unrecognized action"); 
+        console.log("unrecognized action");
     }
   }
 }
@@ -415,8 +414,8 @@ function processPlayerState (buffer, isNew) {
     player.lookDirection.x = lookDirectionX;
     player.lookDirection.y = lookDirectionY;
     player.lookDirection.z = lookDirectionZ;
-    player.isCrouched = isCrouched; 
-  }  
+    player.isCrouched = isCrouched;
+  }
 }
 
 
@@ -438,6 +437,3 @@ async function receive (blob) {
       break;
   }
 }
-
-
-

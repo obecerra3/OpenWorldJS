@@ -1,17 +1,30 @@
 var THREE = require('three');
 var Utils = require('./Utils.js');
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 
 class Player {
   constructor(username,position,velocity=new THREE.Vector3(),lookDirection=new THREE.Vector3(), isCrouched=false) {
-    this.username = username; 
+    this.username = username;
     this.velocity = velocity;
     this.lookDirection = lookDirection;
     this.body = new THREE.Mesh(new THREE.BoxGeometry(5,30,5), new THREE.MeshBasicMaterial({color: Utils.getRandomColor()}));
     this.body.position.copy(position);
     this.isCrouched = isCrouched;
+
+    var loader = new THREE.GLTFLoader();
+
+    loader.load( '../models/Soldier.glb', function ( gltf ) {
+
+    	this.model = gltf.scene;
+
+    }, undefined, function ( error ) {
+
+    	console.error( error );
+
+    } );
   }
-  
+
   getCurrentChunk (cellSize, chunkSize) {
     var worldChunkSize = cellSize * chunkSize;
     var current = {x:  Math.round(this.body.position.x / (cellSize*chunkSize)), z: Math.round(this.body.position.z / (cellSize*chunkSize)) }
@@ -21,10 +34,8 @@ class Player {
     }
 
     return current;
-    
+
   }
 }
 
 module.exports = Player;
-
-
