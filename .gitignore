@@ -3,3 +3,4 @@ deploy/
 bundle.js
 build.js
 node_modules/
+media/

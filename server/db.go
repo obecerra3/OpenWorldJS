@@ -27,7 +27,7 @@ func SavePlayerPosition(player *game.Player, dbconn *sql.DB) {
   updates.Close()
 }
 
-func VerifyPlayer(player *game.Player, secret string, dbconn *sql.DB) bool {
+func VerifyPlayer(player *game.Player, secret int, dbconn *sql.DB) bool {
     var exists int
     err := dbconn.QueryRow(`SELECT COUNT(1) FROM Users WHERE username=? AND secret=?`, player.Username, secret).Scan(&exists)
     if err != nil { fmt.Println(err) }

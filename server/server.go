@@ -64,8 +64,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
     dbconn, err := db.Connect()
     if err != nil {log.Println(err); return }
     var player game.Player
-    player.Username = string(helloData[40:])
-    secret := string(helloData[:40])
+    player.Username = string(helloData[4:])
+    secret := int(helloData[0:4])
     if !db.VerifyPlayer(&player, secret, dbconn) { return }
     player.Conn = conn
     player.Connected = true

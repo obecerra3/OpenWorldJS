@@ -32,7 +32,6 @@ $position = $user_man->getPosition($username);
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="style.css">
     <script>
-      console.log("here");
       var username = "<?php echo $username;?>"; 
       var secret = "<?php echo $secret?>"; 
       var xPosition = parseFloat("<?php echo $position->x;?>");

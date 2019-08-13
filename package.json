@@ -20,6 +20,6 @@
   "dependencies": {
     "pointerlockcontrols": "^1.0.2",
     "stats.js": "^0.17.0",
-    "three": "^0.106.2"
+     "three": "^0.106.2"
   }
 }
