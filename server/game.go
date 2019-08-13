@@ -76,7 +76,7 @@ func (c ChunkCoord) GetNeighbours () []ChunkCoord {
     ChunkCoord {X: c.X+1, Z: c.Z},
     ChunkCoord {X: c.X+1, Z: c.Z+1}}
   min := int8(-MAZE_SIZE/CHUNK_SIZE/2)
-  max := int8(-min-1)
+  max := int8(-min)
   i := 0
   for _, c := range chunkCoords {
     if !(c.X < min || c.X > max || c.Z < min || c.X > max) {

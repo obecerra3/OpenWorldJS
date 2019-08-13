@@ -65,8 +65,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
     if err != nil {log.Println(err); return }
     var player game.Player
     player.Username = string(helloData[4:])
-    secret := int(helloData[0:4])
-    if !db.VerifyPlayer(&player, secret, dbconn) { return }
+    secret := binary.BigEndian.Uint32(helloData[:4])
+    if !db.VerifyPlayer(&player, secret, dbconn) { fmt.Println("failed to verify player"); return }
     player.Conn = conn
     player.Connected = true
     defer func () { player.Connected = false } ()
@@ -75,7 +75,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
     player.KnowsAboutMe = make(map[*game.Player]struct{})
     player.DeliveredChunks = make(map[game.ChunkCoord]struct{})
     player.ID = idGenerator.GetNextID()
-    fmt.Println(string(player.Username), ": ", player.ID)
     go nearbyPlayerUpdateLoop(&player)
     go chunkSendLoop(&player)
     go SavePlayerPositionLoop(&player, dbconn)
@@ -111,6 +110,6 @@ func main () {
   players.Set = make(map[*game.Player]struct{})
       
   http.HandleFunc("/", handler)
-  http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/key.pem", nil)
+  http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/privkey.pem", nil)
 
 }

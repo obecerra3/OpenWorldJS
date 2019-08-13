@@ -10,7 +10,6 @@ class MessageBuilder {
     resultArray.set(this.encoder.encode(username), 4);
     var dataView = new DataView(resultArray.buffer);
     dataView.setInt32(0, key);
-    console.log(resultArray);
     return resultArray; 
     
   }
