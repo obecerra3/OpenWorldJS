@@ -44,7 +44,7 @@ var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 
-var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPosition));
+var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPosition), addModelToScene);
 
 var flashLight, floor;
 
@@ -54,7 +54,7 @@ var socket = new WebSocket("wss://themaze.io:8000");
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username, secret)); }
 socket.onmessage = (event) => {
-  receive(event.data);
+    receive(event.data);
 }
 
 var stats = new Stats();
@@ -64,77 +64,79 @@ animate();
 
 function init() {
 
-  stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-  document.body.appendChild( stats.dom );
+    stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild( stats.dom );
 
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-  camera.position.y = PLAYER_HEIGHT;
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+    camera.position.y = PLAYER_HEIGHT;
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1f1e33);
-  scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000 );
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1f1e33);
+    scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000 );
 
-  var axesHelper = new THREE.AxesHelper(10);
-  scene.add(axesHelper);
+    var axesHelper = new THREE.AxesHelper(10);
+    scene.add(axesHelper);
 
-  var light = new THREE.AmbientLight( 0x404040 );
-  scene.add( light );
+    var light = new THREE.AmbientLight( 0x404040 );
+    scene.add( light );
 
-  controls = new PointerLockControls( camera );
+    controls = new PointerLockControls( camera );
 
-  var blocker = document.getElementById( 'blocker' );
+    var blocker = document.getElementById( 'blocker' );
 
-  blocker.addEventListener( 'click', function () {
+    blocker.addEventListener( 'click', function () {
     controls.lock();
-  }, false );
+    }, false );
 
-  controls.addEventListener( 'lock', function () {
+    controls.addEventListener( 'lock', function () {
     blocker.style.display = 'none';
-  } );
+    } );
 
-  controls.addEventListener( 'unlock', function () {
+    controls.addEventListener( 'unlock', function () {
     blocker.style.display = 'block';
-  } );
+    } );
 
-  scene.add(controls.getObject());
+    scene.add(controls.getObject());
 
-  document.addEventListener( 'keydown', onKeyDown, false );
-  document.addEventListener( 'keyup', onKeyUp, false );
+    document.addEventListener( 'keydown', onKeyDown, false );
+    document.addEventListener( 'keyup', onKeyUp, false );
 
-  var floorGeometry = new THREE.PlaneBufferGeometry(CHUNK_SIZE*CELL_SIZE*3, CHUNK_SIZE*CELL_SIZE*3);
-  floorGeometry.rotateX(-Math.PI/2);
-  var floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
-  floorMaterial.color = new THREE.Color(0x81a68c);
+    var floorGeometry = new THREE.PlaneBufferGeometry(CHUNK_SIZE*CELL_SIZE*3, CHUNK_SIZE*CELL_SIZE*3);
+    floorGeometry.rotateX(-Math.PI/2);
+    var floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
+    floorMaterial.color = new THREE.Color(0x81a68c);
 
-  floor = new THREE.Mesh( floorGeometry, floorMaterial );
-  scene.add(floor);
+    floor = new THREE.Mesh( floorGeometry, floorMaterial );
+    scene.add(floor);
 
-  renderer = new THREE.WebGLRenderer( { antialias: true } );
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  renderer.gammaInput = true;
-  renderer.gammaOutput = true;
-
-
-  document.body.appendChild( renderer.domElement );
-
-  flashLight = new THREE.SpotLight( 0xffffff, 1, 300, 0.5, 0.1, 10.0 );
-  flashLight.castShadow = true;
-  scene.add( flashLight );
-  flashLight.visible = true;
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
 
 
-  scene.add(player.body);
-  scene.add(player.model);
+    document.body.appendChild( renderer.domElement );
+
+    flashLight = new THREE.SpotLight( 0xffffff, 1, 300, 0.5, 0.1, 10.0 );
+    flashLight.castShadow = true;
+    scene.add( flashLight );
+    flashLight.visible = true;
 
 
-  window.addEventListener( 'resize', onWindowResize, false );
+    scene.add(player.body);
+
+
+    window.addEventListener( 'resize', onWindowResize, false );
 }
 
+function addModelToScene(model) {
+    scene.add(model);
+}
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -394,7 +396,7 @@ function processPlayerState (buffer, isNew) {
     var lookDirectionX = dataView.getFloat32(usernameLength+12);
     var lookDirectionY = dataView.getFloat32(usernameLength+16);
     var lookDirectionZ = dataView.getFloat32(usernameLength+20);
-    var player = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ), isCrouched);
+    var player = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), addModelToScene, new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ), isCrouched);
     otherPlayers[id] = player;
     scene.add(player.body);
   } else {
