@@ -425,7 +425,6 @@ async function receive (blob) {
   var dataView = new DataView(arrayBuffer);
   switch (dataView.getUint8(0)) {
     case 0:
-      console.log("received chunk");
       processChunk(arrayBuffer.slice(1));
       break;
     case 1:
