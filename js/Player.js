@@ -45,6 +45,13 @@ class Player {
     if (Math.abs(rightEdge-this.body.position.x) < 8) {
       current.x += 1;
     }
+    
+    var leftEdge = current.x * worldChunkSize - worldChunkSize/2;
+    if (Math.abs(rightEdge-this.body.position.x) < 8) {
+      current.x -= 1;
+    }
+    
+    console.log(current);
 
     return current;
 

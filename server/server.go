@@ -14,7 +14,6 @@ import (
         "github.com/gorilla/websocket"
 )
 
-var idGenerator game.IDGenerator
 var players game.Players
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
@@ -64,9 +63,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
     dbconn, err := db.Connect()
     if err != nil {log.Println(err); return }
     var player game.Player
-    player.Username = string(helloData[40:])
-    secret := string(helloData[:40])
-    if !db.VerifyPlayer(&player, secret, dbconn) { return }
+    player.Username = string(helloData[4:])
+    secret := binary.BigEndian.Uint32(helloData[:4])
+    if player.ID = uint16(db.VerifyPlayer(&player, secret, dbconn)); player.ID == 0 { fmt.Println("failed to verify player"); return }
     player.Conn = conn
     player.Connected = true
     defer func () { player.Connected = false } ()
@@ -74,8 +73,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
     player.NearbyPlayers = make(map[*game.Player]struct{})
     player.KnowsAboutMe = make(map[*game.Player]struct{})
     player.DeliveredChunks = make(map[game.ChunkCoord]struct{})
-    player.ID = idGenerator.GetNextID()
-    fmt.Println(string(player.Username), ": ", player.ID)
     go nearbyPlayerUpdateLoop(&player)
     go chunkSendLoop(&player)
     go SavePlayerPositionLoop(&player, dbconn)
@@ -111,6 +108,6 @@ func main () {
   players.Set = make(map[*game.Player]struct{})
       
   http.HandleFunc("/", handler)
-  http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/key.pem", nil)
+  http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/privkey.pem", nil)
 
 }

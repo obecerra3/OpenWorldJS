@@ -6,10 +6,12 @@ class MessageBuilder {
   }
   
   hello(username, key) {
-    var resultArray = new Uint8Array(40 + username.length);
-    resultArray.set(this.encoder.encode(key), 0);
-    resultArray.set(this.encoder.encode(username), 40);
-    return resultArray;
+    var resultArray = new Uint8Array(4 + username.length);
+    resultArray.set(this.encoder.encode(username), 4);
+    var dataView = new DataView(resultArray.buffer);
+    dataView.setInt32(0, key);
+    return resultArray; 
+    
   }
   
   state (player) {

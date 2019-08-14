@@ -10,9 +10,6 @@ class UserManager {
         $this->link = new mysqli("themaze.io", "bnwlkr", "88ae3cefb3", "Maze");
     }
     
-    function random_str() {
-      return sha1(rand());
-    }
     
     /* verify a user
      */ 
@@ -38,7 +35,7 @@ class UserManager {
     
     public function setsecret ($username) {
       $query = $this->link->prepare("UPDATE Users SET secret=? WHERE username=?");
-      $secret = $this->random_str();
+      $secret = rand();
       $query->bind_param("ss", $secret, $username);
       $query->execute();
       return $secret;
