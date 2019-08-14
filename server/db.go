@@ -27,20 +27,9 @@ func SavePlayerPosition(player *game.Player, dbconn *sql.DB) {
   updates.Close()
 }
 
-func VerifyPlayer(player *game.Player, secret uint32, dbconn *sql.DB) bool {
-    var exists int
-    err := dbconn.QueryRow(`SELECT COUNT(1) FROM Users WHERE username=? AND secret=?`, player.Username, secret).Scan(&exists)
-    if err != nil { fmt.Println(err) }
-    return exists != 0
-}
-
-func Test (db *sql.DB) {
-  results, err := db.Query("SELECT email FROM Users")
-  if err != nil { fmt.Println(err); return }
-  for results.Next() {
-      var email string
-      err := results.Scan(&email)
-      if err != nil { fmt.Println(err) }
-      fmt.Println(email)
-  }
+func VerifyPlayer(player *game.Player, secret uint32, dbconn *sql.DB) int {
+    var id int
+    err := dbconn.QueryRow(`SELECT id FROM Users WHERE username=? AND secret=?`, player.Username, secret).Scan(&id)
+    if err != nil { fmt.Println(err); return 0 }
+    return id
 }
