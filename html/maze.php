@@ -11,16 +11,6 @@ spl_autoload_register(function ($class_name) {
 
 session_start();
 
-if(!isset($_SESSION["auth"]) || $_SESSION["auth"] === false){
-  header("location: login.php");
-  exit;
-}
-
-$username = $_SESSION["username"];
-$secret = $_SESSION["secret"];
-$user_man = new UserManager();
-$position = $user_man->getPosition($username);
-
 ?>
 
 
@@ -32,10 +22,7 @@ $position = $user_man->getPosition($username);
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="style.css">
     <script>
-      var username = "<?php echo $username;?>"; 
-      var secret = "<?php echo $secret?>"; 
-      var xPosition = parseFloat("<?php echo $position->x;?>");
-      var zPosition = parseFloat("<?php echo $position->z;?>");
+      var username = "life is hard";
     </script>
   </head>
   <body>
@@ -45,5 +32,3 @@ $position = $user_man->getPosition($username);
     <script src="build.js"></script>
   </body>
 </html>
-
-
