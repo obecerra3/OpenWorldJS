@@ -1,6 +1,5 @@
 player->server
-  HELLO (4 + username.length)
-    secret (4)
+  HELLO (username.length)
     username
   MYSTATE
     0
@@ -15,23 +14,14 @@ actions
     3
 
 server->player
-  CHUNKRESPONSE (3 + CHUNK_SIZE*CHUNK_SIZE)
-    0
-    offsetX
-    offsetZ
-    data
-  NEWNEARBYPLAYERSTATE
-    1                   (1)
+  MEET (3 + username.length)
+    0                   (1)
     id                  (2)
-    usernameLength      (1)
-    username            (...)
-    isCrouched          (1)
-    positionX           (4)
-    positionZ           (4)
-    lookDirX            (4)
-    lookDirY            (4)
-    lookDirZ            (4)
-  NEARBYPLAYERSTATE
+    username
+  MAZE (1 + SIZE*SIZE)
+    1                   (1)
+    mazeData            (SIZE*SIZE)
+  PLAYERSTATE
     2                   (1)
     id                  (2)
     isCrouched          (1)
@@ -41,7 +31,7 @@ server->player
     lookDirY            (4)
     lookDirZ            (4)
 actions
-  NEARBYJUMP 
+  PLAYERJUMP 
     3                   (1)
     id                  (2)
 

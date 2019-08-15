@@ -5,13 +5,8 @@ class MessageBuilder {
     this.encoder = new TextEncoder ();
   }
   
-  hello(username, key) {
-    var resultArray = new Uint8Array(4 + username.length);
-    resultArray.set(this.encoder.encode(username), 4);
-    var dataView = new DataView(resultArray.buffer);
-    dataView.setInt32(0, key);
-    return resultArray; 
-    
+  hello(username) {
+    return this.encoder.encode(username);
   }
   
   state (player) {

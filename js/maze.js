@@ -17,15 +17,11 @@ const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
 const CELL_SIZE = 12;
 const UPDATE_DELTA = 100.0;
-const CHUNK_REQUEST_DELTA = 3000;
-const CHUNK_SIZE = 27;
+const MAZE_SIZE = 55;
 
 const Y = new THREE.Vector3(0,1,0);
 
-var camera, scene, renderer, controls, theta;
-
-var currentChunk = new THREE.Object3D();
-var onDisplay = new Set();
+var camera, scene, renderer, controls, theta, mazeMesh;
 
 var otherPlayers = {};
 
@@ -36,7 +32,6 @@ var moveRight = false;
 var canJump = false;
 
 var prevUpdateTime = -UPDATE_DELTA;
-var prevChunkRequestTime = 0;
 var prevPosition = new THREE.Vector3();
 var prevLookDirection = new THREE.Vector3();
 var prevTime = performance.now();
@@ -46,7 +41,7 @@ var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 
-var player = new Player (username, new THREE.Vector3(xPosition,PLAYER_HEIGHT,zPosition));
+var player = new Player (username, new THREE.Vector3(0,PLAYER_HEIGHT,0));
 
 var flashLight, floor;
 
@@ -54,7 +49,7 @@ console.log(player.username);
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
-socket.onopen = () => { socket.send(messageBuilder.hello(username, secret)); }
+socket.onopen = () => { socket.send(messageBuilder.hello(username)); }
 socket.onmessage = (event) => { 
   receive(event.data);
 }
@@ -104,7 +99,7 @@ function init() {
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
 
-  var floorGeometry = new THREE.PlaneBufferGeometry(CHUNK_SIZE*CELL_SIZE*3, CHUNK_SIZE*CELL_SIZE*3);
+  var floorGeometry = new THREE.PlaneBufferGeometry(1000,1000);
   floorGeometry.rotateX(-Math.PI/2);
   var floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
   floorMaterial.color = new THREE.Color(0x81a68c);
@@ -250,18 +245,14 @@ function animate() {
   player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
   player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
-  var playerChunk = player.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
-  var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-  if (currentChunk != undefined) collider.collide(player, currentChunk.wallMesh);  
+  if (mazeMesh != undefined) { collider.collide(player, mazeMesh); }
   
-
   player.body.position.x += player.velocity.x*delta;
   player.body.position.y += player.velocity.y*delta;
   player.body.position.z += player.velocity.z*delta;
   
   camera.position.x = player.body.position.x;
   camera.position.z = player.body.position.z;
-  
   
   flashLight.position.copy(camera.position);
   
@@ -294,30 +285,30 @@ function animate() {
   }
   
   
-  if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-      var ir = inRange(playerChunk);
-      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
-      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
-      toRemove.forEach((key)=>{
-        var child = mazeBuilder.chunks.get(key);
-        child.wallMesh.visible = false;
-        onDisplay.delete(key); 
-      })
-      
-      ir.forEach((coord)=>{
-        var key = Utils.pair(coord.x, coord.z);
-        var chunkObj = mazeBuilder.chunks.get(key);
-        if (chunkObj) {
-          if (!onDisplay.has(key)) {
-            chunkObj.wallMesh.visible = true;
-            onDisplay.add(key);
-          }
-        }
-      });
-      floor.position.x = player.body.position.x;
-      floor.position.z = player.body.position.z;
-      prevChunkRequestTime = time;
-  } 
+//  if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
+//      var ir = inRange(playerChunk);
+//      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
+//      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
+//      toRemove.forEach((key)=>{
+//        var child = mazeBuilder.chunks.get(key);
+//        child.wallMesh.visible = false;
+//        onDisplay.delete(key); 
+//      })
+//      
+//      ir.forEach((coord)=>{
+//        var key = Utils.pair(coord.x, coord.z);
+//        var chunkObj = mazeBuilder.chunks.get(key);
+//        if (chunkObj) {
+//          if (!onDisplay.has(key)) {
+//            chunkObj.wallMesh.visible = true;
+//            onDisplay.add(key);
+//          }
+//        }
+//      });
+//      floor.position.x = player.body.position.x;
+//      floor.position.z = player.body.position.z;
+//      prevChunkRequestTime = time;
+//  } 
   
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
@@ -325,46 +316,47 @@ function animate() {
     prevUpdateTime = time;
   }
   
-  Object.values(otherPlayers).forEach((p) => {
-    p.body.position.x += p.velocity.x*delta;
-    p.body.position.z += p.velocity.z*delta;
-    p.body.position.y += p.velocity.y*delta;
-  
-    if (p.isCrouched) {
-      p.body.scale.y = 0.5;
-    } else {
-      p.body.scale.y = 1.0;
-    }
-    
-    if (p.body.position.y <= PLAYER_HEIGHT) {
-      p.velocity.y = 0;
-      p.body.position.y = PLAYER_HEIGHT;
-    } else {
-      p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
-    }
-  });
+//  Object.values(otherPlayers).forEach((p) => {
+//    p.body.position.x += p.velocity.x*delta;
+//    p.body.position.z += p.velocity.z*delta;
+//    p.body.position.y += p.velocity.y*delta;
+//  
+//    if (p.isCrouched) {
+//      p.body.scale.y = 0.5;
+//    } else {
+//      p.body.scale.y = 1.0;
+//    }
+//    
+//    if (p.body.position.y <= PLAYER_HEIGHT) {
+//      p.velocity.y = 0;
+//      p.body.position.y = PLAYER_HEIGHT;
+//    } else {
+//      p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
+//    }
+//  });
   prevTime = time;
   renderer.render( scene, camera );
   stats.end();
 }
 
 
-function processChunk (buffer) {
-  var byteArray = new Int8Array(buffer);
-  var chunkX = byteArray[0];
-  var chunkZ = byteArray[1];
-  var chunkArray = byteArray.slice(2).reduce((array, curr, idx) => { 
-    if (idx % CHUNK_SIZE == 0) {
-      array.push([parseInt(curr)]);
-      return array;
-    } else {
-      array[Math.floor(idx / CHUNK_SIZE)].push(parseInt(curr));
-      return array; 
+function processMaze (buffer) {
+  var byteArray = new Uint8Array(buffer);
+  var mazeArray = byteArray.reduce((array, curr, idx) => {
+    var i;
+    for (i = 0; i < 8; i++) {
+      var type = curr >> (7-i) & 1;
+      var overall = idx * 8 + i;
+      if ((overall % MAZE_SIZE) == 0) {
+        array.push([type]);
+      } else {
+        array[Math.floor(overall / MAZE_SIZE)].push(type);
+      }
     }
+    return array;
   }, []);
-  var newWallMesh = mazeBuilder.buildChunk({x: chunkX, z: chunkZ}, chunkArray, CHUNK_SIZE, CELL_SIZE);
-  onDisplay.add(Utils.pair(chunkX, chunkZ));
-  scene.add(newWallMesh);
+  mazeMesh = mazeBuilder.build(mazeArray, MAZE_SIZE, CELL_SIZE);
+  scene.add(mazeMesh);
 }
 
 function processAction (buffer, code) {
@@ -382,41 +374,24 @@ function processAction (buffer, code) {
   }
 }
 
-function processPlayerState (buffer, isNew) {
-  if (isNew) {
-    var decoder = new TextDecoder("utf-8");
-    var dataView = new DataView(buffer);
-    var id = dataView.getUint16(0);
-    var usernameLength = dataView.getUint8(2);
-    var username = decoder.decode(buffer.slice(3, usernameLength+3));
-    var isCrouched = dataView.getUint8(usernameLength+3);
-    var positionX = dataView.getFloat32(usernameLength+4);
-    var positionZ = dataView.getFloat32(usernameLength+8);
-    var lookDirectionX = dataView.getFloat32(usernameLength+12);
-    var lookDirectionY = dataView.getFloat32(usernameLength+16);
-    var lookDirectionZ = dataView.getFloat32(usernameLength+20);
-    var player = new Player(username, new THREE.Vector3(positionX, PLAYER_HEIGHT, positionZ), new THREE.Vector3(0, 0, 0), new THREE.Vector3(lookDirectionX, lookDirectionY, lookDirectionZ), isCrouched);
-    otherPlayers[id] = player;
-    scene.add(player.body);
-  } else {
-    var dataView = new DataView(buffer);
-    var id = dataView.getUint16(0);
-    var isCrouched = dataView.getUint8(2);
-    var positionX = dataView.getFloat32(3);
-    var positionZ = dataView.getFloat32(7);
-    var lookDirectionX = dataView.getFloat32(11);
-    var lookDirectionY = dataView.getFloat32(15);
-    var lookDirectionZ = dataView.getFloat32(19);
-    var player = otherPlayers[id];
-    var yVelocity = player.velocity.y;
-    var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
-    player.velocity.copy(newVelocity);
-    player.velocity.y = yVelocity;
-    player.lookDirection.x = lookDirectionX;
-    player.lookDirection.y = lookDirectionY;
-    player.lookDirection.z = lookDirectionZ;
-    player.isCrouched = isCrouched; 
-  }  
+function processPlayerState (buffer) {
+  var dataView = new DataView(buffer);
+  var id = dataView.getUint16(0);
+  var isCrouched = dataView.getUint8(2);
+  var positionX = dataView.getFloat32(3);
+  var positionZ = dataView.getFloat32(7);
+  var lookDirectionX = dataView.getFloat32(11);
+  var lookDirectionY = dataView.getFloat32(15);
+  var lookDirectionZ = dataView.getFloat32(19);
+  var player = otherPlayers[id];
+  var yVelocity = player.velocity.y;
+  var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
+  player.velocity.copy(newVelocity);
+  player.velocity.y = yVelocity;
+  player.lookDirection.x = lookDirectionX;
+  player.lookDirection.y = lookDirectionY;
+  player.lookDirection.z = lookDirectionZ;
+  player.isCrouched = isCrouched; 
 }
 
 
@@ -425,13 +400,13 @@ async function receive (blob) {
   var dataView = new DataView(arrayBuffer);
   switch (dataView.getUint8(0)) {
     case 0:
-      processChunk(arrayBuffer.slice(1));
+      processIntroduction(arrayBuffer.slice(1));
       break;
     case 1:
-      processPlayerState(arrayBuffer.slice(1), true);
+      processMaze(arrayBuffer.slice(1));
       break;
     case 2:
-      processPlayerState(arrayBuffer.slice(1), false);
+      processPlayerState(arrayBuffer.slice(1));
       break;
     case 3:
       processAction(arrayBuffer.slice(1), 3);
