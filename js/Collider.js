@@ -29,8 +29,6 @@ class Collider {
     intersections = intersections.concat(this.raycaster.intersectObject(wallMesh));
     
     
-    console.log(intersections.length)
-    
     if (intersections.length > 0) {
       if (intersections.length == 3) { // special cases (read: dumb hack)
         intersections.sort((x,y)=>x.distance > y.distance);
