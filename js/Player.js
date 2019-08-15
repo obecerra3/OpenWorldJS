@@ -128,23 +128,6 @@ class Player {
         }
 
     }
-
-    getCurrentChunk (cellSize, chunkSize) {
-        var worldChunkSize = cellSize * chunkSize;
-        var current = {x:  Math.round(this.body.position.x / (cellSize*chunkSize)), z: Math.round(this.body.position.z / (cellSize*chunkSize)) }
-        var rightEdge = current.x * worldChunkSize + worldChunkSize/2;
-        if (Math.abs(rightEdge-this.body.position.x) < 8) {
-            current.x += 1;
-        }
-
-        var leftEdge = current.x * worldChunkSize - worldChunkSize/2;
-        if (Math.abs(rightEdge-this.body.position.x) < 8) {
-            current.x -= 1;
-        }
-
-        return current;
-
-        }
 }
 
 module.exports = Player;
