@@ -69,13 +69,16 @@ function init() {
   camera.position.y = PLAYER_HEIGHT;
   
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1f1e33);
-  scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000 );
+  scene.background = new THREE.Color( 0xd9edfa );
+  scene.fog = new THREE.Fog( 0xd3d3d3, 0, 750 );
   
   var axesHelper = new THREE.AxesHelper(10);
   scene.add(axesHelper);
 
-  var light = new THREE.AmbientLight( 0x404040 );
+//  var light = new THREE.AmbientLight( 0x404040 );
+//  scene.add( light );
+  var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
+  light.position.set( 0.5, 1, 0.75 );
   scene.add( light );
 
   controls = new PointerLockControls( camera );
@@ -283,33 +286,6 @@ function animate() {
 //    player.velocity.y -= GRAVITY*PLAYER_MASS*delta;
     camera.position.y = player.body.position.y;
   }
-  
-  
-//  if (time - prevChunkRequestTime >= CHUNK_REQUEST_DELTA) {
-//      var ir = inRange(playerChunk);
-//      var inRangeKeys = new Set(ir.map((coord)=>Utils.pair(coord.x, coord.z)));
-//      var toRemove = [...onDisplay].filter((key)=>!inRangeKeys.has(key));
-//      toRemove.forEach((key)=>{
-//        var child = mazeBuilder.chunks.get(key);
-//        child.wallMesh.visible = false;
-//        onDisplay.delete(key); 
-//      })
-//      
-//      ir.forEach((coord)=>{
-//        var key = Utils.pair(coord.x, coord.z);
-//        var chunkObj = mazeBuilder.chunks.get(key);
-//        if (chunkObj) {
-//          if (!onDisplay.has(key)) {
-//            chunkObj.wallMesh.visible = true;
-//            onDisplay.add(key);
-//          }
-//        }
-//      });
-//      floor.position.x = player.body.position.x;
-//      floor.position.z = player.body.position.z;
-//      prevChunkRequestTime = time;
-//  } 
-  
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
     socket.send(messageBuilder.state(player));

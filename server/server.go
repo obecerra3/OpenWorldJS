@@ -4,17 +4,16 @@ import (
         "io/ioutil"
         "fmt"
         "log"
-        "database/sql"
         "net/http"
         "encoding/binary"
         "math"
         "maze/game"
-        "maze/db"
-        "time"
         "github.com/gorilla/websocket"
 )
 
-var players game.Players
+var games game.Games
+var maze game.Maze
+var idGenerator game.IDGenerator
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
     WriteBufferSize: 1024,
@@ -27,57 +26,23 @@ func bytesToFloat32(bytes []byte) float32 {
     return float
 }
 
-func nearbyPlayerUpdateLoop(player *game.Player) {
-  for player.Connected {
-    player.UpdateNearbyPlayers(players, 100);
-    time.Sleep(10*time.Second)
-  }
-}
-
-func chunkSendLoop (player *game.Player) {
-  for player.Connected {
-    for _,neighbour := range player.ComputeChunk().GetNeighbours() {
-      if _, has := player.DeliveredChunks[neighbour]; !has {
-        player.Conn.WriteMessage(websocket.BinaryMessage, game.GetChunk(neighbour).Encode())
-        player.DeliveredChunks[neighbour] = struct{}{}
-        time.Sleep(500*time.Millisecond)
-      }
-    }
-    time.Sleep(5*time.Second)
-  }
-}
-
-func SavePlayerPositionLoop (player *game.Player, dbconn *sql.DB) {
-  for player.Connected {
-    db.SavePlayerPosition(player, dbconn)
-    time.Sleep(10*time.Second)
-  }
-}
 
 func handler(w http.ResponseWriter, r *http.Request) {
     upgrader.CheckOrigin = func(r *http.Request) bool { return true }
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil { log.Println(err); return }
-    _, helloData, err := conn.ReadMessage()
+    _, usernameData, err := conn.ReadMessage()
     if err != nil { log.Println(err); return }
-    dbconn, err := db.Connect()
     if err != nil {log.Println(err); return }
     var player game.Player
-    player.Username = string(helloData[4:])
-    secret := binary.BigEndian.Uint32(helloData[:4])
-    if player.ID = uint16(db.VerifyPlayer(&player, secret, dbconn)); player.ID == 0 { fmt.Println("failed to verify player"); return }
+    player.Username = string(usernameData)
     player.Conn = conn
     player.Connected = true
     defer func () { player.Connected = false } ()
-    player.Position = db.GetSavedPosition(&player, dbconn)
-    player.NearbyPlayers = make(map[*game.Player]struct{})
-    player.KnowsAboutMe = make(map[*game.Player]struct{})
-    player.DeliveredChunks = make(map[game.ChunkCoord]struct{})
-    go nearbyPlayerUpdateLoop(&player)
-    go chunkSendLoop(&player)
-    go SavePlayerPositionLoop(&player, dbconn)
-    players.Add(&player)
-    defer players.Remove(&player)
+    fmt.Println("attempting to join game")
+    game := player.JoinGame(&games)
+    fmt.Println(player.Username, " joined ", game)
+    player.SendMaze(&maze)
     for {
       _, data, err := conn.ReadMessage()
       if err != nil { log.Println(err); return }
@@ -85,13 +50,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
        case 0:  
          player.Position.X = bytesToFloat32(data[2:6])
          player.Position.Z = bytesToFloat32(data[6:10])
-         for nearbyPlayer := range player.NearbyPlayers {
-           nearbyPlayer.SendState(&player, data[1:]);
-         }
+         //player.BroadCastPosition(game)
        case 3: // JUMP
-        for nearbyPlayer := range player.NearbyPlayers {
-           nearbyPlayer.SendAction(3, &player);
-         }
+        // send jump
        default: 
         panic("I got something weird")
       }
@@ -100,13 +61,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 
 func main () {
-  maze, err := ioutil.ReadFile("maze.bin")
+  mazedata, err := ioutil.ReadFile("maze.bin")
   if err != nil {
     fmt.Print(err)
   }
-  game.Maze = maze
-  players.Set = make(map[*game.Player]struct{})
-      
+  
+  maze = game.Maze {mazedata}
+  
   http.HandleFunc("/", handler)
   http.ListenAndServeTLS(":8000", "certs/cert.pem", "certs/privkey.pem", nil)
 
