@@ -41,7 +41,7 @@ var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
 
-var player = new Player (username, new THREE.Vector3(0,PLAYER_HEIGHT,0));
+var player = new Player (username, new THREE.Vector3(0,PLAYER_HEIGHT,0), false);
 
 var flashLight, floor;
 
@@ -370,6 +370,20 @@ function processPlayerState (buffer) {
   player.isCrouched = isCrouched; 
 }
 
+function processNewGame(buffer) {
+  var dataView = new DataView(buffer);
+  player.isHunted = dataView.getUint8(0) != 0;
+  console.log("received new game, hunted: ", player.isHunted);
+}
+
+function processIntroduction (buffer) {
+    var dataView = new DataView(buffer);
+    var id = dataView.getUint8(0);
+    var isHunted = dataView.getUint8(1) != 0;
+    
+
+
+}
 
 async function receive (blob) {
   var arrayBuffer = await new Response(blob).arrayBuffer();
@@ -387,6 +401,8 @@ async function receive (blob) {
     case 3:
       processAction(arrayBuffer.slice(1), 3);
       break;
+    case 4:
+      processNewGame(arrayBuffer.slice(1));
   }
 }
 

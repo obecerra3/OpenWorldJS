@@ -14,26 +14,30 @@ actions
     3
 
 server->player
-  MEET (3 + username.length)
+  INTRODUCTION (3 + username.length)
     0                   (1)
-    id                  (2)
+    id                  (1)
+    isHunted            (1)
     username
   MAZE (1 + SIZE*SIZE)
     1                   (1)
     mazeData            (SIZE*SIZE)
   PLAYERSTATE
     2                   (1)
-    id                  (2)
+    id                  (1)
     isCrouched          (1)
     positionX           (4)
     positionZ           (4)
     lookDirX            (4)
     lookDirY            (4)
     lookDirZ            (4)
+  GAME
+    4
+    isHunted            (1)
 actions
   PLAYERJUMP 
     3                   (1)
-    id                  (2)
+    id                  (1)
 
 
 
