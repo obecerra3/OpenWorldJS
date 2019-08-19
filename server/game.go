@@ -4,7 +4,6 @@ import (
   //"fmt"
   "sync"
   "math"
-  "encoding/binary"
   "github.com/gorilla/websocket"
 )
 
@@ -21,10 +20,6 @@ type Maze struct {
   Data []byte
 }
 
-type IDGenerator struct {
-  sync.Mutex
-  nextID uint16
-}
 
 type Games struct {
   sync.RWMutex
@@ -40,72 +35,90 @@ type Game struct {
 type Player struct {
   sync.Mutex
   Conn *websocket.Conn
-  Hunted bool
-  Connected bool
+  isHunted byte
   Username string
-  ID uint16
+  ID byte
   Position Vec2
 }
 
-func (idGenerator *IDGenerator) GetNextID () uint16 {
-  idGenerator.Lock()
-  id := idGenerator.nextID
-  idGenerator.nextID++
-  idGenerator.Unlock()
-  return id
-}
-
-func (game *Game) add (player *Player) bool {
-  game.Lock()
-  if game.isFull() { return false }
-  for _,otherPlayer := range game.Players {
-    otherPlayer.Introduce (player)
-  }
-  game.Players = append(game.Players, player)
-  if len(game.Players) <= NUM_HUNTED {
-    player.Hunted = true
-  }
-  game.Unlock()
-  return true
-}
 
 func (game *Game) isFull () bool  {
+  game.RLock()
+  defer game.RUnlock()
   return len(game.Players) < NUM_HUNTERS + NUM_HUNTED;
 }
 
-
-func (games *Games) newGameWithPlayer (player * Player) *Game {
-    games.Lock()
-    players := make([]*Player, NUM_HUNTERS+NUM_HUNTED)
-    players[0] = player
-    game := Game { Players: players }
-    games.array = append(games.array, &game)
-    games.Unlock()
-    return &game
+func (game *Game) Remove (player *Player) {
+  game.Lock()
+  for i,p := range game.Players {
+      if p == player {
+        game.Players[i] = game.Players[len(game.Players)-1]
+        game.Players = game.Players[:len(game.Players)-1]
+      }
+  }
+  game.Unlock()
 }
+
 
 func (player *Player) JoinGame (games *Games) *Game {
   games.RLock()
   for _, game := range games.array {
     if !game.isFull() {
-      if !game.add(player) { continue }
+      game.add(player)
+      player.sendGame(game)
       games.RUnlock()
       return game
     }
   }
   games.RUnlock()
-  return games.newGameWithPlayer(player)
+  return games.newGame(player)
 }
 
 
+func (game *Game) add (player *Player) bool {
+  game.Lock()
+  if game.isFull() { return false }
+  for _,otherPlayer := range game.Players {
+    otherPlayer.Introduce(player)
+  }
+  game.Players = append(game.Players, player)
+  player.ID = byte(len(game.Players)-1)
+  player.isHunted = 0
+  game.Unlock()
+  return true
+}
+
+func (games *Games) newGame (player * Player) *Game {
+    games.Lock()
+    players := make([]*Player, 1)
+    players[0] = player
+    player.ID = 0
+    player.isHunted = 1
+    game := Game { Players: players }
+    games.array = append(games.array, &game)
+    player.sendGame(&game)
+    games.Unlock()
+    return &game
+}
+
 func (dstPlayer *Player) Introduce (srcPlayer *Player) {
   dstPlayer.Lock()
-  payload := make([]byte, 2 + len(srcPlayer.Username))
+  payload := make([]byte, 3 + len(srcPlayer.Username))
   payload[0] = 0
-  binary.BigEndian.PutUint16(payload[1:], srcPlayer.ID)
+  payload[1] = srcPlayer.ID
+  payload[2] = srcPlayer.isHunted 
   copy(payload[3:], []byte(srcPlayer.Username))
   dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
   dstPlayer.Unlock()
+}
+
+func (player *Player) sendGame (game *Game) {
+  payload := make([]byte, 2)
+  payload[0] = 4
+  payload[1] = player.isHunted
+  player.Lock()
+  player.Conn.WriteMessage(websocket.BinaryMessage, payload)
+  player.Unlock()
 }
 
 func (player *Player) SendMaze (maze *Maze) {
@@ -118,9 +131,9 @@ func (player *Player) SendMaze (maze *Maze) {
 }
 
 func (dstPlayer *Player) SendAction (code byte, srcPlayer *Player) {
-  payload := make([]byte, 3)
+  payload := make([]byte, 2)
   payload[0] = code
-  binary.BigEndian.PutUint16(payload[1:], srcPlayer.ID)
+  payload[1] = srcPlayer.ID
   dstPlayer.Lock()
   dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
   dstPlayer.Unlock()
@@ -128,10 +141,10 @@ func (dstPlayer *Player) SendAction (code byte, srcPlayer *Player) {
 
   
 func (dstPlayer *Player) SendState (srcPlayer *Player, data []byte) {
-  payload := make([]byte, 3+len(data))
+  payload := make([]byte, 2+len(data))
   payload[0] = 2
-  binary.BigEndian.PutUint16(payload[1:3], srcPlayer.ID)
-  copy(payload[3:], data)
+  payload[1] = srcPlayer.ID
+  copy(payload[2:], data)
   dstPlayer.Lock()
   dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
   dstPlayer.Unlock()

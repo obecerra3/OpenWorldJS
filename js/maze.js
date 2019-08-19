@@ -1,6 +1,7 @@
 var THREE = require('three');
 var Utils = require('./Utils.js');
 var Player = require('./Player.js');
+var Game = require('./Game.js');
 var MazeBuilder = require('./MazeBuilder.js');
 var Collider = require('./Collider.js');
 var MessageBuilder = require('./MessageBuilder.js');
@@ -21,7 +22,7 @@ const MAZE_SIZE = 55;
 
 const Y = new THREE.Vector3(0,1,0);
 
-var camera, scene, renderer, controls, theta, mazeMesh;
+var camera, scene, renderer, controls, theta, mazeMesh, currentGame;
 
 var otherPlayers = {};
 
@@ -373,16 +374,14 @@ function processPlayerState (buffer) {
 function processNewGame(buffer) {
   var dataView = new DataView(buffer);
   player.isHunted = dataView.getUint8(0) != 0;
-  console.log("received new game, hunted: ", player.isHunted);
+  currentGame = new Game (player);
+  console.log(currentGame);
 }
 
 function processIntroduction (buffer) {
     var dataView = new DataView(buffer);
     var id = dataView.getUint8(0);
     var isHunted = dataView.getUint8(1) != 0;
-    
-
-
 }
 
 async function receive (blob) {

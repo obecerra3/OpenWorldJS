@@ -13,7 +13,6 @@ import (
 
 var games game.Games
 var maze game.Maze
-var idGenerator game.IDGenerator
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
     WriteBufferSize: 1024,
@@ -37,10 +36,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
     var player game.Player
     player.Username = string(usernameData)
     player.Conn = conn
-    player.Connected = true
-    defer func () { player.Connected = false } ()
-    fmt.Println("attempting to join game")
     game := player.JoinGame(&games)
+    defer game.Remove(&player)
     fmt.Println(player.Username, " joined ", game)
     player.SendMaze(&maze)
     for {
