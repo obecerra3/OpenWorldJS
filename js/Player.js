@@ -84,10 +84,7 @@ class Player {
         this.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
         this.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
 
-        var playerChunk = this.getCurrentChunk(CELL_SIZE, CHUNK_SIZE);
-        var currentChunk = mazeBuilder.chunks.get(Utils.pair(playerChunk.x, playerChunk.z));
-        if (currentChunk != undefined) collider.collide(this, currentChunk.wallMesh);
-
+        if (mazeMesh != undefined) { collider.collide(player, mazeMesh); }
 
         this.body.position.x += this.velocity.x*delta;
         this.body.position.y += this.velocity.y*delta;
