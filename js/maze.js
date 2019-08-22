@@ -377,7 +377,6 @@ function processIntroduction (buffer) {
   var isHunted = dataView.getUint8(1) != 0;
   var decoder = new TextDecoder("utf-8");
   var username = decoder.decode(buffer.slice(2));
-  console.log(username, id);
   var player = new Player (username, new THREE.Vector3(), isHunted);
   otherPlayers[id] = player;
   scene.add(player.body);
