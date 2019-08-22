@@ -47,9 +47,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
        case 0:  
          player.Position.X = bytesToFloat32(data[2:6])
          player.Position.Z = bytesToFloat32(data[6:10])
-         //player.BroadCastPosition(game)
+         for _,dstPlayer := range game.Players {
+            if dstPlayer != &player {
+              dstPlayer.SendState(&player, data[1:])
+            }
+         }
        case 3: // JUMP
-        // send jump
+         for _,dstPlayer := range game.Players {
+            if dstPlayer != &player {
+              dstPlayer.SendAction(3, &player)
+            }
+         }
        default: 
         panic("I got something weird")
       }

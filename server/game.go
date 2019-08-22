@@ -22,12 +22,12 @@ type Maze struct {
 
 
 type Games struct {
-  sync.RWMutex
+  sync.Mutex
   array []*Game
 }
 
 type Game struct {
-  sync.RWMutex
+  sync.Mutex
   Players []*Player
   inProgress bool
 }
@@ -43,61 +43,57 @@ type Player struct {
 
 
 func (game *Game) isFull () bool  {
-  game.RLock()
-  defer game.RUnlock()
-  return len(game.Players) < NUM_HUNTERS + NUM_HUNTED;
+  return len(game.Players) == (NUM_HUNTERS + NUM_HUNTED);
 }
 
 func (game *Game) Remove (player *Player) {
   game.Lock()
   for i,p := range game.Players {
-      if p == player {
-        game.Players[i] = game.Players[len(game.Players)-1]
-        game.Players = game.Players[:len(game.Players)-1]
-      }
+    if p == player {
+      game.Players[i] = game.Players[len(game.Players)-1]
+      game.Players = game.Players[:len(game.Players)-1]
+    }
+  }
+  for _,dstPlayer := range game.Players {
+    dstPlayer.SendLeft(player)
   }
   game.Unlock()
 }
 
 
 func (player *Player) JoinGame (games *Games) *Game {
-  games.RLock()
+  games.Lock()
+  defer games.Unlock()
   for _, game := range games.array {
+    game.Lock()
     if !game.isFull() {
       game.add(player)
-      player.sendGame(game)
-      games.RUnlock()
+      game.Unlock()
       return game
     }
+    game.Unlock()
   }
-  games.RUnlock()
   return games.newGame(player)
 }
 
 
-func (game *Game) add (player *Player) bool {
-  game.Lock()
-  if game.isFull() { return false }
+func (game *Game) add (player *Player) {
+  player.ID = byte(len(game.Players))
   for _,otherPlayer := range game.Players {
     otherPlayer.Introduce(player)
+    player.Introduce(otherPlayer)
   }
   game.Players = append(game.Players, player)
-  player.ID = byte(len(game.Players)-1)
   player.isHunted = 0
-  game.Unlock()
-  return true
 }
 
 func (games *Games) newGame (player * Player) *Game {
-    games.Lock()
     players := make([]*Player, 1)
     players[0] = player
     player.ID = 0
     player.isHunted = 1
     game := Game { Players: players }
     games.array = append(games.array, &game)
-    player.sendGame(&game)
-    games.Unlock()
     return &game
 }
 
@@ -112,14 +108,6 @@ func (dstPlayer *Player) Introduce (srcPlayer *Player) {
   dstPlayer.Unlock()
 }
 
-func (player *Player) sendGame (game *Game) {
-  payload := make([]byte, 2)
-  payload[0] = 4
-  payload[1] = player.isHunted
-  player.Lock()
-  player.Conn.WriteMessage(websocket.BinaryMessage, payload)
-  player.Unlock()
-}
 
 func (player *Player) SendMaze (maze *Maze) {
   payload := make([]byte, 1 + (MAZE_SIZE*MAZE_SIZE)/8)
@@ -145,6 +133,15 @@ func (dstPlayer *Player) SendState (srcPlayer *Player, data []byte) {
   payload[0] = 2
   payload[1] = srcPlayer.ID
   copy(payload[2:], data)
+  dstPlayer.Lock()
+  dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
+  dstPlayer.Unlock()
+}
+
+func (dstPlayer *Player) SendLeft (srcPlayer *Player) {
+  payload := make([]byte, 2)
+  payload[0] = 4
+  payload[1] = srcPlayer.ID
   dstPlayer.Lock()
   dstPlayer.Conn.WriteMessage(websocket.BinaryMessage, payload)
   dstPlayer.Unlock()

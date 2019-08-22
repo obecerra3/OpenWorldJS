@@ -17,7 +17,7 @@ const PLAYER_SPEED = 0.0005;
 const PLAYER_JUMP = 0.1;
 const GRAVITY = 9.8;
 const CELL_SIZE = 12;
-const UPDATE_DELTA = 100.0;
+const UPDATE_DELTA = 75.0;
 const MAZE_SIZE = 55;
 
 const Y = new THREE.Vector3(0,1,0);
@@ -293,24 +293,24 @@ function animate() {
     prevUpdateTime = time;
   }
   
-//  Object.values(otherPlayers).forEach((p) => {
-//    p.body.position.x += p.velocity.x*delta;
-//    p.body.position.z += p.velocity.z*delta;
-//    p.body.position.y += p.velocity.y*delta;
-//  
-//    if (p.isCrouched) {
-//      p.body.scale.y = 0.5;
-//    } else {
-//      p.body.scale.y = 1.0;
-//    }
-//    
-//    if (p.body.position.y <= PLAYER_HEIGHT) {
-//      p.velocity.y = 0;
-//      p.body.position.y = PLAYER_HEIGHT;
-//    } else {
-//      p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
-//    }
-//  });
+  Object.values(otherPlayers).forEach((p) => {
+    p.body.position.x += p.velocity.x*delta;
+    p.body.position.z += p.velocity.z*delta;
+    p.body.position.y += p.velocity.y*delta;
+  
+    if (p.isCrouched) {
+      p.body.scale.y = 0.5;
+    } else {
+      p.body.scale.y = 1.0;
+    }
+    
+    if (p.body.position.y <= PLAYER_HEIGHT) {
+      p.velocity.y = 0;
+      p.body.position.y = PLAYER_HEIGHT;
+    } else {
+      p.velocity.y -= GRAVITY * PLAYER_MASS * delta;
+    }
+  });
   prevTime = time;
   renderer.render( scene, camera );
   stats.end();
@@ -338,7 +338,7 @@ function processMaze (buffer) {
 
 function processAction (buffer, code) {
   var dataView = new DataView(buffer);
-  var id = dataView.getUint16(0);
+  var id = dataView.getUint8(0);
   var player = otherPlayers[id];
   if (player != undefined) {
     switch (code) {
@@ -353,13 +353,13 @@ function processAction (buffer, code) {
 
 function processPlayerState (buffer) {
   var dataView = new DataView(buffer);
-  var id = dataView.getUint16(0);
-  var isCrouched = dataView.getUint8(2);
-  var positionX = dataView.getFloat32(3);
-  var positionZ = dataView.getFloat32(7);
-  var lookDirectionX = dataView.getFloat32(11);
-  var lookDirectionY = dataView.getFloat32(15);
-  var lookDirectionZ = dataView.getFloat32(19);
+  var id = dataView.getUint8(0);
+  var isCrouched = dataView.getUint8(1);
+  var positionX = dataView.getFloat32(2);
+  var positionZ = dataView.getFloat32(6);
+  var lookDirectionX = dataView.getFloat32(10);
+  var lookDirectionY = dataView.getFloat32(14);
+  var lookDirectionZ = dataView.getFloat32(18);
   var player = otherPlayers[id];
   var yVelocity = player.velocity.y;
   var newVelocity = new THREE.Vector3(positionX-player.body.position.x, 0, positionZ-player.body.position.z).divideScalar(UPDATE_DELTA);
@@ -371,17 +371,23 @@ function processPlayerState (buffer) {
   player.isCrouched = isCrouched; 
 }
 
-function processNewGame(buffer) {
+function processIntroduction (buffer) {
   var dataView = new DataView(buffer);
-  player.isHunted = dataView.getUint8(0) != 0;
-  currentGame = new Game (player);
-  console.log(currentGame);
+  var id = dataView.getUint8(0);
+  var isHunted = dataView.getUint8(1) != 0;
+  var decoder = new TextDecoder("utf-8");
+  var username = decoder.decode(buffer.slice(2));
+  console.log(username, id);
+  var player = new Player (username, new THREE.Vector3(), isHunted);
+  otherPlayers[id] = player;
+  scene.add(player.body);
 }
 
-function processIntroduction (buffer) {
-    var dataView = new DataView(buffer);
-    var id = dataView.getUint8(0);
-    var isHunted = dataView.getUint8(1) != 0;
+function processLeft (buffer) {
+  var dataView = new DataView(buffer);
+  var id = dataView.getUint8(0);
+  scene.remove(otherPlayers[id].body);
+  delete otherPlayers[id];
 }
 
 async function receive (blob) {
@@ -401,7 +407,8 @@ async function receive (blob) {
       processAction(arrayBuffer.slice(1), 3);
       break;
     case 4:
-      processNewGame(arrayBuffer.slice(1));
+      processLeft(arrayBuffer.slice(1));
+      break;
   }
 }
 

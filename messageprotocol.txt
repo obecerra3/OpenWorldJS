@@ -31,9 +31,9 @@ server->player
     lookDirX            (4)
     lookDirY            (4)
     lookDirZ            (4)
-  GAME
+  LEFT
     4
-    isHunted            (1)
+    id
 actions
   PLAYERJUMP 
     3                   (1)
