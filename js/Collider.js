@@ -30,6 +30,7 @@ class Collider {
     
     
     if (intersections.length > 0) {
+      console.log(intersections.length);
       if (intersections.length == 3) { // special cases (read: dumb hack)
         intersections.sort((x,y)=>x.distance > y.distance);
         intersections.slice(0,2).forEach((x)=> {
@@ -37,14 +38,6 @@ class Collider {
             player.velocity.projectOnPlane(x.face.normal);
           }
         });
-      } else if (intersections.length == 5) {
-        intersections.sort((x,y)=>x.distance > y.distance);
-        intersections.slice(0,3).forEach((x)=> {
-          if (x.face.normal.dot(player.velocity) < 0) {
-            player.velocity.projectOnPlane(x.face.normal);
-          }
-        });
-      
       } else {
         intersections.forEach((x)=> {
           if (x.face.normal.dot(player.velocity) < 0) {

@@ -23,7 +23,7 @@ const NUM_HUNTERS = 3;
 
 const Y = new THREE.Vector3(0,1,0);
 
-var camera, scene, renderer, controls, theta, mazeMesh, gameinfo;
+var camera, scene, renderer, controls, mazeMesh, gameinfo;
 
 var otherPlayers = {};
 
@@ -214,37 +214,12 @@ function animate() {
   stats.begin();
   var time = performance.now();
   var delta = (time - prevTime);
-  myPlayer.velocity.x -= myPlayer.velocity.x * 0.01 * delta;
-  myPlayer.velocity.z -= myPlayer.velocity.z * 0.01 * delta;
-  myPlayer.velocity.y -= myPlayer.velocity.y * 0.01 * delta;
   
-  moveDirection.z = Number(moveForward) - Number(moveBackward);
-  moveDirection.x = Number(moveLeft) - Number(moveRight);
-  moveDirection.normalize(); 
-  
-  controls.getDirection(myPlayer.lookDirection);
-  
-  if (myPlayer.lookDirection.z > 0) {
-    theta = Math.atan(myPlayer.lookDirection.x / myPlayer.lookDirection.z);
-  } else if (myPlayer.lookDirection.x > 0) {
-    theta = Math.PI/2 + Math.atan(-myPlayer.lookDirection.z/myPlayer.lookDirection.x);
-  } else {
-    if (myPlayer.lookDirection.x == 0) {
-      theta = Math.PI;
-    } else {
-      theta = -Math.PI/2 - Math.atan(-myPlayer.lookDirection.z/-myPlayer.lookDirection.x);
-    }
-  }
-  moveDirection.applyAxisAngle(Y, theta);
-
-  myPlayer.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
-  myPlayer.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
+  myPlayer.update(delta, moveDirection, moveForward, moveBackward, moveLeft, moveRight, Y, PLAYER_SPEED, controls);
   
   if (mazeMesh != undefined) { collider.collide(myPlayer, mazeMesh); }
   
-  myPlayer.body.position.x += myPlayer.velocity.x*delta;
-  myPlayer.body.position.y += myPlayer.velocity.y*delta;
-  myPlayer.body.position.z += myPlayer.velocity.z*delta;
+  myPlayer.move(delta);
   
   camera.position.x = myPlayer.body.position.x;
   camera.position.z = myPlayer.body.position.z;
