@@ -5,9 +5,9 @@ var Game = require('./Game.js');
 var MazeBuilder = require('./MazeBuilder.js');
 var Collider = require('./Collider.js');
 var MessageBuilder = require('./MessageBuilder.js');
+var InfoManager = require('./InfoManager.js');
 var Stats = require('stats.js');
 var PointerLockControls = require('pointerlockcontrols');
-
 
 
 const PLAYER_HEIGHT = 10;
@@ -19,10 +19,11 @@ const GRAVITY = 9.8;
 const CELL_SIZE = 12;
 const UPDATE_DELTA = 75.0;
 const MAZE_SIZE = 55;
+const NUM_HUNTERS = 3;
 
 const Y = new THREE.Vector3(0,1,0);
 
-var camera, scene, renderer, controls, theta, mazeMesh, currentGame;
+var camera, scene, renderer, controls, theta, mazeMesh, gameinfo;
 
 var otherPlayers = {};
 
@@ -41,12 +42,13 @@ var moveDirection = new THREE.Vector3();
 var mazeBuilder = new MazeBuilder();
 var messageBuilder = new MessageBuilder();
 var collider = new Collider(PLAYER_SIZE);
+var infoManager = new InfoManager();
 
-var player = new Player (username, new THREE.Vector3(0,PLAYER_HEIGHT,0), false);
+var myPlayer = new Player (username, new THREE.Vector3(0,PLAYER_HEIGHT,0), false);
 
 var flashLight, floor;
 
-console.log(player.username); 
+console.log(myPlayer.username); 
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
@@ -64,7 +66,8 @@ function init() {
   
   stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
   document.body.appendChild( stats.dom );
-
+  
+  infoManager.addPlayerInfo(myPlayer, false);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   camera.position.y = PLAYER_HEIGHT;
@@ -129,7 +132,7 @@ function init() {
   flashLight.visible = true;
 
   
-  scene.add(player.body);
+  scene.add(myPlayer.body);
   
 
   window.addEventListener( 'resize', onWindowResize, false );
@@ -149,8 +152,8 @@ function onKeyDown( event ) {
           flashLight.visible = !flashLight.visible;
           break;
         case 16:
-          player.isCrouched = true;
-          if (player.body.position.y > PLAYER_HEIGHT) player.velocity.y -= PLAYER_JUMP;
+          myPlayer.isCrouched = true;
+          if (myPlayer.body.position.y > PLAYER_HEIGHT) myPlayer.velocity.y -= PLAYER_JUMP;
           break;
         case 38: // up
         case 87: // w
@@ -170,7 +173,7 @@ function onKeyDown( event ) {
           break;
         case 32: // space 
           if ( canJump === true ) {
-            player.velocity.y += PLAYER_JUMP;
+            myPlayer.velocity.y += PLAYER_JUMP;
             //canJump = false;
             socket.send(messageBuilder.jump());
           } 
@@ -183,7 +186,7 @@ function onKeyUp ( event ) {
     if (controls.isLocked) {
       switch ( event.keyCode ) {
         case 16:
-          player.isCrouched = false;
+          myPlayer.isCrouched = false;
         case 38: // up
         case 87: // w
           moveForward = false;
@@ -204,18 +207,6 @@ function onKeyUp ( event ) {
     }
 }
 
-function inRange (c) {
-  return [{x: c.x-1, z: c.z-1},
-          {x: c.x-1, z: c.z},
-          {x: c.x-1, z: c.z+1},
-          {x: c.x,   z: c.z-1},
-          {x: c.x,   z: c.z},
-          {x: c.x,   z: c.z+1},
-          {x: c.x+1, z: c.z-1},
-          {x: c.x+1, z: c.z},
-          {x: c.x+1, z: c.z+1}];
-}
-
 
 function animate() {
 
@@ -223,73 +214,73 @@ function animate() {
   stats.begin();
   var time = performance.now();
   var delta = (time - prevTime);
-  player.velocity.x -= player.velocity.x * 0.01 * delta;
-  player.velocity.z -= player.velocity.z * 0.01 * delta;
-  player.velocity.y -= player.velocity.y * 0.01 * delta;
+  myPlayer.velocity.x -= myPlayer.velocity.x * 0.01 * delta;
+  myPlayer.velocity.z -= myPlayer.velocity.z * 0.01 * delta;
+  myPlayer.velocity.y -= myPlayer.velocity.y * 0.01 * delta;
   
   moveDirection.z = Number(moveForward) - Number(moveBackward);
   moveDirection.x = Number(moveLeft) - Number(moveRight);
   moveDirection.normalize(); 
   
-  controls.getDirection(player.lookDirection);
+  controls.getDirection(myPlayer.lookDirection);
   
-  if (player.lookDirection.z > 0) {
-    theta = Math.atan(player.lookDirection.x / player.lookDirection.z);
-  } else if (player.lookDirection.x > 0) {
-    theta = Math.PI/2 + Math.atan(-player.lookDirection.z/player.lookDirection.x);
+  if (myPlayer.lookDirection.z > 0) {
+    theta = Math.atan(myPlayer.lookDirection.x / myPlayer.lookDirection.z);
+  } else if (myPlayer.lookDirection.x > 0) {
+    theta = Math.PI/2 + Math.atan(-myPlayer.lookDirection.z/myPlayer.lookDirection.x);
   } else {
-    if (player.lookDirection.x == 0) {
+    if (myPlayer.lookDirection.x == 0) {
       theta = Math.PI;
     } else {
-      theta = -Math.PI/2 - Math.atan(-player.lookDirection.z/-player.lookDirection.x);
+      theta = -Math.PI/2 - Math.atan(-myPlayer.lookDirection.z/-myPlayer.lookDirection.x);
     }
   }
   moveDirection.applyAxisAngle(Y, theta);
 
-  player.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
-  player.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
+  myPlayer.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
+  myPlayer.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
   
-  if (mazeMesh != undefined) { collider.collide(player, mazeMesh); }
+  if (mazeMesh != undefined) { collider.collide(myPlayer, mazeMesh); }
   
-  player.body.position.x += player.velocity.x*delta;
-  player.body.position.y += player.velocity.y*delta;
-  player.body.position.z += player.velocity.z*delta;
+  myPlayer.body.position.x += myPlayer.velocity.x*delta;
+  myPlayer.body.position.y += myPlayer.velocity.y*delta;
+  myPlayer.body.position.z += myPlayer.velocity.z*delta;
   
-  camera.position.x = player.body.position.x;
-  camera.position.z = player.body.position.z;
+  camera.position.x = myPlayer.body.position.x;
+  camera.position.z = myPlayer.body.position.z;
   
   flashLight.position.copy(camera.position);
   
   flashLight.position.y -= 1;
-  flashLight.position.x += player.lookDirection.x*3.0;
-  flashLight.position.z += player.lookDirection.z*3.0;
+  flashLight.position.x += myPlayer.lookDirection.x*3.0;
+  flashLight.position.z += myPlayer.lookDirection.z*3.0;
   
-  flashLight.target.position.set(flashLight.position.x + player.lookDirection.x,
-                                 flashLight.position.y + player.lookDirection.y,
-                                 flashLight.position.z + player.lookDirection.z);
+  flashLight.target.position.set(flashLight.position.x + myPlayer.lookDirection.x,
+                                 flashLight.position.y + myPlayer.lookDirection.y,
+                                 flashLight.position.z + myPlayer.lookDirection.z);
   
   flashLight.target.updateMatrixWorld();
   
   
-  if (player.isCrouched) {
+  if (myPlayer.isCrouched) {
     camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
   } else {
     camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
   }
   
   
-  if (player.body.position.y <= PLAYER_HEIGHT) {
-    if (!player.isCrouched) {
+  if (myPlayer.body.position.y <= PLAYER_HEIGHT) {
+    if (!myPlayer.isCrouched) {
       canJump = true;
     }
-    player.velocity.y = 0;
+    myPlayer.velocity.y = 0;
   } else { 
-//    player.velocity.y -= GRAVITY*PLAYER_MASS*delta;
-    camera.position.y = player.body.position.y;
+//    myPlayer.velocity.y -= GRAVITY*PLAYER_MASS*delta;
+    camera.position.y = myPlayer.body.position.y;
   }
   
   if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
-    socket.send(messageBuilder.state(player));
+    socket.send(messageBuilder.state(myPlayer));
     prevUpdateTime = time;
   }
   
@@ -379,6 +370,10 @@ function processIntroduction (buffer) {
   var username = decoder.decode(buffer.slice(2));
   var player = new Player (username, new THREE.Vector3(), isHunted);
   otherPlayers[id] = player;
+  infoManager.addPlayerInfo(player, false);
+  if (Object.keys(otherPlayers).length == NUM_HUNTERS) {
+    infoManager.showPlayerClass(myPlayer, otherPlayers);
+  }
   scene.add(player.body);
 }
 
@@ -387,6 +382,7 @@ function processLeft (buffer) {
   var id = dataView.getUint8(0);
   scene.remove(otherPlayers[id].body);
   delete otherPlayers[id];
+  infoManager.playerLeft(myPlayer, Object.values(otherPlayers));
 }
 
 async function receive (blob) {

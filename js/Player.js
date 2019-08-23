@@ -3,7 +3,7 @@ var Utils = require('./Utils.js');
 
 
 class Player {
-  constructor(username,position,isHunted,velocity=new THREE.Vector3(),lookDirection=new THREE.Vector3(), isCrouched=false) {
+  constructor(username,position,isHunted=false,velocity=new THREE.Vector3(),lookDirection=new THREE.Vector3(), isCrouched=false) {
     this.username = username; 
     this.velocity = velocity;
     this.lookDirection = lookDirection;

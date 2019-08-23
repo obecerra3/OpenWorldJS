@@ -29,7 +29,8 @@ if (!isset($_SESSION["username"])) {
   </head>
   <body>
     <div id="blocker">
-     <div id="info"><?php echo $username?><br><br><br><br><br><br>space - jump/fly<br>shift - crouch/descend<br>f - toggle flashlight</div>
+     <div id="info">
+     </div>
     </div>
     <script src="build.js"></script>
   </body>
