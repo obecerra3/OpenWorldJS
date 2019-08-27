@@ -1,28 +1,18 @@
 var THREE = require('three');
 var Utils = require('./Utils.js');
 var GLTFLoader =  require('three-gltf-loader');
-//import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-
-const PLAYER_HEIGHT = 10;
-const PLAYER_SIZE = 5;
-const PLAYER_MASS = 0.00005;
-const PLAYER_SPEED = 0.0005;
-const PLAYER_JUMP = 0.1;
-const GRAVITY = 9.8;
-const CELL_SIZE = 12;
-const UPDATE_DELTA = 100.0;
-const CHUNK_REQUEST_DELTA = 3000;
-const CHUNK_SIZE = 27;
 
 const Y = new THREE.Vector3(0,1,0);
 
 class Player {
     constructor(username, position, addModelToScene, velocity=new THREE.Vector3(), lookDirection=new THREE.Vector3(), isCrouched=false) {
-        console.log("username: ",username);
-        console.log("HERE");
         this.username = username;
         this.velocity = velocity;
         this.lookDirection = lookDirection;
+        this.prevPosition = new THREE.Vector3();
+        this.moveDirection = new THREE.Vector3();
+        this.flashlight = 
+
         this.body = {
             position: {x: 0, y: 0, z: 0},
             scale: {x: 0, y: 0, z: 0}
@@ -57,7 +47,7 @@ class Player {
         });
     }
 
-    animateUpdate(delta, theta, camera, controls, canJump, flashLight, mazeBuilder, moveDirection, moveForward, moveBackward, moveLeft, moveRight) {
+    animateUpdate(delta, theta, camera, controls, canJump, flashLight, mazeBuilder, moveDirection, moveForward, moveBackward, moveLeft, moveRight, mazeMesh) {
         this.velocity.x -= this.velocity.x * 0.01 * delta;
         this.velocity.z -= this.velocity.z * 0.01 * delta;
         this.velocity.y -= this.velocity.y * 0.01 * delta;
@@ -81,8 +71,8 @@ class Player {
         }
         moveDirection.applyAxisAngle(Y, theta);
 
-        this.velocity.z += moveDirection.z * PLAYER_SPEED * delta;
-        this.velocity.x += moveDirection.x * PLAYER_SPEED * delta;
+        this.velocity.z += moveDirection.z * Utils.PLAYER_SPEED * delta;
+        this.velocity.x += moveDirection.x * Utils.PLAYER_SPEED * delta;
 
         if (mazeMesh != undefined) { collider.collide(player, mazeMesh); }
 
@@ -108,13 +98,13 @@ class Player {
 
 
         if (this.isCrouched) {
-            camera.position.y -= Math.min(0.75, camera.position.y-PLAYER_HEIGHT/2);
+            camera.position.y -= Math.min(0.75, camera.position.y - Utils.PLAYER_HEIGHT/2);
         } else {
-            camera.position.y += Math.min(0.75, PLAYER_HEIGHT-camera.position.y);
+            camera.position.y += Math.min(0.75, Utils.PLAYER_HEIGHT - camera.position.y);
         }
 
 
-        if (this.body.position.y <= PLAYER_HEIGHT) {
+        if (this.body.position.y <= Utils.PLAYER_HEIGHT) {
             if (!this.isCrouched) {
                 canJump = true;
             }

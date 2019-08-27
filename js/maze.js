@@ -1,49 +1,11 @@
 var THREE = require('three');
 var Utils = require('./Utils.js');
 var Player = require('./Player.js');
-var MazeBuilder = require('./MazeBuilder.js');
-var Collider = require('./Collider.js');
-var MessageBuilder = require('./MessageBuilder.js');
+var Controls = require('./Controls.js');
+var WorldState = require('./WorldState.js');
 var Stats = require('stats.js');
-var PointerLockControls = require('pointerlockcontrols');
-
-const PLAYER_HEIGHT = 10;
-const PLAYER_SIZE = 5;
-const PLAYER_MASS = 0.00005;
-const PLAYER_SPEED = 0.0005;
-const PLAYER_JUMP = 0.1;
-const GRAVITY = 9.8;
-const CELL_SIZE = 12;
-const UPDATE_DELTA = 100.0;
-const MAZE_SIZE = 55;
-
-const Y = new THREE.Vector3(0,1,0);
-
-var camera, scene, renderer, controls, theta, mazeMesh;
-
-var otherPlayers = {};
-
-var moveForward = false;
-var moveBackward = false;
-var moveLeft = false;
-var moveRight = false;
-var canJump = false;
-
-var prevUpdateTime = -UPDATE_DELTA;
-var prevPosition = new THREE.Vector3();
-var prevLookDirection = new THREE.Vector3();
-var prevTime = performance.now();
-var moveDirection = new THREE.Vector3();
-
-var mazeBuilder = new MazeBuilder();
-var messageBuilder = new MessageBuilder();
-var collider = new Collider(PLAYER_SIZE);
 
 var player = new Player(username, new THREE.Vector3(0,PLAYER_HEIGHT,0), addModelToScene);
-
-var flashLight, floor;
-
-console.log(player.username);
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
@@ -74,8 +36,6 @@ function init() {
 
     var light = new THREE.AmbientLight(0x404040);
     scene.add(light);
-
-    controls = new PointerLockControls(camera);
 
     var blocker = document.getElementById('blocker');
 
@@ -215,7 +175,7 @@ function animate() {
     var time = performance.now();
     var delta = (time - prevTime);
 
-    player.animateUpdate(delta, theta, camera, controls, canJump, flashLight, mazeBuilder, moveDirection, moveForward, moveBackward, moveLeft, moveRight);
+    player.animateUpdate(delta, theta, camera, controls, canJump, flashLight, mazeBuilder, moveDirection, moveForward, moveBackward, moveLeft, moveRight, mazeMesh);
 
     if (time - prevUpdateTime >= UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controls.isLocked) {
         socket.send(messageBuilder.state(player));
@@ -284,7 +244,7 @@ function processPlayerState (buffer) {
 
 
 async function receive (blob) {
-  var arrayBuffer = await new Response(blob).arrayBuffer();
+    var arrayBuffer = await new Response(blob).arrayBuffer();
     var dataView = new DataView(arrayBuffer);
     switch (dataView.getUint8(0)) {
         case 0:
@@ -299,5 +259,5 @@ async function receive (blob) {
         case 3:
             processAction(arrayBuffer.slice(1), 3);
             break;
-        }
+    }
 }
