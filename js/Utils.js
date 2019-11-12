@@ -26,6 +26,18 @@ module.exports = {
           color += letters[Math.floor(Math.random() * 16)];
         }
         return color;
+    },
+
+    inRange: (c) => {
+      return [{x: c.x-1, z: c.z-1},
+              {x: c.x-1, z: c.z},
+              {x: c.x-1, z: c.z+1},
+              {x: c.x, z: c.z-1},
+              {x: c.x, z: c.z},
+              {x: c.x, z: c.z+1},
+              {x: c.x+1, z: c.z-1},
+              {x: c.x+1, z: c.z},
+              {x: c.x+1, z: c.z+1}];
     }
 }
 
