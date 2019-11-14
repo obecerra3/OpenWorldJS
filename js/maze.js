@@ -31,7 +31,7 @@ function animate() {
     var time = performance.now();
     var delta = (time - worldState.prevTime);
 
-    player.animateUpdate(delta);
+    player.updatePlayer(delta);
 
     if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
         socket.send(messageBuilder.state(player));

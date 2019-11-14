@@ -47,6 +47,7 @@ class WorldState {
 
         this.renderer.gammaInput = true;
         this.renderer.gammaOutput = true;
+        this.renderer.gammaFactor = 2.2;
         document.body.appendChild(this.renderer.domElement);
 
         window.addEventListener('resize', () => {

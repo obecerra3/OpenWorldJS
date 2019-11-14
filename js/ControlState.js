@@ -1,6 +1,7 @@
 var THREE = require('three');
 var Utils = require('./Utils.js');
-var PointerLockControls = require('pointerlockcontrols');
+// var PointerLockControls = require('pointerlockcontrols');
+var PointerLockControls = require('../lib/PointerLockControls.js');
 
 class ControlState {
     constructor(worldState) {
@@ -12,6 +13,8 @@ class ControlState {
         this.toggleFlashlight = null;
         this.toggleCrouch = null;
         this.toggleJump = null;
+        this.printState = null;
+        this.toggleFlight = null;
 
         var blocker = document.getElementById('blocker');
 
@@ -57,6 +60,12 @@ class ControlState {
                     case 32: // space
                         this.toggleJump();
                         break;
+                    case 80: // p
+                        this.printState();
+                        break;
+                    case 79: // o
+                        this.toggleFlight();
+                        break;
                 }
             }
         }, false);
@@ -65,7 +74,8 @@ class ControlState {
             if (this.controls.isLocked) {
                 switch (event.keyCode) {
                     case 16:
-                        this.toggleCrouch();
+                        // this.toggleCrouch();
+                        break;
                     case 38: // up
                     case 87: // w
                         this.moveForward = false;
