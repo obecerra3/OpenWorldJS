@@ -7,18 +7,22 @@ const Y = new THREE.Vector3(0,1,0);
 
 class Player {
     constructor(worldState, controlState, username, position, velocity= new THREE.Vector3(), lookDirection= new THREE.Vector3()) {
+
         this.body = {
             position: {x: 0, y: 0, z: 0},
             scale: {x: 0, y: 0, z: 0},
             rotation: {x: 0, y: 0, z: 0}
         };
+
         this.worldState = worldState;
+
         this.controlState = controlState;
         this.controlState.toggleJump = this.toggleJump.bind(this);
         this.controlState.toggleCrouch = this.toggleCrouch.bind(this);
         this.controlState.toggleFlashlight = this.toggleFlashlight.bind(this);
         this.controlState.printState = this.printState.bind(this);
         this.controlState.toggleFlight = this.toggleFlight.bind(this);
+
         this.username = username;
         this.velocity = velocity;
         this.lookDirection = lookDirection;
@@ -26,6 +30,16 @@ class Player {
         this.moveDirection = new THREE.Vector3();
         this.collider = new Collider(Utils.PLAYER_SIZE);
         this.flightEnabled = false;
+
+        this.states = {
+            IDLE: "idle",
+            DEAD: "dead",
+            WALKING: "walking",
+            RUNNING: "running",
+            STRAFING: "strafing",
+            JUMPING: "jumping"
+        };
+        this.state = this.states.IDLE;
 
         this.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
         this.flashlight.castShadow = true;
@@ -38,7 +52,7 @@ class Player {
         loader.load('Soldier.glb', (gltf) => {
             this.model = gltf;
             this.body = gltf.scene;
-            this.body.position.y = Utils.PLAYER_HEIGHT / 2;
+            this.body.position.y = 3;
 
             this.worldState.scene.add(this.body);
 
@@ -48,15 +62,15 @@ class Player {
 
             var animations = gltf.animations;
 
-            this.mixer = new THREE.AnimationMixer(this.model);
+            this.mixer = new THREE.AnimationMixer(this.body);
             this.idleAction = this.mixer.clipAction(animations[0]);
             this.walkAction = this.mixer.clipAction(animations[3]);
             this.runAction = this.mixer.clipAction(animations[1]);
-            this.actions = [this.idleAction, this.walkAction, this.runAction];
+            // this.actions = [this.idleAction, this.walkAction, this.runAction];
 
             this.body.scale.set(6,6,6);
+            this.idleAction.play();
 
-            this.loaded = true;
         }, undefined, (error) =>  {
             console.error('gltf loader error: ', error);
         });
@@ -65,6 +79,9 @@ class Player {
     //main update loop
 
     updatePlayer(delta) {
+        if (this.mixer) this.mixer.update(delta);
+        console.log("clockDelta: ", delta);
+
         this.controlState.controls.getDirection(this.lookDirection);
 
         this.updateMoveDirection(); //must be called before updateVelocity()
@@ -78,6 +95,20 @@ class Player {
         this.updateCameraPosition();
 
         if (!this.flightEnabled && this.body.position.y >= Utils.PLAYER_HEIGHT) this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;
+
+        this.updateAnimation();
+    }
+
+    updateAnimation() {
+        switch (this.state) {
+            case this.states.IDLE:
+                if (this.velocity.length() > 0) {
+                    this.state = this.states.WALKING;
+                    this.walkAction.play();
+                }
+                break;
+            //case this.states.WALKING:
+        }
     }
 
     updateMoveDirection() {
@@ -101,9 +132,9 @@ class Player {
     }
 
     updateVelocity(delta) {
-        this.velocity.x -= this.velocity.x * 0.01 * delta;
-        this.velocity.z -= this.velocity.z * 0.01 * delta;
-        this.velocity.y -= this.velocity.y * 0.01 * delta;
+        this.velocity.x -= this.velocity.x * Utils.VELOCITY_DAMP * delta;
+        this.velocity.z -= this.velocity.z * Utils.VELOCITY_DAMP * delta;
+        this.velocity.y -= this.velocity.y * Utils.VELOCITY_DAMP * delta;
         this.velocity.z += this.moveDirection.z * Utils.PLAYER_SPEED * delta;
         this.velocity.x += this.moveDirection.x * Utils.PLAYER_SPEED * delta;
     }
@@ -119,10 +150,18 @@ class Player {
     }
 
     updateCameraPosition() {
+        // if (this.lookDirection.y > -0.97) {
+        //     let offset = new THREE.Vector3(this.lookDirection.x * 1.75, 0, this.lookDirection.z * 1.75);
+        //     offset.normalize();
+        //     offset.multiplyScalar(2);
+        //     this.worldState.camera.position.x = this.body.position.x + offset.x;
+        //     this.worldState.camera.position.z = this.body.position.z + offset.z;
+        // }
+        // this.worldState.camera.position.y = this.body.position.y + 10;
         if (this.lookDirection.y > -0.97) {
             let offset = new THREE.Vector3(this.lookDirection.x * 1.75, 0, this.lookDirection.z * 1.75);
             offset.normalize();
-            offset.multiplyScalar(2);
+            offset.multiplyScalar(-10);
             this.worldState.camera.position.x = this.body.position.x + offset.x;
             this.worldState.camera.position.z = this.body.position.z + offset.z;
         }

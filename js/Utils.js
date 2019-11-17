@@ -3,9 +3,10 @@ var THREE = require('three');
 module.exports = {
     PLAYER_HEIGHT: 10,
     PLAYER_SIZE: 5,
-    PLAYER_MASS: 0.00005,
-    PLAYER_SPEED: 0.0005,
-    PLAYER_JUMP: 0.1,
+    PLAYER_MASS: 200,//0.00005,
+    PLAYER_SPEED: 15,//0.0005,
+    PLAYER_JUMP: 100,//0.1,
+    VELOCITY_DAMP: 1,//0.01,
     GRAVITY: 9.8,
     CELL_SIZE: 12,
     UPDATE_DELTA: 100.0,

@@ -4,8 +4,16 @@ var Player = require('./Player.js');
 var ControlState = require('./ControlState.js');
 var WorldState = require('./WorldState.js');
 var Stats = require('stats.js');
+var MessageBuilder = require('./MessageBuilder.js');
+var MazeBuilder = require('./MazeBuilder.js');
+
+var messageBuilder = new MessageBuilder();
+
+var mazeBuilder = new MazeBuilder();
 
 var socket = new WebSocket("wss://themaze.io:8000");
+
+var clock = new THREE.Clock();
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username)); }
 socket.onmessage = (event) => {
@@ -29,8 +37,9 @@ function animate() {
     requestAnimationFrame(animate);
     stats.begin();
     var time = performance.now();
-    var delta = (time - worldState.prevTime);
-
+    var delta = clock.getDelta();
+    //(time - worldState.prevTime);
+    console.log("previousDelta: ", time - worldState.prevTime);
     player.updatePlayer(delta);
 
     if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {

@@ -1,7 +1,5 @@
 var THREE = require('three');
 var Utils = require('./Utils.js');
-var MazeBuilder = require('./MazeBuilder.js');
-var MessageBuilder = require('./MessageBuilder.js');
 
 //var camera, scene, renderer, theta, mazeMesh;
 
@@ -24,9 +22,6 @@ class WorldState {
         this.scene.add(light);
 
         this.otherPlayers = {};
-
-        this.mazeBuilder = new MazeBuilder();
-        this.messageBuilder = new MessageBuilder();
 
         this.prevUpdateTime = -Utils.UPDATE_DELTA;
         this.prevTime = performance.now();
