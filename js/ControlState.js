@@ -1,6 +1,4 @@
-var THREE = require('three');
 var Utils = require('./Utils.js');
-// var PointerLockControls = require('pointerlockcontrols');
 var PointerLockControls = require('../lib/PointerLockControls.js');
 
 class ControlState {
@@ -10,11 +8,14 @@ class ControlState {
         this.moveBackward = false;
         this.moveLeft = false;
         this.moveRight = false;
+
+        // Callbacks defined in Player.js
         this.toggleFlashlight = null;
         this.toggleCrouch = null;
         this.toggleJump = null;
         this.printState = null;
         this.toggleFlight = null;
+        this.toggleRun = null;
 
         var blocker = document.getElementById('blocker');
 
@@ -32,14 +33,18 @@ class ControlState {
 
         worldState.scene.add(this.controls.getObject());
 
+        //embedded these instead of doing bind(this) for the event callbacks
         document.addEventListener('keydown', (event) => {
             if (this.controls.isLocked) {
                 switch (event.keyCode) {
                     case 70:
                         this.toggleFlashlight();
                         break;
+                    case 91:
+                        this.toggleCrouch(true);
+                        break;
                     case 16:
-                        this.toggleCrouch();
+                        this.toggleRun(true);
                         break;
                     case 38: // up
                     case 87: // w
@@ -74,7 +79,10 @@ class ControlState {
             if (this.controls.isLocked) {
                 switch (event.keyCode) {
                     case 16:
-                        // this.toggleCrouch();
+                        this.toggleRun(false);
+                        break;
+                    case 91:
+                        this.toggleCrouch(false);
                         break;
                     case 38: // up
                     case 87: // w

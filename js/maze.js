@@ -1,4 +1,4 @@
-var THREE = require('three');
+var Three = require('three');
 var Utils = require('./Utils.js');
 var Player = require('./Player.js');
 var ControlState = require('./ControlState.js');
@@ -13,7 +13,7 @@ var mazeBuilder = new MazeBuilder();
 
 var socket = new WebSocket("wss://themaze.io:8000");
 
-var clock = new THREE.Clock();
+var clock = new Three.Clock();
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username)); }
 socket.onmessage = (event) => {
@@ -22,7 +22,7 @@ socket.onmessage = (event) => {
 
 var worldState = new WorldState();
 var controlState = new ControlState(worldState);
-var player = new Player(worldState, controlState, username, new THREE.Vector3(0, Utils.PLAYER_HEIGHT, 0));
+var player = new Player(worldState, controlState, username, new Three.Vector3(0, Utils.PLAYER_HEIGHT, 0));
 var stats = new Stats();
 
 init();
@@ -39,7 +39,6 @@ function animate() {
     var time = performance.now();
     var delta = clock.getDelta();
     //(time - worldState.prevTime);
-    console.log("previousDelta: ", time - worldState.prevTime);
     player.updatePlayer(delta);
 
     if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
@@ -98,7 +97,7 @@ function processPlayerState (buffer) {
     var lookDirectionZ = dataView.getFloat32(19);
     var otherPlayer = otherPlayers[id];
     var yVelocity = otherPlayer.velocity.y;
-    var newVelocity = new THREE.Vector3(positionX - otherPlayer.body.position.x, 0, positionZ-otherPlayer.body.position.z).divideScalar(Utils.UPDATE_DELTA);
+    var newVelocity = new Three.Vector3(positionX - otherPlayer.body.position.x, 0, positionZ-otherPlayer.body.position.z).divideScalar(Utils.UPDATE_DELTA);
     otherPlayer.velocity.copy(newVelocity);
     otherPlayer.velocity.y = yVelocity;
     otherPlayer.lookDirection.x = lookDirectionX;
