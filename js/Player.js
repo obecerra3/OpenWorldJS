@@ -82,7 +82,7 @@ class Player {
 
     updatePlayer(delta) {
         //if (this.mixer) this.mixer.update(delta);
-
+        this.updateAnimation();
         this.controlState.controls.getDirection(this.lookDirection);
 
         this.updateMoveDirection(); //must be called before updateVelocity()
@@ -96,26 +96,25 @@ class Player {
         this.updateCameraPosition();
 
         if (!this.flightEnabled && this.body.position.y >= Utils.PLAYER_HEIGHT) this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;
-
-        this.updateAnimation();
     }
 
     updateAnimation() {
         if (this.animator) this.animator.animate();
         switch (this.state) {
             case this.states.IDLE:
-                if (this.velocity.x > 0 || this.velocity.z > 0) {
+                if (this.controlState.moveForward || this.controlState.moveLeft || this.controlState.moveRight || this.controlState.moveBackward) {
                     this.state = this.states.WALK;
                     this.transitions['idle to walk']();
                 }
                 break;
-            case this.states.WALKING:
-                if (this.velocity.x <= 0.1 && this.velocity.z <= 0.1) {
+            case this.states.WALK:
+                if (!this.controlState.moveForward && !this.controlState.moveLeft && !this.controlState.moveRight && !this.controlState.moveBackward) {
                     this.state = this.states.IDLE;
-                    this.transitions['walk to idle'];
+                    console.log("jere");
+                    this.transitions['walk to idle']();
                 } else if (this.running) {
                     this.state = this.states.RUN;
-                    this.transitions['walk to run'];
+                    this.transitions['walk to run']();
                 }
 
                 break;
@@ -264,11 +263,13 @@ class Player {
     printState() {
         console.log("\n");
         // console.log("camera position: ", this.worldState.camera.position);
-        console.log(this.body)
-        console.log(this.animator);
+        // console.log(this.body)
+        // console.log(this.animator);
         console.log(this.state);
         // console.log("player position: ", this.body.position);
+        console.log("move Direction: ", this.moveDirection);
         console.log("player velocity: ", this.velocity);
+        console.log("controlstate: ", this.controlState.moveForward, this.controlState.moveLeft, this.controlState.moveBackward, this.controlState.moveRight);
         // console.log("look direction: ", this.lookDirection);
         // console.log("look direction angle: ", Math.atan2(this.lookDirection.x, this.lookDirection.z));
         // console.log("move direction: ", this.moveDirection);
@@ -277,8 +278,6 @@ class Player {
         //console.log("body - camera position: (x,z) ", this.body.position.x - this.worldState.camera.position.x, ",", this.body.position.z - this.worldState.camera.position.z);
         //console.log("this.body.rotation.y: ", this.body.rotation.y);
 
-        console.log(this.animator.animationData.Idle.action);
-        console.log(this.animator.animationData.Walk.action);
     }
 }
 

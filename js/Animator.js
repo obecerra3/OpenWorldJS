@@ -34,16 +34,18 @@ class Animator {
     }
 
     prepareCrossFade(startKey, endKey, duration) {
+        console.log("\nprepareCrossFade");
         this.togglePause(false);
-
-        if (this.animationData[startKey].duration >= Utils.DURATION_THRESHOLD) {
-            this.executeCrossFade(startKey, endKey, duration);
-        } else {
-            this.synchronizeCrossFade(startKey, endKey, duration);
-        }
+        this.executeCrossFade(startKey, endKey, duration);
+        // if (this.animationData[startKey].duration >= Utils.DURATION_THRESHOLD) {
+        //     this.executeCrossFade(startKey, endKey, duration);
+        // } else {
+        //     this.synchronizeCrossFade(startKey, endKey, duration);
+        // }
     }
 
     synchronizeCrossFade(startKey, endKey, duration) {
+        console.log("synchronizeCrossFade");
         let onLoopFinished = (event) => {
             if (event.action === this.animationData[startKey].action) {
                 this.mixer.removeEventListener('loop', onLoopFinished);
@@ -55,6 +57,7 @@ class Animator {
     }
 
     executeCrossFade(startKey, endKey, duration) {
+        console.log("executeCrossFade");
         // Not only the start action, but also the end action must get a weight of 1 before fading
         // (concerning the start action this is already guaranteed in this place)
         let endAction = this.animationData[endKey].action;
