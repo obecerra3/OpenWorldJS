@@ -5,7 +5,6 @@ var Utils = require('./Utils.js');
 
 class WorldState {
     constructor() {
-
         this.camera = new Three.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
         this.camera.position.y = Utils.PLAYER_HEIGHT;
 

@@ -285,7 +285,7 @@ class Player {
                 this.animator.prepareCrossFade('Walk', 'Run', 0.5);
             },
             "run to idle" : () => {
-                this.animator.prepareCrossFade('Run', 'Idle', 0.5);
+                this.animator.prepareCrossFade('Run', 'Idle', 0.25);
             }
         }
     }
@@ -298,7 +298,7 @@ class Player {
         // console.log(this.body)
         // console.log(this.animator);
         console.log(this.state);
-        // console.log("player position: ", this.body.position);
+        console.log("player position: ", this.body.position);
         console.log("move Direction: ", this.moveDirection);
         console.log("player velocity: ", this.velocity);
         console.log("controlstate: ", this.controlState.moveForward, this.controlState.moveLeft, this.controlState.moveBackward, this.controlState.moveRight);

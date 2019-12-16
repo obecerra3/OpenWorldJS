@@ -1,4 +1,5 @@
 var Three = require('three');
+var Utils = require('./Utils.js');
 
 class Collider {
 
@@ -16,11 +17,11 @@ class Collider {
     initHelperRays () {
         let rays = []
         for (var key of Object.keys(this.stateRayData)) {
-            for (var i = 0; i < this.stateRayData[key]; i++) {
-                rays[i] = new Three.ArrowHelper(this.stateRayData[key][i], this.player.position, 1, 0x00ff00);
+            for (var i = 0; i < this.stateRayData[key].length; i++) {
+                rays[i] = new Three.ArrowHelper(this.stateRayData[key][i], this.player.body.position, Utils.PLAYER_SIZE, 0x00ff00);
+                rays[i].visible = false;
                 this.player.worldState.scene.add(rays[i]);
             }
-
             this.helperRays[key] = rays;
             rays = [];
         }
@@ -28,55 +29,42 @@ class Collider {
 
     toggleShowRays (value) {
         this.showRays = value;
-
-        if (!value) {
-            this.toggleHelperRays(this.state, false);
-        }
     }
 
     toggleHelperRays (state, value) {
         this.helperRays[state].forEach((ray) => {
+            ray.position.copy(this.player.body.position);
+            ray.position.y = 10;
             ray.visible = value;
         });
     }
 
     addMesh (key, value) {
-        console.log(key);
-        console.log(value);
         this.meshes[key] = value;
     }
 
     update () {
-        if (this.showRays) {
-            if (this.state != this.player.state) {
-                this.toggleHelperRays(this.state, false);
-                this.toggleHelperRays(this.player.state, true);
-            }
+        if (this.state != this.player.state) {
+            this.toggleHelperRays(this.state, false);
+            this.state = this.player.state;
         }
+
+        this.toggleHelperRays(this.state, this.showRays);
 
         for (var key of Object.keys(this.meshes)) {
             this.collide(this.player, this.meshes[key]);
         }
-
-        this.state = this.player.state;
     }
 
     collide (player, mesh) {
         var intersections = [];
+
         this.raycaster.ray.origin.copy(player.body.position);
+        this.raycaster.ray.origin.y = 10;
         this.stateRayData[this.state].forEach((ray) => {
             this.raycaster.ray.direction.copy(ray);
             intersections = intersections.concat(this.raycaster.intersectObject(mesh));
         });
-        // this.raycaster.ray.direction.copy(XZ);
-        // intersections = intersections.concat(this.raycaster.intersectObject(mesh));
-        // this.raycaster.ray.direction.copy(X_Z);
-        // intersections = intersections.concat(this.raycaster.intersectObject(mesh));
-        // this.raycaster.ray.direction.copy(_XZ);
-        // intersections = intersections.concat(this.raycaster.intersectObject(mesh));
-        // this.raycaster.ray.direction.copy(_X_Z);
-        // intersections = intersections.concat(this.raycaster.intersectObject(mesh));
-
 
         if (intersections.length > 0) {
             if (intersections.length == 3) { // special cases (read: dumb hack)
