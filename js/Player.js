@@ -28,7 +28,7 @@ class Player {
         this.lookDirection = lookDirection;
         this.prevPosition = new Three.Vector3();
         this.moveDirection = new Three.Vector3();
-        this.collider = new Collider(Utils.PLAYER_SIZE);
+
         this.flightEnabled = false;
         this.running = false;
 
@@ -45,6 +45,15 @@ class Player {
         };
 
         this.state = this.states.IDLE;
+
+        let stateRayData = {}
+
+        for (var key of Object.keys(this.states)) {
+            stateRayData[this.states[key]] = [Utils.XZ.normalize(), Utils._XZ.normalize(), Utils.X_Z.normalize(), Utils._X_Z.normalize()];
+        }
+
+        this.collider = new Collider(this, Utils.PLAYER_SIZE, stateRayData);
+        this.collider.addMesh("floor", this.worldState.floor);
 
         this.flashlight = new Three.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
         this.flashlight.castShadow = true;
@@ -88,7 +97,11 @@ class Player {
         this.updateMoveDirection(); //must be called before updateVelocity()
         this.updateVelocity(delta);
 
-        if (this.worldState.mazeMesh != undefined) this.collider.collide(this, this.worldState.mazeMesh);
+        //have some class decide what meshes r near the player and feed that into the collider.js
+        //for now thats just here
+        // if (this.worldState.mazeMesh) this.collider.collide(this, this.worldState.mazeMesh);
+        // if (this.worldState.floor) this.collider.collide(this, this.worldState.floor);
+        this.collider.update();
 
         this.updatePosition(delta);
         this.updateRotation(delta);
@@ -110,16 +123,25 @@ class Player {
             case this.states.WALK:
                 if (!this.controlState.moveForward && !this.controlState.moveLeft && !this.controlState.moveRight && !this.controlState.moveBackward) {
                     this.state = this.states.IDLE;
-                    console.log("jere");
                     this.transitions['walk to idle']();
                 } else if (this.running) {
                     this.state = this.states.RUN;
                     this.transitions['walk to run']();
                 }
+                break;
+            case this.states.RUN:
+                if (!this.controlState.moveForward && !this.controlState.moveLeft && !this.controlState.moveRight && !this.controlState.moveBackward) {
+                    this.state = this.states.IDLE;
+                    this.transitions['run to idle']();
+                }
+                if (!this.running) {
+                    this.state = this.states.WALK;
+                    this.transitions['run to walk']();
+                }
 
                 break;
-            //case this.states.RUNNING:
             // default:
+            //     if ()
         }
     }
 
@@ -177,6 +199,14 @@ class Player {
             this.worldState.camera.position.z = this.body.position.z + offset.z;
         }
         this.worldState.camera.position.y = this.body.position.y + 10;
+
+        if (this.running && this.state == this.states.RUN) {
+            let max = 0.07;
+            let min = -0.07;
+            this.worldState.camera.position.x += Math.random() * (max - min) + min;
+            this.worldState.camera.position.z += Math.random() * (max - min) + min;
+            this.worldState.camera.position.y += Math.random() * (max - min) + min;
+        }
     }
 
     updateFlashLight() {
@@ -212,8 +242,7 @@ class Player {
     toggleJump() {
         if ((this.body.position.y <= Utils.PLAYER_HEIGHT && !this.isCrouched) || this.flightEnabled) {
             this.velocity.y += Utils.PLAYER_JUMP;
-            // this.deactivateAllAnimations();
-            // this.jumpAction.play();
+
         }
     }
 
@@ -247,13 +276,16 @@ class Player {
                 this.animator.prepareCrossFade('Idle', 'Walk', 0.5);
             },
             "walk to idle" : () => {
-                this.animator.prepareCrossFade('Walk', 'Idle', 1.0);
+                this.animator.prepareCrossFade('Walk', 'Idle', 0.5);
             },
             "run to walk" : () => {
-                this.animator.prepareCrossFade('Run', 'Walk', 5.0);
+                this.animator.prepareCrossFade('Run', 'Walk', 1.0);
             },
             "walk to run" : () => {
-                this.animator.prepareCrossFade('Walk', 'Run', 2.5);
+                this.animator.prepareCrossFade('Walk', 'Run', 0.5);
+            },
+            "run to idle" : () => {
+                this.animator.prepareCrossFade('Run', 'Idle', 0.5);
             }
         }
     }

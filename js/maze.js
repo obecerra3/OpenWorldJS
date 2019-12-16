@@ -69,6 +69,7 @@ function processMaze (buffer) {
     }, []);
     worldState.mazeMesh = mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE);
     worldState.scene.add(worldState.mazeMesh);
+    player.collider.addMesh("walls", worldState.mazeMesh);
 }
 
 function processAction (buffer, code) {

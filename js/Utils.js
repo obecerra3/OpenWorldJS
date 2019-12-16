@@ -1,6 +1,8 @@
-var THREE = require('three');
+var Three = require('three');
 
 module.exports = {
+
+    //PLAYER CONSTANTS
     PLAYER_HEIGHT: 10,
     PLAYER_SIZE: 5,
     PLAYER_MASS: 100,//0.00005,
@@ -8,13 +10,32 @@ module.exports = {
     PLAYER_RUNNING_SPEED: 200,
     PLAYER_JUMP: 100,//0.1,
     VELOCITY_DAMP: 2.5,//0.01,
+
+    //WORLD CONSTANTS
     GRAVITY: 9.8,
     CELL_SIZE: 12,
     UPDATE_DELTA: 100.0,
     MAZE_SIZE: 55,
-    DEFAULT_WEIGHT: 1.0, //default weight for animation action in animationData
-    DURATION_THRESHOLD: 4, //duration of animation for determining synchronizeCrossFade or executeCrossFade
-    Y: new THREE.Vector3(0,1,0),
+
+    //ANIMATIONS
+    //default weight for animation action in animationData
+    DEFAULT_WEIGHT: 1.0,
+    //duration of animation for determining synchronizeCrossFade or executeCrossFade
+    DURATION_THRESHOLD: 4,
+
+    //VECTORS
+    X: new Three.Vector3(1, 0, 0),
+    Y: new Three.Vector3(0, 1, 0),
+    Z: new Three.Vector3(0, 0, 1),
+    _X: new Three.Vector3(-1, 0, 0),
+    _Y: new Three.Vector3(0, -1, 0),
+    _Z: new Three.Vector3(0, 0, -1),
+    //collision vectors
+    XZ : new Three.Vector3(1,0,1),
+    _XZ : new Three.Vector3(-1,0,1),
+    X_Z : new Three.Vector3(1,0,-1),
+    _X_Z : new Three.Vector3(-1,0,-1),
+
 
     pair: (a, b) => {
         /* http://szudzik.com/ElegantPairing.pdf */
