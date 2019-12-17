@@ -23,22 +23,27 @@ socket.onmessage = (event) => {
 var worldState = new WorldState();
 var controlState = new ControlState(worldState);
 var player = new Player(worldState, controlState, username, new Three.Vector3(0, Utils.PLAYER_HEIGHT, 0));
-var stats = new Stats();
+var statsFps = new Stats();
+var statsMs = new Stats();
 
 init();
 animate();
 
 function init() {
-    stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
-    document.body.appendChild(stats.dom);
+    statsFps.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    statsMs.showPanel(1);
+    statsFps.domElement.style.cssText = 'position:absolute;top:0px;left:0px;';
+    statsMs.domElement.style.cssText = 'position:absolute;top:0px;left:80px;';
+    document.body.appendChild(statsFps.dom);
+    document.body.appendChild(statsMs.dom);
 }
 
 function animate() {
     requestAnimationFrame(animate);
-    stats.begin();
+    statsFps.begin();
+    statsMs.begin();
     var time = performance.now();
     var delta = clock.getDelta();
-    //(time - worldState.prevTime);
     player.updatePlayer(delta);
 
     if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
@@ -48,7 +53,8 @@ function animate() {
 
     worldState.prevTime = time;
     worldState.renderer.render(worldState.scene, worldState.camera);
-    stats.end();
+    statsFps.end();
+    statsMs.end();
 }
 
 

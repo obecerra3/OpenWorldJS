@@ -31,10 +31,10 @@ module.exports = {
     _Y: new Three.Vector3(0, -1, 0),
     _Z: new Three.Vector3(0, 0, -1),
     //collision vectors
-    XZ : new Three.Vector3(1,0,1),
-    _XZ : new Three.Vector3(-1,0,1),
-    X_Z : new Three.Vector3(1,0,-1),
-    _X_Z : new Three.Vector3(-1,0,-1),
+    XZ : new Three.Vector3(1, 0, 1),
+    _XZ : new Three.Vector3(-1, 0, 1),
+    X_Z : new Three.Vector3(1, 0, -1),
+    _X_Z : new Three.Vector3(-1, 0, -1),
 
 
     pair: (a, b) => {

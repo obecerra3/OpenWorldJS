@@ -3,6 +3,7 @@ var Utils = require('./Utils.js');
 var GLTFLoader =  require('three-gltf-loader');
 var Collider = require('./Collider.js');
 var Animator = require('./Animator.js');
+var Ray = require('./Ray.js');
 
 class Player {
     constructor(worldState, controlState, username, position, velocity= new Three.Vector3(), lookDirection= new Three.Vector3()) {
@@ -46,13 +47,22 @@ class Player {
 
         this.state = this.states.IDLE;
 
-        let stateRayData = {}
+        let rays = [new Ray(this.worldState.scene, Utils.XZ, Utils.PLAYER_SIZE),
+            new Ray(this.worldState.scene, Utils._XZ, Utils.PLAYER_SIZE),
+            new Ray(this.worldState.scene, Utils.X_Z, Utils.PLAYER_SIZE),
+            new Ray(this.worldState.scene, Utils._X_Z, Utils.PLAYER_SIZE),
+            new Ray(this.worldState.scene, Utils.X, Utils.PLAYER_SIZE * 0.75),
+            new Ray(this.worldState.scene, Utils._X, Utils.PLAYER_SIZE * 0.75),
+            new Ray(this.worldState.scene, Utils.Z, Utils.PLAYER_SIZE * 0.75),
+            new Ray(this.worldState.scene, Utils._Z, Utils.PLAYER_SIZE * 0.75),
+            new Ray(this.worldState.scene, Utils.Y, Utils.PLAYER_SIZE * 0.75),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils.X.multiplyScalar(1.5)),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils._X.multiplyScalar(1.5)),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils.Z.multiplyScalar(1.5)),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils._Z.multiplyScalar(1.5))]
 
-        for (var key of Object.keys(this.states)) {
-            stateRayData[this.states[key]] = [Utils.XZ.normalize(), Utils._XZ.normalize(), Utils.X_Z.normalize(), Utils._X_Z.normalize()];
-        }
-
-        this.collider = new Collider(this, Utils.PLAYER_SIZE, stateRayData);
+        this.collider = new Collider(this, rays);
+        this.collider.toggleShowRays(true);
         this.collider.addMesh("floor", this.worldState.floor);
 
         this.flashlight = new Three.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
@@ -90,18 +100,13 @@ class Player {
     //main update loop
 
     updatePlayer(delta) {
-        //if (this.mixer) this.mixer.update(delta);
         this.updateAnimation();
         this.controlState.controls.getDirection(this.lookDirection);
 
         this.updateMoveDirection(); //must be called before updateVelocity()
         this.updateVelocity(delta);
 
-        //have some class decide what meshes r near the player and feed that into the collider.js
-        //for now thats just here
-        // if (this.worldState.mazeMesh) this.collider.collide(this, this.worldState.mazeMesh);
-        // if (this.worldState.floor) this.collider.collide(this, this.worldState.floor);
-        this.collider.update();
+        this.collider.update(this);
 
         this.updatePosition(delta);
         this.updateRotation(delta);
