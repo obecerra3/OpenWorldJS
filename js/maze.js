@@ -44,7 +44,7 @@ function animate() {
     statsMs.begin();
     var time = performance.now();
     var delta = clock.getDelta();
-    player.updatePlayer(delta);
+    player.update(delta);
 
     if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
         socket.send(messageBuilder.state(player));

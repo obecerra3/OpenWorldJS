@@ -27,10 +27,11 @@ class WorldState {
 
         var floorGeometry = new Three.PlaneBufferGeometry(1000,1000);
         floorGeometry.rotateX(-Math.PI/2);
-        var floorMaterial = new Three.MeshPhongMaterial( { vertexColors: Three.NoColors } );
+        let floorMaterial = new Three.MeshPhongMaterial( { vertexColors: Three.NoColors } );
         floorMaterial.color = new Three.Color(0x81a68c);
 
         this.floor = new Three.Mesh(floorGeometry, floorMaterial);
+
         this.scene.add(this.floor);
 
         this.renderer = new Three.WebGLRenderer({antialias: true});

@@ -8,7 +8,7 @@ class Collider {
         this.rays = rays;
         this.meshes = {};
         this.showRays = false;
-        this.state = player.state;
+        //this.state = player.state;
         this.groundRayCount = groundRayCount;
     }
 
@@ -30,8 +30,9 @@ class Collider {
 
         if (this.showRays) {
             this.rays.forEach((ray) => {
-                let origin = new Three.Vector3(0, 7, 0);
+                let origin = new Three.Vector3(0, 0, 0);
                 origin.add(player.body.position);
+                origin.add(player.center);
                 origin.add(ray.originOffset);
                 ray.update(origin);
             });
@@ -40,21 +41,22 @@ class Collider {
 
     isGrounded (player) {
         let intersections = [];
+        if (player.velocity.y < 0) {
+            console.log(player.velocity.y);
+        }
         for (var key of Object.keys(this.meshes)) {
             let mesh = this.meshes[key];
             this.rays.forEach((ray) => {
                 if (ray.groundChecker) {
                     this.raycaster.far = ray.length;
                     this.raycaster.ray.origin.copy(player.body.position);
-                    this.raycaster.ray.origin.y = 10;
+                    this.raycaster.ray.origin.add(player.center);
                     this.raycaster.ray.origin.add(ray.originOffset);
                     this.raycaster.ray.direction.copy(ray.direction);
                     intersections = intersections.concat(this.raycaster.intersectObject(mesh));
                 }
             });
         }
-
-        console.log("intersections: ", intersections);
 
         if (intersections.length > Math.ceil(this.groundRayCount / 2)) {
             return true;
@@ -69,7 +71,7 @@ class Collider {
             if (!ray.groundChecker) {
                 this.raycaster.far = ray.length;
                 this.raycaster.ray.origin.copy(player.body.position);
-                this.raycaster.ray.origin.y = 10;
+                this.raycaster.ray.origin.add(player.center);
                 this.raycaster.ray.origin.add(ray.originOffset);
                 this.raycaster.ray.direction.copy(ray.direction);
                 intersections = intersections.concat(this.raycaster.intersectObject(mesh));

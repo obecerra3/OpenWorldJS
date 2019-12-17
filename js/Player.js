@@ -30,6 +30,8 @@ class Player {
         this.prevPosition = new Three.Vector3();
         this.moveDirection = new Three.Vector3();
 
+        this.center = new Three.Vector3(0, 7, 0);
+
         this.flightEnabled = false;
         this.running = false;
 
@@ -56,10 +58,10 @@ class Player {
             new Ray(this.worldState.scene, Utils.Z, Utils.PLAYER_SIZE * 0.75),
             new Ray(this.worldState.scene, Utils._Z, Utils.PLAYER_SIZE * 0.75),
             new Ray(this.worldState.scene, Utils.Y, Utils.PLAYER_SIZE * 0.75, false, new Three.Vector3(0, 0, 0), 0x00ff00),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils.X.multiplyScalar(1.5), 0xff0000),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils._X.multiplyScalar(1.5), 0xff0000),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils.Z.multiplyScalar(1.5), 0xff0000),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils._Z.multiplyScalar(1.5), 0xff0000)]
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils.X.multiplyScalar(1.5), 0xff0000),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils._X.multiplyScalar(1.5), 0xff0000),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils.Z.multiplyScalar(1.5), 0xff0000),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils._Z.multiplyScalar(1.5), 0xff0000)]
 
         this.collider = new Collider(this, rays, 4);
         this.collider.toggleShowRays(true);
@@ -76,7 +78,6 @@ class Player {
         loader.load('fpsCharacter.glb', (gltf) => {
             this.model = gltf;
             this.body = gltf.scene;
-            this.body.position.y = 3;
 
             this.body.traverse(function (object) {
                 object.castShadow = true;
@@ -89,7 +90,6 @@ class Player {
             this.setupAnimations(new Three.AnimationMixer(this.body), gltf.animations);
 
             this.body.scale.set(6, 6, 6);
-            // this.IdleAnim.play();
             this.worldState.scene.add(this.body);
 
         }, undefined, (error) =>  {
@@ -99,9 +99,7 @@ class Player {
 
     //main update loop
 
-    updatePlayer(delta) {
-        // if (!this.flightEnabled && this.body.position.y >= Utils.PLAYER_HEIGHT) this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;
-
+    update(delta) {
         this.updateAnimation();
         this.controlState.controls.getDirection(this.lookDirection);
 
@@ -114,6 +112,15 @@ class Player {
         this.updateRotation(delta);
         this.updateFlashLight();
         this.updateCameraPosition();
+
+        let grounded = this.collider.isGrounded(this);
+
+        if (!this.flightEnabled && !grounded) {
+            this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;;
+        } else if (grounded) {
+            this.velocity.y = 0;
+        }
+
     }
 
     updateAnimation() {
@@ -245,9 +252,8 @@ class Player {
     }
 
     toggleJump() {
-        if ((this.body.position.y <= Utils.PLAYER_HEIGHT && !this.isCrouched) || this.flightEnabled) {
+        if ((this.collider.isGrounded(this) && !this.isCrouched) || this.flightEnabled) {
             this.velocity.y += Utils.PLAYER_JUMP;
-
         }
     }
 
