@@ -3,12 +3,13 @@ var Utils = require('./Utils.js');
 
 class Collider {
 
-    constructor (player, rays) {
+    constructor (player, rays, groundRayCount) {
         this.raycaster = new Three.Raycaster(new Three.Vector3(), new Three.Vector3(), 0, 1);
         this.rays = rays;
         this.meshes = {};
         this.showRays = false;
         this.state = player.state;
+        this.groundRayCount = groundRayCount;
     }
 
     toggleShowRays (value) {
@@ -17,7 +18,6 @@ class Collider {
             ray.toggleVisible(value);
         });
     }
-
 
     addMesh (key, value) {
         this.meshes[key] = value;
@@ -38,16 +38,42 @@ class Collider {
         }
     }
 
+    isGrounded (player) {
+        let intersections = [];
+        for (var key of Object.keys(this.meshes)) {
+            let mesh = this.meshes[key];
+            this.rays.forEach((ray) => {
+                if (ray.groundChecker) {
+                    this.raycaster.far = ray.length;
+                    this.raycaster.ray.origin.copy(player.body.position);
+                    this.raycaster.ray.origin.y = 10;
+                    this.raycaster.ray.origin.add(ray.originOffset);
+                    this.raycaster.ray.direction.copy(ray.direction);
+                    intersections = intersections.concat(this.raycaster.intersectObject(mesh));
+                }
+            });
+        }
+
+        console.log("intersections: ", intersections);
+
+        if (intersections.length > Math.ceil(this.groundRayCount / 2)) {
+            return true;
+        }
+        return false;
+    }
+
     collide (player, mesh) {
-        var intersections = [];
+        let intersections = [];
 
         this.rays.forEach((ray) => {
-            this.raycaster.far = ray.length;
-            this.raycaster.ray.origin.copy(player.body.position);
-            this.raycaster.ray.origin.y = 10;
-            this.raycaster.ray.origin.add(ray.originOffset);
-            this.raycaster.ray.direction.copy(ray.direction);
-            intersections = intersections.concat(this.raycaster.intersectObject(mesh));
+            if (!ray.groundChecker) {
+                this.raycaster.far = ray.length;
+                this.raycaster.ray.origin.copy(player.body.position);
+                this.raycaster.ray.origin.y = 10;
+                this.raycaster.ray.origin.add(ray.originOffset);
+                this.raycaster.ray.direction.copy(ray.direction);
+                intersections = intersections.concat(this.raycaster.intersectObject(mesh));
+            }
         });
 
         if (intersections.length > 0) {

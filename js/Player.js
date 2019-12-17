@@ -55,13 +55,13 @@ class Player {
             new Ray(this.worldState.scene, Utils._X, Utils.PLAYER_SIZE * 0.75),
             new Ray(this.worldState.scene, Utils.Z, Utils.PLAYER_SIZE * 0.75),
             new Ray(this.worldState.scene, Utils._Z, Utils.PLAYER_SIZE * 0.75),
-            new Ray(this.worldState.scene, Utils.Y, Utils.PLAYER_SIZE * 0.75),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils.X.multiplyScalar(1.5)),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils._X.multiplyScalar(1.5)),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils.Z.multiplyScalar(1.5)),
-            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.5, Utils._Z.multiplyScalar(1.5))]
+            new Ray(this.worldState.scene, Utils.Y, Utils.PLAYER_SIZE * 0.75, false, new Three.Vector3(0, 0, 0), 0x00ff00),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils.X.multiplyScalar(1.5), 0xff0000),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils._X.multiplyScalar(1.5), 0xff0000),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils.Z.multiplyScalar(1.5), 0xff0000),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 2, true, Utils._Z.multiplyScalar(1.5), 0xff0000)]
 
-        this.collider = new Collider(this, rays);
+        this.collider = new Collider(this, rays, 4);
         this.collider.toggleShowRays(true);
         this.collider.addMesh("floor", this.worldState.floor);
 
@@ -100,6 +100,8 @@ class Player {
     //main update loop
 
     updatePlayer(delta) {
+        // if (!this.flightEnabled && this.body.position.y >= Utils.PLAYER_HEIGHT) this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;
+
         this.updateAnimation();
         this.controlState.controls.getDirection(this.lookDirection);
 
@@ -112,8 +114,6 @@ class Player {
         this.updateRotation(delta);
         this.updateFlashLight();
         this.updateCameraPosition();
-
-        if (!this.flightEnabled && this.body.position.y >= Utils.PLAYER_HEIGHT) this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;
     }
 
     updateAnimation() {
@@ -304,9 +304,10 @@ class Player {
         // console.log(this.animator);
         console.log(this.state);
         console.log("player position: ", this.body.position);
-        console.log("move Direction: ", this.moveDirection);
-        console.log("player velocity: ", this.velocity);
-        console.log("controlstate: ", this.controlState.moveForward, this.controlState.moveLeft, this.controlState.moveBackward, this.controlState.moveRight);
+        console.log("isGrounded: ", this.collider.isGrounded(this));
+        // console.log("move Direction: ", this.moveDirection);
+        // console.log("player velocity: ", this.velocity);
+        // console.log("controlstate: ", this.controlState.moveForward, this.controlState.moveLeft, this.controlState.moveBackward, this.controlState.moveRight);
         // console.log("look direction: ", this.lookDirection);
         // console.log("look direction angle: ", Math.atan2(this.lookDirection.x, this.lookDirection.z));
         // console.log("move direction: ", this.moveDirection);
