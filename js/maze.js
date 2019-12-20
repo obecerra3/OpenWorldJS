@@ -6,6 +6,7 @@ var WorldState = require('./WorldState.js');
 var Stats = require('stats.js');
 var MessageBuilder = require('./MessageBuilder.js');
 var MazeBuilder = require('./MazeBuilder.js');
+var Ammo = require('../lib/ammo.js');
 
 var messageBuilder = new MessageBuilder();
 
@@ -26,10 +27,29 @@ var player = new Player(worldState, controlState, username, new Three.Vector3(0,
 var statsFps = new Stats();
 var statsMs = new Stats();
 
-init();
-animate();
+Ammo().then((AmmoLib) => {
+    Ammo = AmmoLib;
+    init();
+});
 
 function init() {
+    initStats();
+    initPhysics();
+    animate();
+}
+
+function initPhysics() {
+    let collisionConfiguration  = new Ammo.btDefaultCollisionConfiguration(),
+        dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
+        overlappingPairCache = new Ammo.btDbvtBroadphase(),
+        solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+    worldState.physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+    worldState.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY, 0));
+    worldState.tempBtTransform = new Ammo.btTransform();
+}
+
+function initStats() {
     statsFps.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
     statsMs.showPanel(1);
     statsFps.domElement.style.cssText = 'position:absolute;top:0px;left:0px;';
@@ -60,19 +80,21 @@ function animate() {
 
 function processMaze (buffer) {
     var byteArray = new Uint8Array(buffer);
+
     var mazeArray = byteArray.reduce((array, curr, idx) => {
-    var i;
-    for (i = 0; i < 8; i++) {
-        var type = curr >> (7-i) & 1;
-        var overall = idx * 8 + i;
-        if ((overall % Utils.MAZE_SIZE) == 0) {
-            array.push([type]);
-        } else {
-            array[Math.floor(overall / Utils.MAZE_SIZE)].push(type);
+        var i;
+        for (i = 0; i < 8; i++) {
+            var type = curr >> (7-i) & 1;
+            var overall = idx * 8 + i;
+            if ((overall % Utils.MAZE_SIZE) == 0) {
+                array.push([type]);
+            } else {
+                array[Math.floor(overall / Utils.MAZE_SIZE)].push(type);
+            }
         }
-    }
-    return array;
+        return array;
     }, []);
+
     worldState.mazeMesh = mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE);
     worldState.scene.add(worldState.mazeMesh);
     player.collider.addMesh("walls", worldState.mazeMesh);

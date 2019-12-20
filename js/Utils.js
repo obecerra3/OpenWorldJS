@@ -13,7 +13,9 @@ module.exports = {
 
     //WORLD CONSTANTS
     GRAVITY: 9.8,
-    CELL_SIZE: 12,
+    WALL_HEIGHT: 200,
+    WALL_WIDTH: 15,
+    CELL_SIZE: 95,
     UPDATE_DELTA: 100.0,
     MAZE_SIZE: 55,
 

@@ -41,9 +41,7 @@ class Collider {
 
     isGrounded (player) {
         let intersections = [];
-        if (player.velocity.y < 0) {
-            console.log(player.velocity.y);
-        }
+
         for (var key of Object.keys(this.meshes)) {
             let mesh = this.meshes[key];
             this.rays.forEach((ray) => {
