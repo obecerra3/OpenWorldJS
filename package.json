@@ -10,7 +10,7 @@
         "type": "git",
         "url": "git+https://github.com/bnwlkr/Maze.git"
     },
-    "author": "Ben Wanker",
+    "author": "Ben Walker",
     "license": "ISC",
     "private": true,
     "bugs": {
@@ -18,10 +18,7 @@
     },
     "homepage": "https://github.com/bnwlkr/Maze#readme",
     "dependencies": {
-        "pointerlockcontrols": "^1.0.2",
-        "stats.js": "^0.17.0",
-        "three": "^0.106.2",
-        "three-gltf-loader": "^1.107.0"
+        "stats.js": "^0.17.0"
     },
     "devDependencies": {
         "browserify": "^16.5.0",
