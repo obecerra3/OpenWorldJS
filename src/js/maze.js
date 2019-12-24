@@ -5,6 +5,7 @@ let Stats = require('stats.js');
 let MessageBuilder = require('./MessageBuilder.js');
 let MazeBuilder = require('./MazeBuilder.js');
 let InfoManager = require('./InfoManager.js');
+let Physics = require('./Physics.js');
 
 let messageBuilder = new MessageBuilder();
 
@@ -24,22 +25,25 @@ let worldState = new WorldState();
 let controlState = new ControlState(worldState);
 let infoManager = new InfoManager();
 let myPlayer;
+let physics;
 let statsFps = new Stats();
 let statsMs = new Stats();
 
 Ammo().then((AmmoLib) => {
     Ammo = AmmoLib;
     worldState.Ammo = Ammo;
-    myPlayer = new Player(worldState, username, new THREE.Vector3(0, Utils.PLAYER_HEIGHT, 0), controlState);
     init();
 });
 
 function init() {
-    infoManager.addPlayerInfo(myPlayer, false);
-
     initStats();
     initPhysics();
     initDebug();
+
+    myPlayer = new Player(worldState, username, new THREE.Vector3(0, Utils.PLAYER_HEIGHT, 0), controlState, physics);
+
+    infoManager.addPlayerInfo(myPlayer, false);
+
     animate();
 }
 
@@ -53,13 +57,16 @@ function initStats() {
 }
 
 function initPhysics() {
+    physics = new Physics(worldState);
+
     let collisionConfiguration  = new Ammo.btDefaultCollisionConfiguration(),
         dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
         overlappingPairCache = new Ammo.btDbvtBroadphase(),
         solver = new Ammo.btSequentialImpulseConstraintSolver();
 
     worldState.physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-    worldState.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY, 0));
+    //make y component -Utils.GRAVITY
+    worldState.physicsWorld.setGravity(new Ammo.btVector3(0, 0, 0));
     worldState.tempBtTransform = new Ammo.btTransform();
 }
 
@@ -74,9 +81,10 @@ function animate() {
     statsMs.begin();
     let time = performance.now();
     let delta = clock.getDelta();
-
+    
     worldState.physicsWorld.stepSimulation(delta, 10);
     if (worldState.debugDrawer) worldState.debugDrawer.update();
+    physics.update(delta);
     myPlayer.update(delta);
 
     if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {

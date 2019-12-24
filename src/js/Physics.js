@@ -1,4 +1,51 @@
 
-module.exports = {
-    createRigidBody: () => {}
+class Physics {
+    constructor (worldState) {
+        this.worldState = worldState;
+        this.rigidBodies = [];
+        this.player = {}
+    }
+
+    update (delta) {
+        this.rigidBodies.forEach((obj) => {
+            let motionState = obj.rigidBody.getMotionState();
+            motionState.getWorldTransform(this.worldState.tempBtTransform);
+            let p = this.worldState.tempBtTransform.getOrigin();
+            let q = this.worldState.tempBtTransform.getRotation();
+            obj.threeObject.position.set(p.x(), p.y() - 7, p.z());
+            obj.threeObject.quaternion.set(q.x(), q.y(), q.z(), q.w());
+        });
+    }
+
+    createRigidBody (threeObject, physicsShape, mass, pos, quat, positionOffset) {
+        var transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin(new Ammo.btVector3(pos.x, pos.y + 7, pos.z));
+        transform.setRotation(new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w));
+
+        var motionState = new Ammo.btDefaultMotionState(transform);
+        var localInertia = new Ammo.btVector3(0, 0, 0);
+        physicsShape.calculateLocalInertia(mass, localInertia);
+
+        var rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, physicsShape, localInertia);
+        var rigidBody = new Ammo.btRigidBody(rbInfo);
+
+        this.worldState.physicsWorld.addRigidBody(rigidBody);
+
+        if (mass > 0) {
+            this.rigidBodies.push(new PhysicsObject(threeObject, rigidBody, positionOffset));
+        }
+
+        return rigidBody;
+    }
 }
+
+class PhysicsObject {
+    constructor (threeObject, rigidBody, positionOffset) {
+        this.threeObject = threeObject;
+        this.rigidBody = rigidBody;
+        this.positionOffset = positionOffset;
+    }
+}
+
+module.exports = Physics;

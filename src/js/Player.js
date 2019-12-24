@@ -2,7 +2,7 @@ var GLTFLoader = require('../lib/GLTFLoader.js');
 var Animator = require('./Animator.js');
 
 class Player {
-    constructor(worldState, username, position, controlState = null, velocity = new THREE.Vector3(), lookDirection= new THREE.Vector3()) {
+    constructor(worldState, username, position, controlState = null, physics = null, velocity = new THREE.Vector3(), lookDirection= new THREE.Vector3()) {
 
         this.body = {
             position: {x: 0, y: 0, z: 0},
@@ -14,6 +14,7 @@ class Player {
         Ammo = worldState.Ammo;
 
         this.controlState = controlState;
+
         if (this.controlState) {
             this.controlState.toggleJump = this.toggleJump.bind(this);
             this.controlState.toggleCrouch = this.toggleCrouch.bind(this);
@@ -23,12 +24,14 @@ class Player {
             this.controlState.toggleRun = this.toggleRun.bind(this);
         }
 
+        this.physics = physics;
+
         this.username = username;
         this.lookDirection = lookDirection;
         this.prevPosition = new THREE.Vector3();
         this.moveDirection = new THREE.Vector3();
 
-        this.center = new THREE.Vector3(0, 7, 0);
+        this.centerOffset = new THREE.Vector3(0, -7, 0);
 
         this.flightEnabled = false;
         this.running = false;
@@ -79,37 +82,15 @@ class Player {
     }
 
     initPlayerPhysics() {
-        let transform = new Ammo.btTransform();
-        transform.setIdentity();
-        transform.setOrigin(new Ammo.btVector3(this.body.position.x, this.body.position.y, this.body.position.z));
-        transform.setRotation(new Ammo.btQuaternion(this.body.quaternion.x, this.body.quaternion.y, this.body.quaternion.z, this.body.quaternion.w));
-        let motionState = new Ammo.btDefaultMotionState(transform);
-
-        let colShape = new Ammo.btBoxShape(new Ammo.btVector3(this.body.scale.x, this.body.scale.y, this.body.scale.z));
-        colShape.setMargin(0.05);
-
-        let localInertia = new Ammo.btVector3(0, 0, 0);
-        colShape.calculateLocalInertia(Utils.PLAYER_MASS, localInertia);
-
-        let rbInfo = new Ammo.btRigidBodyConstructionInfo(Utils.PLAYER_MASS, motionState, colShape, localInertia);
-        let body = new Ammo.btRigidBody(rbInfo);
+        let colShape = new Ammo.btBoxShape(new Ammo.btVector3(this.body.scale.x * 0.3, this.body.scale.y, this.body.scale.z * 0.3));
+        let body = this.physics.createRigidBody(this.body, colShape, Utils.PLAYER_MASS, this.body.position, this.body.quaternion, this.centerOffset);
         this.physicsBody = body;
-
-        this.worldState.physicsWorld.addRigidBody(body);
+        this.physics.player = this;
     }
 
     //main update loop
 
     update(delta) {
-        if (this.physicsBody) {
-            let motionState = this.physicsBody.getMotionState();
-            motionState.getWorldTransform(this.worldState.tempBtTransform);
-            let p = this.worldState.tempBtTransform.getOrigin();
-            let q = this.worldState.tempBtTransform.getRotation();
-            this.body.position.set(p.x(), p.y(), p.z());
-            this.body.quaternion.set(q.x(), q.y(), q.z(), q.w());
-        }
-
         this.updateAnimation();
         if (this.controlState) this.controlState.controls.getDirection(this.lookDirection);
 
@@ -121,7 +102,8 @@ class Player {
         // this.updatePosition(delta);
         this.updateRotation(delta);
         this.updateFlashLight();
-        this.updateCameraPosition();
+
+        if (!this.controlState.debugMode) this.updateCameraPosition();
 
         // let grounded = this.collider.isGrounded(this);
         //

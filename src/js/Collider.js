@@ -29,7 +29,7 @@ class Collider {
             this.rays.forEach((ray) => {
                 let origin = new THREE.Vector3(0, 0, 0);
                 origin.add(player.body.position);
-                origin.add(player.center);
+                origin.add(player.centerOffset);
                 origin.add(ray.originOffset);
                 ray.update(origin);
             });
@@ -45,7 +45,7 @@ class Collider {
                 if (ray.groundChecker) {
                     this.raycaster.far = ray.length;
                     this.raycaster.ray.origin.copy(player.body.position);
-                    this.raycaster.ray.origin.add(player.center);
+                    this.raycaster.ray.origin.add(player.centerOffset);
                     this.raycaster.ray.origin.add(ray.originOffset);
                     this.raycaster.ray.direction.copy(ray.direction);
                     intersections = intersections.concat(this.raycaster.intersectObject(mesh));
@@ -66,7 +66,7 @@ class Collider {
             if (!ray.groundChecker) {
                 this.raycaster.far = ray.length;
                 this.raycaster.ray.origin.copy(player.body.position);
-                this.raycaster.ray.origin.add(player.center);
+                this.raycaster.ray.origin.add(player.centerOffset);
                 this.raycaster.ray.origin.add(ray.originOffset);
                 this.raycaster.ray.direction.copy(ray.direction);
                 intersections = intersections.concat(this.raycaster.intersectObject(mesh));
