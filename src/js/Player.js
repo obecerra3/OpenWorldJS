@@ -31,7 +31,7 @@ class Player {
         this.prevPosition = new THREE.Vector3();
         this.moveDirection = new THREE.Vector3();
 
-        this.centerOffset = new THREE.Vector3(0, -7, 0);
+        this.centerOffset = new THREE.Vector3(0, 6, 0);
 
         this.flightEnabled = false;
         this.running = false;
@@ -82,7 +82,7 @@ class Player {
     }
 
     initPlayerPhysics() {
-        let colShape = new Ammo.btBoxShape(new Ammo.btVector3(this.body.scale.x * 0.3, this.body.scale.y, this.body.scale.z * 0.3));
+        let colShape = new Ammo.btBoxShape(new Ammo.btVector3(this.body.scale.x * 0.3, this.body.scale.y * 0.8, this.body.scale.z * 0.3));
         let body = this.physics.createRigidBody(this.body, colShape, Utils.PLAYER_MASS, this.body.position, this.body.quaternion, this.centerOffset);
         this.physicsBody = body;
         this.physics.player = this;
@@ -95,7 +95,7 @@ class Player {
         if (this.controlState) this.controlState.controls.getDirection(this.lookDirection);
 
         this.updateMoveDirection(); //must be called before updateVelocity()
-        // this.updateVelocity(delta);
+        this.updateVelocity(delta);
 
         // this.collider.update(this);
 
@@ -170,24 +170,19 @@ class Player {
         this.moveDirection.applyAxisAngle(Utils.Y, theta);
     }
 
-    // updateVelocity(delta) {
-    //     this.velocity.x -= this.velocity.x * Utils.VELOCITY_DAMP * delta;
-    //     this.velocity.z -= this.velocity.z * Utils.VELOCITY_DAMP * delta;
-    //     this.velocity.y -= this.velocity.y * Utils.VELOCITY_DAMP * delta;
-    //     if (this.running) {
-    //         this.velocity.z += this.moveDirection.z * Utils.PLAYER_RUNNING_SPEED * delta;
-    //         this.velocity.x += this.moveDirection.x * Utils.PLAYER_RUNNING_SPEED * delta;
-    //     } else {
-    //         this.velocity.z += this.moveDirection.z * Utils.PLAYER_WALKING_SPEED * delta;
-    //         this.velocity.x += this.moveDirection.x * Utils.PLAYER_WALKING_SPEED * delta;
-    //     }
-    // }
+    updateVelocity(delta) {
+        if (this.physicsBody) {
+            if (this.running) {
+                this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_RUNNING_SPEED * delta, 0, this.moveDirection.z * Utils.PLAYER_RUNNING_SPEED * delta));
+            } else {
+                this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_WALKING_SPEED * delta, 0, this.moveDirection.z * Utils.PLAYER_WALKING_SPEED * delta));
+            }
+        }
 
-    // updatePosition(delta) {
-    //     this.body.position.x += this.velocity.x * delta;
-    //     this.body.position.y += this.velocity.y * delta;
-    //     this.body.position.z += this.velocity.z * delta;
-    // }
+        // this.velocity.x -= this.velocity.x * Utils.VELOCITY_DAMP * delta;
+        // this.velocity.z -= this.velocity.z * Utils.VELOCITY_DAMP * delta;
+        // this.velocity.y -= this.velocity.y * Utils.VELOCITY_DAMP * delta;
+    }
 
     updateRotation() {
         if (this.lookDirection.y > -0.97) {
@@ -233,17 +228,8 @@ class Player {
     toggleCrouch(value) {
         this.isCrouched= value;
         // if (this.flightEnabled) {
-        //     this.velocity.y -= Utils.PLAYER_JUMP;
-        // } else
-
-        if (this.isCrouched) {
-            this.worldState.camera.position.y -= 5;
-            //this.worldState.camera.position.y -= Math.max(0.75, this.worldState.camera.position.y - Utils.PLAYER_HEIGHT / 2);
-        } else {
-            this.worldState.camera.y += 5;
-            //this.worldState.camera.position.y += Math.max(0.75, Utils.PLAYER_HEIGHT - this.worldState.camera.position.y);
-        }
-        //if (this.flightEnabled && this.player.body.position.y > Utils.PLAYER_HEIGHT) this.player.velocity.y -= Utils.PLAYER_JUMP;
+        //velocity.y -= Utils.PLAYER_JUMP
+        // }
     }
 
     toggleJump() {
@@ -305,7 +291,6 @@ class Player {
         // console.log(this.animator);
         console.log(this.state);
         console.log("player position: ", this.body.position);
-        console.log("isGrounded: ", this.collider.isGrounded(this));
         // console.log("move Direction: ", this.moveDirection);
         // console.log("player velocity: ", this.velocity);
         // console.log("controlstate: ", this.controlState.moveForward, this.controlState.moveLeft, this.controlState.moveBackward, this.controlState.moveRight);

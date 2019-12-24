@@ -12,7 +12,7 @@ class Physics {
             motionState.getWorldTransform(this.worldState.tempBtTransform);
             let p = this.worldState.tempBtTransform.getOrigin();
             let q = this.worldState.tempBtTransform.getRotation();
-            obj.threeObject.position.set(p.x(), p.y() - 7, p.z());
+            obj.threeObject.position.set(p.x() - obj.positionOffset.x, p.y() - obj.positionOffset.y, p.z() - obj.positionOffset.z);
             obj.threeObject.quaternion.set(q.x(), q.y(), q.z(), q.w());
         });
     }
@@ -20,7 +20,7 @@ class Physics {
     createRigidBody (threeObject, physicsShape, mass, pos, quat, positionOffset) {
         var transform = new Ammo.btTransform();
         transform.setIdentity();
-        transform.setOrigin(new Ammo.btVector3(pos.x, pos.y + 7, pos.z));
+        transform.setOrigin(new Ammo.btVector3(pos.x + positionOffset.x, pos.y + positionOffset.y, pos.z + positionOffset.z));
         transform.setRotation(new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w));
 
         var motionState = new Ammo.btDefaultMotionState(transform);
@@ -33,6 +33,7 @@ class Physics {
         this.worldState.physicsWorld.addRigidBody(rigidBody);
 
         if (mass > 0) {
+            rigidBody.setActivationState(1);
             this.rigidBodies.push(new PhysicsObject(threeObject, rigidBody, positionOffset));
         }
 
