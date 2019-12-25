@@ -33,7 +33,7 @@ class Physics {
         this.worldState.physicsWorld.addRigidBody(rigidBody);
 
         if (mass > 0) {
-            rigidBody.setActivationState(1);
+            rigidBody.setActivationState(4);
             this.rigidBodies.push(new PhysicsObject(threeObject, rigidBody, positionOffset));
         }
 
