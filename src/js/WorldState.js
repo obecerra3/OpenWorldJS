@@ -20,13 +20,12 @@ class WorldState {
         this.prevUpdateTime = -Utils.UPDATE_DELTA;
         this.prevTime = performance.now();
 
-        var floorGeometry = new THREE.PlaneBufferGeometry(1000,1000);
+        var floorGeometry = new THREE.PlaneBufferGeometry(5000, 5000);
         floorGeometry.rotateX(-Math.PI/2);
         let floorMaterial = new THREE.MeshPhongMaterial( { vertexColors: THREE.NoColors } );
         floorMaterial.color = new THREE.Color(0x81a68c);
 
         this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
-
         this.scene.add(this.floor);
 
         this.renderer = new THREE.WebGLRenderer({antialias: true});

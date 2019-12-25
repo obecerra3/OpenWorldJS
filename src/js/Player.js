@@ -31,7 +31,7 @@ class Player {
         this.prevPosition = new THREE.Vector3();
         this.moveDirection = new THREE.Vector3();
 
-        this.centerOffset = new THREE.Vector3(0, 6, 0);
+        this.centerOffset = new THREE.Vector3(0, 5, 0);
 
         this.flightEnabled = false;
         this.running = false;
@@ -82,8 +82,9 @@ class Player {
     }
 
     initPlayerPhysics() {
-        let colShape = new Ammo.btBoxShape(new Ammo.btVector3(this.body.scale.x * 0.3, this.body.scale.y * 0.8, this.body.scale.z * 0.3));
+        let colShape = new Ammo.btCapsuleShape(2, 6.5);
         let body = this.physics.createRigidBody(this.body, colShape, Utils.PLAYER_MASS, this.body.position, this.body.quaternion, this.centerOffset);
+        body.setAngularFactor(new Ammo.btVector3(0.0, 0.0, 0.0));
         this.physicsBody = body;
         this.physics.player = this;
     }
@@ -271,13 +272,13 @@ class Player {
                 this.animator.prepareCrossFade('Walk', 'Idle', 0.5);
             },
             "run to walk" : () => {
-                this.animator.prepareCrossFade('Run', 'Walk', 1.0);
+                this.animator.prepareCrossFade('Run', 'Walk', 0.25);
             },
             "walk to run" : () => {
                 this.animator.prepareCrossFade('Walk', 'Run', 0.5);
             },
             "run to idle" : () => {
-                this.animator.prepareCrossFade('Run', 'Idle', 0.25);
+                this.animator.prepareCrossFade('Run', 'Idle', 0.1);
             }
         }
     }

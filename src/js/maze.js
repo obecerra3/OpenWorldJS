@@ -58,6 +58,7 @@ function initStats() {
 
 function initPhysics() {
     physics = new Physics(worldState);
+    mazeBuilder.physics = physics;
 
     let collisionConfiguration  = new Ammo.btDefaultCollisionConfiguration(),
         dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
@@ -65,9 +66,12 @@ function initPhysics() {
         solver = new Ammo.btSequentialImpulseConstraintSolver();
 
     worldState.physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-    //make y component -Utils.GRAVITY
-    worldState.physicsWorld.setGravity(new Ammo.btVector3(0, 0, 0));
+    worldState.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY * 100, 0));
     worldState.tempBtTransform = new Ammo.btTransform();
+
+    let colShape = new Ammo.btBoxShape(new Ammo.btVector3(worldState.floor.geometry.parameters.width * 0.5, 1, worldState.floor.geometry.parameters.height * 0.5));
+    let body = physics.createRigidBody(worldState.floor, colShape, 0, worldState.floor.position, worldState.floor.quaternion);
+    worldState.floor.userData.physicsBody = body;
 }
 
 function initDebug() {
@@ -81,7 +85,7 @@ function animate() {
     statsMs.begin();
     let time = performance.now();
     let delta = clock.getDelta();
-    
+
     worldState.physicsWorld.stepSimulation(delta, 10);
     if (worldState.debugDrawer) worldState.debugDrawer.update();
     physics.update(delta);

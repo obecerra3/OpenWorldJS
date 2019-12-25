@@ -17,7 +17,7 @@ class Physics {
         });
     }
 
-    createRigidBody (threeObject, physicsShape, mass, pos, quat, positionOffset) {
+    createRigidBody (threeObject, physicsShape, mass, pos, quat, positionOffset = new THREE.Vector3()) {
         var transform = new Ammo.btTransform();
         transform.setIdentity();
         transform.setOrigin(new Ammo.btVector3(pos.x + positionOffset.x, pos.y + positionOffset.y, pos.z + positionOffset.z));

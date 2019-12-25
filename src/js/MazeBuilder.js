@@ -27,6 +27,10 @@ class MazeBuilder {
                     var wallCenter = new THREE.Vector3(origin.x + (j * cellSize) + (wallLength / 2) - Utils.WALL_WIDTH / 2, Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2));
                     var wall = new THREE.Mesh(this.getGeometry(wallLength, Utils.WALL_WIDTH));
                     wall.position.copy(wallCenter);
+
+                    let colShape = new Ammo.btBoxShape(new Ammo.btVector3(wall.geometry.parameters.width * 0.5, wall.geometry.parameters.height * 0.5, wall.geometry.parameters.depth * 0.5));
+                    let body = this.physics.createRigidBody(wall, colShape, 0, wall.position, wall.quaternion);
+
                     wallGeometry.mergeMesh(wall);
                     j = k;
                 }
@@ -46,6 +50,10 @@ class MazeBuilder {
                     var wallCenter = new THREE.Vector3(origin.x + (j * cellSize), Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2) + (wallLength / 2));
                     var wall = new THREE.Mesh(this.getGeometry(Utils.WALL_WIDTH, wallLength));
                     wall.position.copy(wallCenter);
+
+                    let colShape = new Ammo.btBoxShape(new Ammo.btVector3(wall.geometry.parameters.width * 0.5, wall.geometry.parameters.height * 0.5, wall.geometry.parameters.depth * 0.5));
+                    let body = this.physics.createRigidBody(wall, colShape, 0, wall.position, wall.quaternion);
+
                     wallGeometry.mergeMesh(wall);
                     i = k;
                 }
