@@ -1,14 +1,10 @@
-var GLTFLoader = require('../lib/GLTFLoader.js');
-var Animator = require('./Animator.js');
+let GLTFLoader = require('../lib/GLTFLoader.js');
+let Animator = require('./Animator.js');
+let Collider = require('./Collider.js');
+let Ray = require('./Ray.js');
 
 class Player {
     constructor(worldState, username, position, controlState = null, physics = null, velocity = new THREE.Vector3(), lookDirection= new THREE.Vector3()) {
-
-        this.body = {
-            position: {x: 0, y: 0, z: 0},
-            scale: {x: 0, y: 0, z: 0},
-            rotation: {x: 0, y: 0, z: 0}
-        };
 
         this.worldState = worldState;
         Ammo = worldState.Ammo;
@@ -23,6 +19,16 @@ class Player {
             this.controlState.toggleFlight = this.toggleFlight.bind(this);
             this.controlState.toggleRun = this.toggleRun.bind(this);
         }
+
+        let rays = [
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils.X.multiplyScalar(1.5), 0xff00ff),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils._X.multiplyScalar(1.5), 0xff00ff),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils.Z.multiplyScalar(1.5), 0xff00ff),
+            new Ray(this.worldState.scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils._Z.multiplyScalar(1.5), 0xff00ff)
+        ]
+
+        this.collider = new Collider(rays, 4);
+        this.collider.toggleShowRays(true);
 
         this.physics = physics;
 
@@ -57,7 +63,7 @@ class Player {
 
         this.isCrouched = false;
 
-        var loader = new THREE.GLTFLoader();
+        let loader = new THREE.GLTFLoader();
         loader.load('./models/fpsCharacter.glb', (gltf) => {
             this.model = gltf;
             this.body = gltf.scene;
@@ -86,7 +92,6 @@ class Player {
         let body = this.physics.createRigidBody(this.body, colShape, Utils.PLAYER_MASS, this.body.position, this.body.quaternion, this.centerOffset);
         body.setAngularFactor(new Ammo.btVector3(0.0, 0.0, 0.0));
         this.physicsBody = body;
-        this.physics.player = this;
     }
 
     //main update loop
@@ -94,25 +99,14 @@ class Player {
     update(delta) {
         this.updateAnimation();
         if (this.controlState) this.controlState.controls.getDirection(this.lookDirection);
+        if (this.body) this.collider.update(this);
 
         this.updateMoveDirection(); //must be called before updateVelocity()
         this.updateVelocity(delta);
-
-        // this.collider.update(this);
-
-        // this.updatePosition(delta);
         this.updateRotation(delta);
         this.updateFlashLight();
 
         if (!this.controlState.debugMode) this.updateCameraPosition();
-
-        // let grounded = this.collider.isGrounded(this);
-        //
-        // if (!this.flightEnabled && !grounded) {
-        //     this.velocity.y -= Utils.GRAVITY * Utils.PLAYER_MASS * delta;;
-        // } else if (grounded) {
-        //     this.velocity.y = 0;
-        // }
 
     }
 
@@ -173,40 +167,39 @@ class Player {
 
     updateVelocity(delta) {
         if (this.physicsBody) {
+            let yVelocity = this.physicsBody.getLinearVelocity().y();
             if (this.running) {
-                this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_RUNNING_SPEED * delta, 0, this.moveDirection.z * Utils.PLAYER_RUNNING_SPEED * delta));
+                this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_RUNNING_SPEED * delta, yVelocity, this.moveDirection.z * Utils.PLAYER_RUNNING_SPEED * delta));
             } else {
-                this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_WALKING_SPEED * delta, 0, this.moveDirection.z * Utils.PLAYER_WALKING_SPEED * delta));
+                this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_WALKING_SPEED * delta, yVelocity, this.moveDirection.z * Utils.PLAYER_WALKING_SPEED * delta));
             }
         }
-
-        // this.velocity.x -= this.velocity.x * Utils.VELOCITY_DAMP * delta;
-        // this.velocity.z -= this.velocity.z * Utils.VELOCITY_DAMP * delta;
-        // this.velocity.y -= this.velocity.y * Utils.VELOCITY_DAMP * delta;
     }
 
     updateRotation() {
-        if (this.lookDirection.y > -0.97) {
+        if (this.body && this.lookDirection.y > -0.97) {
             this.body.rotation.y = Math.atan2(this.lookDirection.x, this.lookDirection.z);
         }
     }
 
     updateCameraPosition() {
-        if (this.lookDirection.y > -0.97) {
-            let offset = new THREE.Vector3(this.lookDirection.x, 0, this.lookDirection.z); //used to be * 1.75
-            offset.normalize();
-            offset.multiplyScalar(-10); //2 for fps -10 for 3rd person
-            this.worldState.camera.position.x = this.body.position.x + offset.x;
-            this.worldState.camera.position.z = this.body.position.z + offset.z;
-        }
-        this.worldState.camera.position.y = this.body.position.y + 10;
+        if (this.body) {
+            if (this.lookDirection.y > -0.97) {
+                let offset = new THREE.Vector3(this.lookDirection.x, 0, this.lookDirection.z); //used to be * 1.75
+                offset.normalize();
+                offset.multiplyScalar(-10); //2 for fps -10 for 3rd person
+                this.worldState.camera.position.x = this.body.position.x + offset.x;
+                this.worldState.camera.position.z = this.body.position.z + offset.z;
+            }
+            this.worldState.camera.position.y = this.body.position.y + 10;
 
-        if (this.running && this.state == this.states.RUN) {
-            let max = 0.07;
-            let min = -0.07;
-            this.worldState.camera.position.x += Math.random() * (max - min) + min;
-            this.worldState.camera.position.z += Math.random() * (max - min) + min;
-            this.worldState.camera.position.y += Math.random() * (max - min) + min;
+            if (this.running && this.state == this.states.RUN) {
+                let max = 0.07;
+                let min = -0.07;
+                this.worldState.camera.position.x += Math.random() * (max - min) + min;
+                this.worldState.camera.position.z += Math.random() * (max - min) + min;
+                this.worldState.camera.position.y += Math.random() * (max - min) + min;
+            }
         }
     }
 
@@ -228,12 +221,11 @@ class Player {
 
     toggleCrouch(value) {
         this.isCrouched= value;
-        // if (this.flightEnabled) {
-        //velocity.y -= Utils.PLAYER_JUMP
-        // }
     }
 
     toggleJump() {
+        this.jumpToggled = true;
+        // this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.physicsBody.getLinearVelocity().x(), 800, this.physicsBody.getLinearVelocity().z()));
         // if ((this.collider.isGrounded(this) && !this.isCrouched) || this.flightEnabled) {
         //     this.velocity.y += Utils.PLAYER_JUMP;
         // }

@@ -22,6 +22,7 @@ spl_autoload_register(function ($class_name) {
       var username = "life is hard";
     </script>
     <script src="./lib/three.min.js"></script>
+    <script src="./lib/stats.min.js"></script>
     <script src="./lib/ammo.js"></script>
     <script src="./lib/AmmoDebugDrawer.js"></script>
     <script src="./js/Utils.js"></script>

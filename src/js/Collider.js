@@ -1,6 +1,6 @@
 class Collider {
 
-    constructor (player, rays, groundRayCount) {
+    constructor (rays, groundRayCount) {
         this.raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 1);
         this.rays = rays;
         this.meshes = {};

@@ -7,7 +7,7 @@ class MazeBuilder {
     }
 
 
-    build (mazeArray, mazeSize, cellSize) {
+    build (mazeArray, mazeSize, cellSize, worldState, physics, player) {
         var wallGeometry = new THREE.Geometry();
         var wallGroup = new THREE.Group();
         var worldMazeSize = cellSize * mazeSize;
@@ -29,7 +29,7 @@ class MazeBuilder {
                     wall.position.copy(wallCenter);
 
                     let colShape = new Ammo.btBoxShape(new Ammo.btVector3(wall.geometry.parameters.width * 0.5, wall.geometry.parameters.height * 0.5, wall.geometry.parameters.depth * 0.5));
-                    let body = this.physics.createRigidBody(wall, colShape, 0, wall.position, wall.quaternion);
+                    let body = physics.createRigidBody(wall, colShape, 0, wall.position, wall.quaternion);
 
                     wallGeometry.mergeMesh(wall);
                     j = k;
@@ -52,7 +52,7 @@ class MazeBuilder {
                     wall.position.copy(wallCenter);
 
                     let colShape = new Ammo.btBoxShape(new Ammo.btVector3(wall.geometry.parameters.width * 0.5, wall.geometry.parameters.height * 0.5, wall.geometry.parameters.depth * 0.5));
-                    let body = this.physics.createRigidBody(wall, colShape, 0, wall.position, wall.quaternion);
+                    let body = physics.createRigidBody(wall, colShape, 0, wall.position, wall.quaternion);
 
                     wallGeometry.mergeMesh(wall);
                     i = k;

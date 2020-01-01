@@ -1,19 +1,19 @@
 let Player = require('./Player.js');
 let ControlState = require('./ControlState.js');
 let WorldState = require('./WorldState.js');
-let Stats = require('stats.js');
 let MessageBuilder = require('./MessageBuilder.js');
 let MazeBuilder = require('./MazeBuilder.js');
 let InfoManager = require('./InfoManager.js');
 let Physics = require('./Physics.js');
+let ResourceManager = require('./ResourceManager.js');
 
 let messageBuilder = new MessageBuilder();
-
-let mazeBuilder = new MazeBuilder();
 
 let socket = new WebSocket("wss://themaze.io:8000");
 
 let clock = new THREE.Clock();
+
+let eventQueue = [];
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username)); }
 socket.onmessage = (event) => {
@@ -28,6 +28,12 @@ let myPlayer;
 let physics;
 let statsFps = new Stats();
 let statsMs = new Stats();
+let mazeBuilder = new MazeBuilder();
+let resourceManager = new ResourceManager();
+
+//bad bad coupling but everything will look prettier one day
+worldState.resourceManager = resourceManager;
+resourceManager.worldState = worldState;
 
 Ammo().then((AmmoLib) => {
     Ammo = AmmoLib;
@@ -58,7 +64,6 @@ function initStats() {
 
 function initPhysics() {
     physics = new Physics(worldState);
-    mazeBuilder.physics = physics;
 
     let collisionConfiguration  = new Ammo.btDefaultCollisionConfiguration(),
         dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
@@ -88,10 +93,10 @@ function animate() {
 
     worldState.physicsWorld.stepSimulation(delta, 10);
     if (worldState.debugDrawer) worldState.debugDrawer.update();
-    physics.update(delta);
+    physics.update(delta, myPlayer);
     myPlayer.update(delta);
 
-    if (time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
+    if (myPlayer.body && time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
         socket.send(messageBuilder.state(myPlayer));
         worldState.prevUpdateTime = time;
     }
@@ -104,14 +109,23 @@ function animate() {
     // });
 
     worldState.prevTime = time;
-
+    // console.log(worldState.renderer.info.render.calls);
     worldState.renderer.render(worldState.scene, worldState.camera);
+
+    if (eventQueue.length > 0) {
+        let eventObj = eventQueue[0];
+        if (eventObj.verify()) {
+            eventObj.action.apply(this, eventObj.arguments);
+            eventQueue.shift();
+        }
+    }
 
     statsFps.end();
     statsMs.end();
 }
 
 function processIntroduction (buffer) {
+    // console.log("processIntroduction");
     let dataView = new DataView(buffer);
     let id = dataView.getUint8(0);
     // let isHunted = dataView.getUint8(1) != 0;
@@ -127,6 +141,7 @@ function processIntroduction (buffer) {
 }
 
 function processLeft (buffer) {
+    // console.log("processLeft");
     let dataView = new DataView(buffer);
     let id = dataView.getUint8(0);
     worldState.scene.remove(otherPlayers[id].body);
@@ -136,6 +151,7 @@ function processLeft (buffer) {
 
 
 function processMaze (buffer) {
+    // console.log("processMaze");
     let byteArray = new Uint8Array(buffer);
 
     let mazeArray = byteArray.reduce((array, curr, idx) => {
@@ -152,12 +168,13 @@ function processMaze (buffer) {
         return array;
     }, []);
 
-    worldState.mazeMesh = mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE);
-    worldState.scene.add(worldState.mazeMesh);
-    // player.collider.addMesh("walls", worldState.mazeMesh);
+    // worldState.mazeMesh =
+    mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE, worldState, physics, myPlayer);
+    // worldState.scene.add(worldState.mazeMesh);
 }
 
 function processAction (buffer, code) {
+    // console.log("processAction");
     let dataView = new DataView(buffer);
     let id = dataView.getUint16(0);
     let player = otherPlayers[id];
@@ -173,6 +190,7 @@ function processAction (buffer, code) {
 }
 
 function processPlayerState (buffer) {
+    // console.log("processPlayerState");
     let dataView = new DataView(buffer);
     let id = dataView.getUint16(0);
     let isCrouched = dataView.getUint8(2);
@@ -194,6 +212,7 @@ function processPlayerState (buffer) {
 
 
 async function receive (blob) {
+    // console.log("receive");
     let arrayBuffer = await new Response(blob).arrayBuffer();
     let dataView = new DataView(arrayBuffer);
     switch (dataView.getUint8(0)) {
@@ -201,7 +220,15 @@ async function receive (blob) {
             processIntroduction(arrayBuffer.slice(1));
             break;
         case 1:
-            processMaze(arrayBuffer.slice(1));
+            if (myPlayer.body) {
+                processMaze(arrayBuffer.slice(1));
+            } else {
+                eventQueue.push({
+                    verify: () => { return myPlayer.body; },
+                    action: processMaze,
+                    arguments: [arrayBuffer.slice(1)]
+                });
+            }
             break;
         case 2:
             processPlayerState(arrayBuffer.slice(1));
