@@ -9,6 +9,8 @@ class ControlState {
         this.moveLeft = false;
         this.moveRight = false;
         this.speed = 5;
+        this.spacePressedTime;
+        this.clock = worldState.clock;
 
         // Callbacks defined in Player.js
         this.toggleFlashlight = null;
@@ -51,10 +53,10 @@ class ControlState {
                             worldState.camera.position.add(offset.multiplyScalar(-this.speed));
                             break;
                         case 49: //1
-                            this.speed -= 1;
+                            this.speed -= 5;
                             break;
                         case 57: //9
-                            this.speed += 1;
+                            this.speed += 5;
                             break;
                         case 48: //0
                             this.debugMode = !this.debugMode;
@@ -88,7 +90,9 @@ class ControlState {
                             this.moveRight = true;
                             break;
                         case 32: // space
-                            this.toggleJump();
+                            if (!this.spacePressedTime) {
+                                this.spacePressedTime = this.clock.elapsedTime;
+                            }
                             break;
                         case 80: // p
                             this.printState();
@@ -128,6 +132,10 @@ class ControlState {
                     case 39: // right
                     case 68: // d
                         this.moveRight = false;
+                        break;
+                    case 32: //space
+                        this.toggleJump(this.clock.elapsedTime - this.spacePressedTime);
+                        this.spacePressedTime = null;
                         break;
                 }
             }

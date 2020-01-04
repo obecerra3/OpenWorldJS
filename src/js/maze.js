@@ -11,8 +11,6 @@ let messageBuilder = new MessageBuilder();
 
 let socket = new WebSocket("wss://themaze.io:8000");
 
-let clock = new THREE.Clock();
-
 let eventQueue = [];
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username)); }
@@ -22,6 +20,7 @@ socket.onmessage = (event) => {
 
 let otherPlayers = {};
 let worldState = new WorldState();
+let clock = worldState.clock;
 let controlState = new ControlState(worldState);
 let infoManager = new InfoManager();
 let myPlayer;

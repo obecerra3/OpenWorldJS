@@ -1,7 +1,7 @@
 
 class WorldState {
     constructor() {
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
 
         this.mazeMesh = null;
 
@@ -38,6 +38,8 @@ class WorldState {
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.gammaFactor = 2.2;
         document.body.appendChild(this.renderer.domElement);
+
+        this.clock = new THREE.Clock();
 
         window.addEventListener('resize', () => {
             this.camera.aspect = window.innerWidth / window.innerHeight;

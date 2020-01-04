@@ -29,6 +29,7 @@ class Player {
 
         this.collider = new Collider(rays, 4);
         this.collider.toggleShowRays(true);
+        this.collider.addMesh("floor", this.worldState.floor);
 
         this.physics = physics;
 
@@ -168,6 +169,7 @@ class Player {
     updateVelocity(delta) {
         if (this.physicsBody) {
             let yVelocity = this.physicsBody.getLinearVelocity().y();
+            // if (yVelocity)
             if (this.running) {
                 this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.moveDirection.x * Utils.PLAYER_RUNNING_SPEED * delta, yVelocity, this.moveDirection.z * Utils.PLAYER_RUNNING_SPEED * delta));
             } else {
@@ -223,12 +225,12 @@ class Player {
         this.isCrouched= value;
     }
 
-    toggleJump() {
-        this.jumpToggled = true;
-        // this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.physicsBody.getLinearVelocity().x(), 800, this.physicsBody.getLinearVelocity().z()));
-        // if ((this.collider.isGrounded(this) && !this.isCrouched) || this.flightEnabled) {
-        //     this.velocity.y += Utils.PLAYER_JUMP;
-        // }
+    toggleJump(timePressed) {
+        timePressed = timePressed % 5;
+        let yVelocity = 300 + (timePressed * 100);
+        if ((this.collider.isGrounded(this) && !this.isCrouched) || this.flightEnabled) {
+            this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.physicsBody.getLinearVelocity().x(), yVelocity, this.physicsBody.getLinearVelocity().z()));
+        }
     }
 
     toggleFlight() {
