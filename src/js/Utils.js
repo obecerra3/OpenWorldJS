@@ -5,7 +5,7 @@ var Utils = {
     PLAYER_SIZE: 5,
     PLAYER_MASS: 50,//0.00005,
     PLAYER_WALKING_SPEED: 1500,//0.0005,
-    PLAYER_RUNNING_SPEED: 3000,
+    PLAYER_RUNNING_SPEED: 6000,
     PLAYER_JUMP: 200,//0.1,
     VELOCITY_DAMP: 2.5,//0.01,
 
@@ -16,6 +16,10 @@ var Utils = {
     CELL_SIZE: 95,
     UPDATE_DELTA: 100.0,
     MAZE_SIZE: 55,
+    WALL_UPDATE_TIME: 5,
+    WALL_UPDATE_DISTANCE: 1000,
+    WALL_QUADRANT_SIZE: 1000,
+    PHYSICS_RENDER_DISTANCE: 1000,
 
     //ANIMATIONS
     //default weight for animation action in animationData
@@ -63,6 +67,15 @@ var Utils = {
               {x: c.x+1, z: c.z-1},
               {x: c.x+1, z: c.z},
               {x: c.x+1, z: c.z+1}];
+    },
+
+    vector3ToString: (v) => {
+        return v.x + "," + v.y + "," + v.z;
+    },
+
+    stringToVector3: (s) => {
+        let values = s.split(",");
+        return new THREE.Vector3(parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]));
     }
 }
 
@@ -70,6 +83,17 @@ var Utils = {
 //CODE DUMP
 //for stuff that we used before, but no longer need but it took time to write so keeping it just in case its
 //useful again
+
+// getGeometry(xLength, zLength) {
+//     let geoLookup = this.geometries.get(Utils.pair(xLength, zLength));
+//     if (geoLookup == undefined) {
+//         let geometry = new THREE.BoxGeometry(xLength, Utils.WALL_HEIGHT, zLength);
+//         this.geometries.set(Utils.pair(xLength, zLength), geometry);
+//         return geometry;
+//     } else {
+//         return geoLookup;
+//     }
+// }
 
 // let rays = [new Ray(this.worldState.scene, Utils.XZ, Utils.PLAYER_SIZE),
 //     new Ray(this.worldState.scene, Utils._XZ, Utils.PLAYER_SIZE),

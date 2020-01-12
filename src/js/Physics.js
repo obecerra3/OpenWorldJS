@@ -2,12 +2,12 @@
 class Physics {
     constructor (worldState) {
         this.worldState = worldState;
-        this.rigidBodies = [];
+        this.dynamicRigidBodies = [];
         this.player = {}
     }
 
     update (delta) {
-        this.rigidBodies.forEach((obj) => {
+        this.dynamicRigidBodies.forEach((obj) => {
             let motionState = obj.rigidBody.getMotionState();
             motionState.getWorldTransform(this.worldState.tempBtTransform);
             let p = this.worldState.tempBtTransform.getOrigin();
@@ -34,7 +34,7 @@ class Physics {
 
         if (mass > 0) {
             rigidBody.setActivationState(4);
-            this.rigidBodies.push(new PhysicsObject(threeObject, rigidBody, positionOffset));
+            this.dynamicRigidBodies.push(new PhysicsObject(threeObject, rigidBody, positionOffset));
         }
 
         return rigidBody;

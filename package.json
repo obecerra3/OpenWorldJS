@@ -22,7 +22,6 @@
         "watchify": "^3.11.1"
     },
     "dependencies": {
-        "three": "^0.112.1",
-        "three-instanced-mesh": "^0.96.2"
+        "three": "^0.112.1"
     }
 }

@@ -7,7 +7,7 @@ class WorldState {
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x1f1e33);
-        this.scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000);
+        // this.scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000);
 
         var axesHelper = new THREE.AxesHelper(10);
         this.scene.add(axesHelper);
@@ -15,7 +15,11 @@ class WorldState {
         var light = new THREE.AmbientLight(0x404040);
         this.scene.add(light);
 
+        this.player = {};
         this.otherPlayers = {};
+
+        this.physics = {};
+        this.physicsWorld = {};
 
         this.prevUpdateTime = -Utils.UPDATE_DELTA;
         this.prevTime = performance.now();

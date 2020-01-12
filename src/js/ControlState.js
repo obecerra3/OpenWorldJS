@@ -8,7 +8,7 @@ class ControlState {
         this.moveBackward = false;
         this.moveLeft = false;
         this.moveRight = false;
-        this.speed = 5;
+        this.speed = 40;
         this.spacePressedTime;
         this.clock = worldState.clock;
 

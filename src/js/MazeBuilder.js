@@ -1,10 +1,10 @@
-require('three-instanced-mesh')(THREE);
+require('../lib/three-instanced-mesh/index.js')(THREE);
 
 class MazeBuilder {
 
     constructor () {
         this.geometries = new Map();
-        this.wallMaterial = new THREE.MeshPhongMaterial({color: 0xd3d3d3, dithering: true});
+        this.wallMaterial = new THREE.MeshPhongMaterial();
     }
 
 
@@ -17,6 +17,10 @@ class MazeBuilder {
         let wallIndex = 0;
         let wallPosition = new THREE.Vector3();
         let wallScale = new THREE.Vector3();
+        let k, wallLength, wallCenter, colShapeVector;
+
+        let resourceManager = worldState.resourceManager;
+        resourceManager.loadWallKeys(player.body.position, cluster);
 
         let i,j;
 
@@ -24,17 +28,18 @@ class MazeBuilder {
             for (j = 0; j < mazeSize - 1; j++) {
                 if (!mazeArray[i][j]) continue;
                 if (mazeArray[i][j + 1] == 1) {
-                    let k = j + 2;
+                    k = j + 2;
                     while (k < mazeSize && mazeArray[i][k]) {
                         k += 1;
                     }
-                    let wallLength = cellSize * (k - j - 1) + Utils.WALL_WIDTH;
-                    let wallCenter = new THREE.Vector3(origin.x + (j * cellSize) + (wallLength / 2) - Utils.WALL_WIDTH / 2, Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2));
+                    wallLength = cellSize * (k - j - 1) + Utils.WALL_WIDTH;
+                    wallCenter = new THREE.Vector3(origin.x + (j * cellSize) + (wallLength / 2) - Utils.WALL_WIDTH / 2, Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2));
                     cluster.setPositionAt(wallIndex, wallPosition.copy(wallCenter));
                     cluster.setScaleAt(wallIndex, wallScale.set(wallLength * 0.5, Utils.WALL_HEIGHT * 0.5, Utils.WALL_WIDTH * 0.5));
+                    cluster.setColorAt(wallIndex, new THREE.Color(0xd3d3d3));
 
-                    let colShape = new Ammo.btBoxShape(new Ammo.btVector3(wallLength * 0.5, Utils.WALL_HEIGHT * 0.5, Utils.WALL_WIDTH * 0.5));
-                    let body = physics.createRigidBody({wallIndex, cluster}, colShape, 0, wallCenter, new THREE.Quaternion());
+                    colShapeVector = new Ammo.btVector3(wallLength * 0.5, Utils.WALL_HEIGHT * 0.5, Utils.WALL_WIDTH * 0.5);
+                    resourceManager.createWallObject(wallIndex, colShapeVector, wallCenter);
 
                     wallIndex++;
                     j = k;
@@ -42,22 +47,22 @@ class MazeBuilder {
             }
         }
 
-
         for (j = 0; j < mazeSize; j++) {
             for (i = 0; i < mazeSize - 1; i++) {
                 if (!mazeArray[i][j]) continue;
                 if (mazeArray[i + 1][j] == 1) {
-                    let k = i + 2;
+                    k = i + 2;
                     while (k < mazeSize && mazeArray[k][j]) {
                         k += 1;
                     }
-                    let wallLength = cellSize * (k - i - 1);
-                    let wallCenter = new THREE.Vector3(origin.x + (j * cellSize), Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2) + (wallLength / 2));
+                    wallLength = cellSize * (k - i - 1);
+                    wallCenter = new THREE.Vector3(origin.x + (j * cellSize), Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2) + (wallLength / 2));
                     cluster.setPositionAt(wallIndex, wallPosition.copy(wallCenter));
                     cluster.setScaleAt(wallIndex, wallScale.set(Utils.WALL_WIDTH * 0.5, Utils.WALL_HEIGHT * 0.5, wallLength * 0.5));
+                    cluster.setColorAt(wallIndex, new THREE.Color(0xd3d3d3));
 
-                    let colShape = new Ammo.btBoxShape(new Ammo.btVector3(Utils.WALL_WIDTH * 0.5, Utils.WALL_HEIGHT * 0.5, wallLength * 0.5));
-                    let body = physics.createRigidBody({wallIndex, cluster}, colShape, 0, wallCenter, new THREE.Quaternion());
+                    colShapeVector = new Ammo.btVector3(Utils.WALL_WIDTH * 0.5, Utils.WALL_HEIGHT * 0.5, wallLength * 0.5);
+                    resourceManager.createWallObject(wallIndex, colShapeVector, wallCenter);
 
                     wallIndex++;
                     i = k;
@@ -65,19 +70,9 @@ class MazeBuilder {
             }
         }
 
+        resourceManager.wallsLoaded();
         worldState.scene.add(cluster);
 
-    }
-
-    getGeometry(xLength, zLength) {
-        let geoLookup = this.geometries.get(Utils.pair(xLength, zLength));
-        if (geoLookup == undefined) {
-            let geometry = new THREE.BoxGeometry(xLength, Utils.WALL_HEIGHT, zLength);
-            this.geometries.set(Utils.pair(xLength, zLength), geometry);
-            return geometry;
-        } else {
-            return geoLookup;
-        }
     }
 }
 

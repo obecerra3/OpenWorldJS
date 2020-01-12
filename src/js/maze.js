@@ -28,11 +28,10 @@ let physics;
 let statsFps = new Stats();
 let statsMs = new Stats();
 let mazeBuilder = new MazeBuilder();
-let resourceManager = new ResourceManager();
+let resourceManager = new ResourceManager(worldState);
 
 //bad bad coupling but everything will look prettier one day
 worldState.resourceManager = resourceManager;
-resourceManager.worldState = worldState;
 
 Ammo().then((AmmoLib) => {
     Ammo = AmmoLib;
@@ -69,6 +68,7 @@ function initPhysics() {
         overlappingPairCache = new Ammo.btDbvtBroadphase(),
         solver = new Ammo.btSequentialImpulseConstraintSolver();
 
+    worldState.physics = physics;
     worldState.physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     worldState.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY * 100, 0));
     worldState.tempBtTransform = new Ammo.btTransform();
@@ -99,6 +99,8 @@ function animate() {
         socket.send(messageBuilder.state(myPlayer));
         worldState.prevUpdateTime = time;
     }
+
+    resourceManager.update(myPlayer);
 
     // Object.values(otherPlayers).forEach((p) => {
     //switch this to the physics update from ammo

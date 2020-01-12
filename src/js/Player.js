@@ -7,6 +7,8 @@ class Player {
     constructor(worldState, username, position, controlState = null, physics = null, velocity = new THREE.Vector3(), lookDirection= new THREE.Vector3()) {
 
         this.worldState = worldState;
+        //more bad coupling lol
+        this.worldState.player = this;
         Ammo = worldState.Ammo;
 
         this.controlState = controlState;
@@ -59,7 +61,7 @@ class Player {
 
         this.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
         this.flashlight.castShadow = true;
-        this.flashlight.visible = true;
+        this.flashlight.visible = false;
         this.worldState.scene.add(this.flashlight);
 
         this.isCrouched = false;
