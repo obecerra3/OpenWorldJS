@@ -73,6 +73,19 @@ function initPhysics() {
     worldState.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY * 100, 0));
     worldState.tempBtTransform = new Ammo.btTransform();
 
+    if (worldState.floor) {
+        initFloorPhysics();
+    } else {
+        eventQueue.push({
+            verify: () => { return worldState.floor; },
+            action: initFloorPhysics,
+            arguments: []
+        });
+    }
+
+}
+
+function initFloorPhysics() {
     let colShape = new Ammo.btBoxShape(new Ammo.btVector3(worldState.floor.geometry.parameters.width * 0.5, 1, worldState.floor.geometry.parameters.height * 0.5));
     let body = physics.createRigidBody(worldState.floor, colShape, 0, worldState.floor.position, worldState.floor.quaternion);
     worldState.floor.userData.physicsBody = body;
