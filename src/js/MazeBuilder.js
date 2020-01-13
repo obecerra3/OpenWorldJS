@@ -6,6 +6,8 @@ class MazeBuilder {
         this.geometries = new Map();
         let loader = new THREE.TextureLoader();
         loader.load('../textures/stoneWall.png', (texture) => {
+            texture.magFilter = THREE.NearestFilter;
+            texture.minFilter = THREE.NearestFilter;
             this.wallMaterial = new THREE.MeshBasicMaterial({map: texture});
         });
 
@@ -75,7 +77,6 @@ class MazeBuilder {
         }
 
         resourceManager.wallManager.wallsLoaded(player.body.position);
-
 
         worldState.scene.add(cluster);
 

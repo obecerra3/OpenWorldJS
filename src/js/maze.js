@@ -44,9 +44,15 @@ function init() {
     initPhysics();
     initDebug();
 
-    myPlayer = new Player(worldState, username, new THREE.Vector3(0, Utils.PLAYER_HEIGHT, 0), controlState, physics);
+    eventQueue.push({
+        verify: () => { return worldState.floor; },
+        action: () => {
+            myPlayer = new Player(worldState, username, new THREE.Vector3(0, Utils.PLAYER_HEIGHT, 0), controlState, physics);
+            infoManager.addPlayerInfo(myPlayer, false);
+        },
+        arguments: []
+    });
 
-    infoManager.addPlayerInfo(myPlayer, false);
 
     animate();
 }
@@ -73,22 +79,16 @@ function initPhysics() {
     worldState.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY * 100, 0));
     worldState.tempBtTransform = new Ammo.btTransform();
 
-    if (worldState.floor) {
-        initFloorPhysics();
-    } else {
-        eventQueue.push({
-            verify: () => { return worldState.floor; },
-            action: initFloorPhysics,
-            arguments: []
-        });
-    }
+    eventQueue.push({
+        verify: () => { return worldState.floor; },
+        action: () => {
+            let colShape = new Ammo.btBoxShape(new Ammo.btVector3(worldState.floor.geometry.parameters.width * 0.5, 1, worldState.floor.geometry.parameters.height * 0.5));
+            let body = physics.createRigidBody(worldState.floor, colShape, 0, worldState.floor.position, worldState.floor.quaternion);
+            worldState.floor.userData.physicsBody = body;
+        },
+        arguments: []
+    });
 
-}
-
-function initFloorPhysics() {
-    let colShape = new Ammo.btBoxShape(new Ammo.btVector3(worldState.floor.geometry.parameters.width * 0.5, 1, worldState.floor.geometry.parameters.height * 0.5));
-    let body = physics.createRigidBody(worldState.floor, colShape, 0, worldState.floor.position, worldState.floor.quaternion);
-    worldState.floor.userData.physicsBody = body;
 }
 
 function initDebug() {
@@ -106,14 +106,15 @@ function animate() {
     worldState.physicsWorld.stepSimulation(delta, 10);
     if (worldState.debugDrawer) worldState.debugDrawer.update();
     physics.update(delta, myPlayer);
-    myPlayer.update(delta);
+    if (myPlayer) {
+        myPlayer.update(delta);
+        resourceManager.update(myPlayer);
 
-    if (myPlayer.body && time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
-        socket.send(messageBuilder.state(myPlayer));
-        worldState.prevUpdateTime = time;
+        if (myPlayer.body && time - worldState.prevUpdateTime >= Utils.UPDATE_DELTA && socket.readyState == WebSocket.OPEN && controlState.controls.isLocked) {
+            socket.send(messageBuilder.state(myPlayer));
+            worldState.prevUpdateTime = time;
+        }
     }
-
-    resourceManager.update(myPlayer);
 
     // Object.values(otherPlayers).forEach((p) => {
     //switch this to the physics update from ammo
@@ -226,7 +227,6 @@ function processPlayerState (buffer) {
 
 
 async function receive (blob) {
-    // console.log("receive");
     let arrayBuffer = await new Response(blob).arrayBuffer();
     let dataView = new DataView(arrayBuffer);
     switch (dataView.getUint8(0)) {
@@ -234,15 +234,11 @@ async function receive (blob) {
             processIntroduction(arrayBuffer.slice(1));
             break;
         case 1:
-            if (myPlayer.body) {
-                processMaze(arrayBuffer.slice(1));
-            } else {
-                eventQueue.push({
-                    verify: () => { return myPlayer.body; },
-                    action: processMaze,
-                    arguments: [arrayBuffer.slice(1)]
-                });
-            }
+            eventQueue.push({
+                verify: () => { return myPlayer && myPlayer.body; },
+                action: processMaze,
+                arguments: [arrayBuffer.slice(1)]
+            });
             break;
         case 2:
             processPlayerState(arrayBuffer.slice(1));

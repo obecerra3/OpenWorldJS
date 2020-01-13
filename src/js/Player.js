@@ -191,7 +191,7 @@ class Player {
             if (this.lookDirection.y > -0.97) {
                 let offset = new THREE.Vector3(this.lookDirection.x, 0, this.lookDirection.z); //used to be * 1.75
                 offset.normalize();
-                offset.multiplyScalar(-10); //2 for fps -10 for 3rd person
+                offset.multiplyScalar(-15); //2 for fps -10 for 3rd person
                 this.worldState.camera.position.x = this.body.position.x + offset.x;
                 this.worldState.camera.position.z = this.body.position.z + offset.z;
             }

@@ -6,7 +6,7 @@ class WorldState {
         this.mazeMesh = null;
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1f1e33);
+        this.scene.background = new THREE.Color(0xB3F3FF);
         // this.scene.fog = new THREE.Fog(0xa3a3a3, 0, 1000);
 
         var axesHelper = new THREE.AxesHelper(10);
@@ -26,10 +26,12 @@ class WorldState {
 
         var floorGeometry = new THREE.PlaneBufferGeometry(5000, 5000);
         floorGeometry.rotateX(-Math.PI/2);
-        // floorMaterial.color = new THREE.Color(0x81a68c);
+        this.floor = null;
 
         let loader = new THREE.TextureLoader();
         loader.load('../textures/grass.png', (texture) => {
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(200, 200);
             let floorMaterial = new THREE.MeshBasicMaterial({map: texture});
             this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
             this.scene.add(this.floor);
