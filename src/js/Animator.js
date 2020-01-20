@@ -30,17 +30,18 @@ class Animator {
         }
     }
 
-    prepareCrossFade(startKey, endKey, duration) {
+    prepareCrossFade(startKey, endKey, duration, syncTime = 0) {
         this.togglePause(false);
-        this.executeCrossFade(startKey, endKey, duration);
-        // if (this.animationData[startKey].duration >= Utils.DURATION_THRESHOLD) {
-        //     this.executeCrossFade(startKey, endKey, duration);
-        // } else {
-        //     this.synchronizeCrossFade(startKey, endKey, duration);
-        // }
+
+        if (syncTime > 0) {
+            this.synchronizeCrossFade(startKey, endKey, duration, syncTime);
+        } else {
+            this.executeCrossFade(startKey, endKey, duration);
+        }
     }
 
-    synchronizeCrossFade(startKey, endKey, duration) {
+    synchronizeCrossFade(startKey, endKey, duration, syncTime) {
+        this.animationData[startKey].action.setDuration(syncTime);
         let onLoopFinished = (event) => {
             if (event.action === this.animationData[startKey].action) {
                 this.mixer.removeEventListener('loop', onLoopFinished);
@@ -48,7 +49,6 @@ class Animator {
             }
         }
         this.mixer.addEventListener('loop', onLoopFinished);
-
     }
 
     executeCrossFade(startKey, endKey, duration) {
@@ -69,6 +69,15 @@ class Animator {
         action.enabled = true;
         action.setEffectiveTimeScale(1);
         action.setEffectiveWeight(weight);
+    }
+
+    playAnimation(key, weight) {
+        this.togglePause(false);
+        let action = this.animationData[key].action;
+        this.setWeight(action, weight);
+        action.time = 0;
+        action.fadeIn(0.5);
+        action.play();
     }
 
     animate() {

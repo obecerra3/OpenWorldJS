@@ -11,6 +11,8 @@ class ControlState {
         this.speed = 40;
         this.spacePressedTime;
         this.clock = worldState.clock;
+        this.isCrouched = false;
+        this.isJumping = false;
 
         // Callbacks defined in Player.js
         this.toggleFlashlight = null;
@@ -67,8 +69,11 @@ class ControlState {
                         case 70: //f
                             this.toggleFlashlight();
                             break;
-                        case 91: //command
-                            this.toggleCrouch(true);
+                        case 67: //c
+                            if (!this.isCrouched) {
+                                this.toggleCrouch();
+                                this.isCrouched = true;
+                            }
                             break;
                         case 16: //shift
                             this.toggleRun(true);
@@ -92,6 +97,7 @@ class ControlState {
                         case 32: // space
                             if (!this.spacePressedTime) {
                                 this.spacePressedTime = this.clock.elapsedTime;
+                                this.toggleJump(0);
                             }
                             break;
                         case 80: // p
@@ -111,11 +117,11 @@ class ControlState {
         document.addEventListener('keyup', (event) => {
             if (this.controls.isLocked && !this.debugMode) {
                 switch (event.keyCode) {
-                    case 16:
+                    case 16: //shift
                         this.toggleRun(false);
                         break;
-                    case 91:
-                        this.toggleCrouch(false);
+                    case 67: //c
+                        this.isCrouched = false;
                         break;
                     case 38: // up
                     case 87: // w

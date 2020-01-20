@@ -26,16 +26,9 @@ class WorldState {
 
         var floorGeometry = new THREE.PlaneBufferGeometry(5000, 5000);
         floorGeometry.rotateX(-Math.PI/2);
-        this.floor = null;
-
-        let loader = new THREE.TextureLoader();
-        loader.load('../textures/grass.png', (texture) => {
-            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(200, 200);
-            let floorMaterial = new THREE.MeshBasicMaterial({map: texture});
-            this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            this.scene.add(this.floor);
-        });
+        let floorMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(0x8CE78C)});
+        this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        this.scene.add(this.floor);
 
         this.renderer = new THREE.WebGLRenderer({antialias: true});
         this.renderer.setPixelRatio(window.devicePixelRatio);

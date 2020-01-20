@@ -5,19 +5,19 @@ var Utils = {
     PLAYER_SIZE: 5,
     PLAYER_MASS: 50,//0.00005,
     PLAYER_WALKING_SPEED: 1500,//0.0005,
-    PLAYER_RUNNING_SPEED: 6000,
+    PLAYER_RUNNING_SPEED: 3000,
     PLAYER_JUMP: 200,//0.1,
     VELOCITY_DAMP: 2.5,//0.01,
 
     //WORLD CONSTANTS
     GRAVITY: 9.8,
-    WALL_HEIGHT: 200,
+    WALL_HEIGHT: 10,
     WALL_WIDTH: 15,
     CELL_SIZE: 95,
     UPDATE_DELTA: 100.0,
     MAZE_SIZE: 55,
     WALL_UPDATE_TIME: 5,
-    WALL_UPDATE_DISTANCE: 1000,
+    WALL_UPDATE_DISTANCE: 900,
     WALL_QUADRANT_SIZE: 1000,
     PHYSICS_RENDER_DISTANCE: 1000,
 
@@ -79,10 +79,27 @@ var Utils = {
     }
 }
 
-
 //CODE DUMP
 //for stuff that we used before, but no longer need but it took time to write so keeping it just in case its
 //useful again
+
+
+// synchronizeCrossFade(startKey, endKey, duration) {
+//     let onLoopFinished = (event) => {
+//         if (event.action === this.animationData[startKey].action) {
+//             this.mixer.removeEventListener('loop', onLoopFinished);
+//             this.executeCrossFade(startKey, endKey, duration);
+//         }
+//     }
+//     this.mixer.addEventListener('loop', onLoopFinished);
+// }
+
+// let loader = new THREE.TextureLoader();
+// loader.load('../textures/stoneWall.png', (texture) => {
+//     texture.magFilter = THREE.NearestFilter;
+//     texture.minFilter = THREE.NearestFilter;
+//     this.wallMaterial = new THREE.MeshBasicMaterial({map: texture});
+// });
 
 // getGeometry(xLength, zLength) {
 //     let geoLookup = this.geometries.get(Utils.pair(xLength, zLength));

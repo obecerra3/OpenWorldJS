@@ -4,17 +4,13 @@ class MazeBuilder {
 
     constructor () {
         this.geometries = new Map();
-        let loader = new THREE.TextureLoader();
-        loader.load('../textures/stoneWall.png', (texture) => {
-            texture.magFilter = THREE.NearestFilter;
-            texture.minFilter = THREE.NearestFilter;
-            this.wallMaterial = new THREE.MeshBasicMaterial({map: texture});
-        });
-
+        this.wallMaterial = new THREE.MeshLambertMaterial();
+        this.wallColor = 0xdfdfdf;
     }
 
 
     build (mazeArray, mazeSize, cellSize, worldState, physics, player) {
+        return false;
         let wallGeometry = new THREE.BoxBufferGeometry(2, 2, 2);
         let worldMazeSize = cellSize * mazeSize;
         let origin = {x: -worldMazeSize / 2, z: -worldMazeSize / 2};
@@ -42,7 +38,7 @@ class MazeBuilder {
                     wallCenter = new THREE.Vector3(origin.x + (j * cellSize) + (wallLength / 2) - Utils.WALL_WIDTH / 2, Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2));
                     cluster.setPositionAt(wallIndex, wallPosition.copy(wallCenter));
                     cluster.setScaleAt(wallIndex, wallScale.set(wallLength * 0.4999, Utils.WALL_HEIGHT * 0.5, Utils.WALL_WIDTH * 0.499));
-                    cluster.setColorAt(wallIndex, new THREE.Color(0x4B4B4B));
+                    cluster.setColorAt(wallIndex, new THREE.Color(this.wallColor));
 
                     colShapeVector = new Ammo.btVector3(wallLength * 0.4999, Utils.WALL_HEIGHT * 0.5, Utils.WALL_WIDTH * 0.5);
                     resourceManager.wallManager.createWallObject(wallIndex, colShapeVector, wallCenter);
@@ -65,7 +61,7 @@ class MazeBuilder {
                     wallCenter = new THREE.Vector3(origin.x + (j * cellSize), Utils.WALL_HEIGHT / 2, origin.z + (i * cellSize) + (cellSize / 2) + (wallLength / 2));
                     cluster.setPositionAt(wallIndex, wallPosition.copy(wallCenter));
                     cluster.setScaleAt(wallIndex, wallScale.set(Utils.WALL_WIDTH * 0.5, Utils.WALL_HEIGHT * 0.5, wallLength * 0.5));
-                    cluster.setColorAt(wallIndex, new THREE.Color(0x4B4B4B));
+                    cluster.setColorAt(wallIndex, new THREE.Color(this.wallColor));
 
                     colShapeVector = new Ammo.btVector3(Utils.WALL_WIDTH * 0.5, Utils.WALL_HEIGHT * 0.5, wallLength * 0.5);
                     resourceManager.wallManager.createWallObject(wallIndex, colShapeVector, wallCenter);
