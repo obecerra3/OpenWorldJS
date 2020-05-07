@@ -10,7 +10,6 @@ class MazeBuilder {
 
 
     build (mazeArray, mazeSize, cellSize, worldState, physics, player) {
-        return false;
         let wallGeometry = new THREE.BoxBufferGeometry(2, 2, 2);
         let worldMazeSize = cellSize * mazeSize;
         let origin = {x: -worldMazeSize / 2, z: -worldMazeSize / 2};

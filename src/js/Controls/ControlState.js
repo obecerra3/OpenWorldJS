@@ -1,4 +1,4 @@
-var PointerLockControls = require('../lib/PointerLockControls.js');
+var PointerLockControls = require('../../lib/PointerLockControls.js');
 
 class ControlState {
     constructor(worldState) {

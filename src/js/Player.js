@@ -1,7 +1,10 @@
 let GLTFLoader = require('../lib/GLTFLoader.js');
-let Animator = require('./Animator.js');
-let Collider = require('./Collider.js');
-let Ray = require('./Ray.js');
+let Animator = require('./Animation/Animator.js');
+let Collider = require('./Physics/Collider.js');
+let Ray = require('./Physics/Ray.js');
+let FirstPersonControls = require('./Controls/FirstPersonControls.js');
+let ThirdPersonControls = require('./Controls/ThirdPersonControls.js');
+
 
 class Player {
     constructor(worldState, username, position, controlState = null, physics = null, velocity = new THREE.Vector3(), lookDirection= new THREE.Vector3()) {
@@ -30,7 +33,7 @@ class Player {
         ]
 
         this.collider = new Collider(rays, 4);
-        this.collider.toggleShowRays(true);
+        // this.collider.toggleShowRays(true);
         this.collider.addMesh("floor", this.worldState.floor);
 
         this.physics = physics;
@@ -65,6 +68,8 @@ class Player {
         this.worldState.scene.add(this.flashlight);
 
         this.isCrouched = false;
+        this.jumpPressed = false;
+        this.jumpCharging = false;
 
         let loader = new THREE.GLTFLoader();
         let dracoLoader = new THREE.DRACOLoader();
@@ -124,11 +129,15 @@ class Player {
                 if (this.controlState.moveForward || this.controlState.moveLeft || this.controlState.moveRight || this.controlState.moveBackward) {
                     this.state = this.states.WALK;
                     this.transitions['idle to walk']();
-                }
-
-                if (this.isCrouched) {
+                }else if (this.isCrouched) {
                     this.state = this.states.CROUCH_IDLE;
                     this.transitions['idle to crouchIdle']();
+                }else if (this.jumpPressed) {
+                    this.jumpCharging = true;
+                    this.transitions['any to jumpCharging'](0.75);
+                    this.jumpPressed = false;
+                } else if (this.jumpCharging) {
+
                 }
 
                 break;
@@ -142,17 +151,25 @@ class Player {
                 } else if (this.isCrouched) {
                     this.state = this.states.CROUCH_WALK;
                     this.transitions['walk to crouchWalk']();
+                } else if (this.jumpPressed) {
+                    this.jumpCharging = true;
+                    this.transitions['any to jumpCharging'](0.2);
+                    this.jumpPressed = false;
                 }
                 break;
             case this.states.RUN:
                 if (!this.controlState.moveForward && !this.controlState.moveLeft && !this.controlState.moveRight && !this.controlState.moveBackward) {
                     this.state = this.states.IDLE;
                     this.transitions['run to idle']();
-                }
-                if (!this.running) {
+                }else if (!this.running) {
                     this.state = this.states.WALK;
                     this.transitions['run to walk']();
+                } else if (this.jumpPressed) {
+                    this.jumpCharging = true;
+                    this.transitions['any to jumpCharging'](0.25);
+                    this.jumpPressed = false;
                 }
+
                 break;
             case this.states.CROUCH_IDLE:
                 if (this.isCrouched) {
@@ -187,17 +204,22 @@ class Player {
                 }
                 break;
             case this.states.FALL_IDLE:
+                let currentVelocity = this.physicsBody.getLinearVelocity();
+                // console.log(currentVelocity.y());
+                if (currentVelocity.y() < -20) {
+                    this.physicsBody.setLinearVelocity(new Ammo.btVector3(currentVelocity.x(), 0, currentVelocity.z()));
+                }
                 if (this.collider.isGrounded(this)) {
+                    // console.log(currentVelocity.y());
                     this.state = this.states.IDLE;
                     this.transitions['fallIdle to idle']();
                 }
                 break;
             }
 
-            if (this.jumpPressed) {
-                // this.state = this.states.FALL_IDLE;
-                this.transitions['any to jumpCharging']();
-                this.jumpPressed = false;
+            if (!(this.state == this.states.FALL_IDLE) && this.body && !this.collider.isGrounded(this)) {
+                this.state = this.states.FALL_IDLE;
+                this.transitions['any to fallIdle']();
             }
     }
 
@@ -248,7 +270,7 @@ class Player {
                 this.worldState.camera.position.x = this.body.position.x + offset.x;
                 this.worldState.camera.position.z = this.body.position.z + offset.z;
             }
-            this.worldState.camera.position.y = this.body.position.y + 10;
+            this.worldState.camera.position.y = this.body.position.y + 15;
 
             if (this.running && this.state == this.states.RUN) {
                 let max = 0.07;
@@ -281,19 +303,17 @@ class Player {
     }
 
     toggleJump(timePressed) {
-        if (timePressed == 0) {
-            this.jumpPressed = true;
-            return;
-        }
-
-        timePressed = timePressed % 5;
-        let yVelocity = 300 + (timePressed * 50);
         if ((this.collider.isGrounded(this) && !this.isCrouched) || this.flightEnabled) {
-            this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.physicsBody.getLinearVelocity().x(), yVelocity, this.physicsBody.getLinearVelocity().z()));
-            this.transitions['crouchIdle to fallIdle']();
-            this.state = this.states.FALL_IDLE;
-        }
+            if (timePressed == 0) {
+                this.jumpPressed = true;
+                return;
+            }
 
+            timePressed = timePressed % 5;
+            let yVelocity = 200 + (timePressed * 50);
+            this.jumpCharging = false;
+            this.physicsBody.setLinearVelocity(new Ammo.btVector3(this.physicsBody.getLinearVelocity().x(), yVelocity, this.physicsBody.getLinearVelocity().z()));
+        }
     }
 
     toggleFlight() {
@@ -371,11 +391,14 @@ class Player {
                 this.animator.prepareCrossFade('CrouchIdle', 'FallIdle', 0.1);
             },
             "fallIdle to idle" : () => {
-                this.animator.prepareCrossFade('FallIdle', 'CrouchIdle', 0.1);
-                this.animator.prepareCrossFade('CrouchIdle', 'Idle', 0.3, 0.2);
+                this.animator.prepareCrossFade('FallIdle', 'Idle', 0.25);
             },
-            "any to jumpCharging" : () => {
-                this.animator.playAnimation('CrouchIdle', 0.25);
+            "any to jumpCharging" : (weight = 0.5) => {
+                this.animator.playAnimation('CrouchIdle', weight);
+            },
+            "any to fallIdle" : () => {
+                this.animator.stopAnimation('CrouchIdle', 0);
+                this.animator.playAnimation('FallIdle', 1, 0.1);
             }
         }
     }

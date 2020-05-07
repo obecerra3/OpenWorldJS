@@ -1,4 +1,3 @@
-
 class Physics {
     constructor (worldState) {
         this.worldState = worldState;

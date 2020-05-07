@@ -1,4 +1,4 @@
-var Utils = {
+let Utils = {
 
     //PLAYER CONSTANTS
     PLAYER_HEIGHT: 10,
@@ -11,7 +11,7 @@ var Utils = {
 
     //WORLD CONSTANTS
     GRAVITY: 9.8,
-    WALL_HEIGHT: 10,
+    WALL_HEIGHT: 100,
     WALL_WIDTH: 15,
     CELL_SIZE: 95,
     UPDATE_DELTA: 100.0,

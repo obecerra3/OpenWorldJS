@@ -1,3 +1,5 @@
+//manages player information for multiplayer (not related to Level Of Detail/ Chunking)
+
 class InfoManager {
 
   addPlayerInfo (player, displayClass=false) {

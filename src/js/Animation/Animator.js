@@ -71,13 +71,20 @@ class Animator {
         action.setEffectiveWeight(weight);
     }
 
-    playAnimation(key, weight) {
+    playAnimation(key, weight = 1, fadeInDuration = 0.5) {
         this.togglePause(false);
         let action = this.animationData[key].action;
         this.setWeight(action, weight);
         action.time = 0;
-        action.fadeIn(0.5);
+        action.fadeIn(fadeInDuration);
         action.play();
+    }
+
+    stopAnimation(key, weight = 0, fadeOutDuration = 0.5) {
+        let action = this.animationData[key].action;
+        this.setWeight(action, weight);
+        action.fadeOut(fadeOutDuration);
+        action.stop();
     }
 
     animate() {

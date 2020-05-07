@@ -1,4 +1,3 @@
-
 class WorldState {
     constructor() {
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
@@ -24,7 +23,7 @@ class WorldState {
         this.prevUpdateTime = -Utils.UPDATE_DELTA;
         this.prevTime = performance.now();
 
-        var floorGeometry = new THREE.PlaneBufferGeometry(5000, 5000);
+        var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000);
         floorGeometry.rotateX(-Math.PI/2);
         let floorMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(0x8CE78C)});
         this.floor = new THREE.Mesh(floorGeometry, floorMaterial);

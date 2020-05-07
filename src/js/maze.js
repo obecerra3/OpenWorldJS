@@ -1,16 +1,17 @@
 let Player = require('./Player.js');
-let ControlState = require('./ControlState.js');
+let ControlState = require('./Controls/ControlState.js');
 let WorldState = require('./WorldState.js');
 let MessageBuilder = require('./MessageBuilder.js');
 let MazeBuilder = require('./MazeBuilder.js');
-let InfoManager = require('./InfoManager.js');
-let Physics = require('./Physics.js');
-let ResourceManager = require('./ResourceManager.js');
+let InfoManager = require('./Managers/InfoManager.js');
+let Physics = require('./Physics/Physics.js');
+let ResourceManager = require('./Managers/ResourceManager.js');
 
 let messageBuilder = new MessageBuilder();
 
 let socket = new WebSocket("wss://themaze.io:8000");
 
+//used to push events of something to be initialized once the verify function call returns true
 let eventQueue = [];
 
 socket.onopen = () => { socket.send(messageBuilder.hello(username)); }
@@ -40,6 +41,8 @@ Ammo().then((AmmoLib) => {
 });
 
 function init() {
+    THREE.Cache.enabled = true;
+
     initStats();
     initPhysics();
     initDebug();
@@ -53,6 +56,11 @@ function init() {
         arguments: []
     });
 
+    eventQueue.push({
+        verify: () => { return myPlayer && myPlayer.body; },
+        action: processMazeLocal,
+        arguments: []
+    });
 
     animate();
 }
@@ -93,7 +101,7 @@ function initPhysics() {
 
 function initDebug() {
     worldState.debugDrawer = new THREE.AmmoDebugDrawer(worldState.scene, worldState.physicsWorld);
-    worldState.debugDrawer.enable();
+    // worldState.debugDrawer.enable();
 }
 
 function animate() {
@@ -164,6 +172,34 @@ function processLeft (buffer) {
     infoManager.playerLeft(myPlayer, Object.values(otherPlayers));
 }
 
+function processMazeLocal() {
+    var loader = new THREE.FileLoader();
+
+    loader.setResponseType("arraybuffer");
+
+    loader.load(
+        "maze.bin",
+        (buffer) => {
+            let byteArray = new Uint8Array(buffer);
+
+            let mazeArray = byteArray.reduce((array, curr, idx) => {
+                let i;
+                for (i = 0; i < 8; i++) {
+                    let type = curr >> (7-i) & 1;
+                    let overall = idx * 8 + i;
+                    if ((overall % Utils.MAZE_SIZE) == 0) {
+                        array.push([type]);
+                    } else {
+                        array[Math.floor(overall / Utils.MAZE_SIZE)].push(type);
+                    }
+                }
+                return array;
+            }, []);
+            console.log(mazeArray);
+            mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE, worldState, physics, myPlayer);
+        }
+    )
+}
 
 function processMaze (buffer) {
     // console.log("processMaze");
@@ -183,9 +219,7 @@ function processMaze (buffer) {
         return array;
     }, []);
 
-    // worldState.mazeMesh =
     mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE, worldState, physics, myPlayer);
-    // worldState.scene.add(worldState.mazeMesh);
 }
 
 function processAction (buffer, code) {

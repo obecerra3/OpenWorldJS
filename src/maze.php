@@ -25,7 +25,7 @@ spl_autoload_register(function ($class_name) {
     <script src="./lib/stats.min.js"></script>
     <script src="./lib/ammo.js"></script>
     <script src="./lib/AmmoDebugDrawer.js"></script>
-    <script src="./js/Utils.js"></script>
+    <script src="./js/Utils/Utils.js"></script>
     <script src="./lib/draco/DRACOLoader.js"></script>
   </head>
   <body>
