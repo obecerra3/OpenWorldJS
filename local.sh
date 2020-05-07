@@ -1,2 +1,2 @@
-watchify js/maze.js -o html/build.js &
-cd html/ && php -S localhost:8000
+watchify src/js/maze.js -o src/build.js &
+cd src/ && php -S localhost:8000
