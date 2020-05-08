@@ -1,6 +1,9 @@
 # Maze
 An internet maze
 
+#to install npm modules the first time you git clone
+npm i
+
 #to build locally 
 ./local.sh
 and then go to http://localhost:8000/maze.php in your browser
