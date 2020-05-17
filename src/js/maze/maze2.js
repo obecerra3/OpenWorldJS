@@ -195,7 +195,6 @@ function processMazeLocal() {
                 }
                 return array;
             }, []);
-            console.log(mazeArray);
             mazeBuilder.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE, worldState, physics, myPlayer);
         }
     )

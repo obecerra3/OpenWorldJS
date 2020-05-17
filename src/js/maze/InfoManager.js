@@ -1,4 +1,3 @@
-
 class InfoManager {
 
   addPlayerInfo (player, displayClass=false) {
@@ -8,7 +7,7 @@ class InfoManager {
     if (displayClass) { p.style.color = player.isHunted ? "blue" : "red"; }
     info.appendChild(p);
   }
-  
+
   showPlayerClass (myPlayer, otherPlayers) {
     var info = document.getElementById('info');
     info.innerHTML = "";
@@ -31,12 +30,12 @@ class InfoManager {
     info.appendChild(h3_);
     this.addPlayerInfo(hunted, true);
   }
-  
+
   playerLeft (myPlayer, remainingPlayers) {
     info.innerHTML = "";
     this.addPlayerInfo(myPlayer, false);
     remainingPlayers.forEach((p)=>this.addPlayerInfo(p, false));
-  } 
+  }
 
 }
 

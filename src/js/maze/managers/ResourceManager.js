@@ -1,11 +1,11 @@
-let WallManager = require('./WallManager.js');
-let PlantManager = require('./PlantManager.js');
-let TerrainManager = require('./TerrainManager.js');
+var WallManager = require('./WallManager.js');
+var PlantManager = require('./PlantManager.js');
+var TerrainManager = require('./TerrainManager.js');
 
 //Supposed to handle the chunking of different resources, similar to level of detail
 class ResourceManager {
     constructor(worldState) {
-        this.playerPosition = new THREE.Vector3();
+        this.player_position = new THREE.Vector3();
         this.worldState = worldState;
 
         //Resource Managers
@@ -15,9 +15,10 @@ class ResourceManager {
     }
 
     update(player) {
-        if (player.body) this.playerPosition = player.body.position;
+        if (player.body) this.player_position = player.body.position;
 
-        this.wallManager.update(this.playerPosition);
+        this.wallManager.update(this.player_position);
+        this.terrainManager.update(this.player_position)
     }
 
 }

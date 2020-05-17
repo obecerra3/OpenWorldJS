@@ -22,7 +22,7 @@ class ControlState {
         this.toggleFlight = null;
         this.toggleRun = null;
 
-        var blocker = document.getElementById('blocker');
+        // var blocker = document.getElementById('blocker');
 
         blocker.addEventListener('click', () => {
             this.controls.lock();
