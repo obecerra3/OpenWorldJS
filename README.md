@@ -4,7 +4,7 @@ _An internet maze_
 
 ## Setup
 
-- Install required **npm objects** after **git-clone** navigate to the project directory in the sheel and run the command `npm i`:
+- To install required **npm objects** after the **git-clone** navigate to the project directory in the sheel and run the command `npm i`:
 
 - Build Locally:
 
