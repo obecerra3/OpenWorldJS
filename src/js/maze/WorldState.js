@@ -1,4 +1,4 @@
-class WorldState {
+ class WorldState {
     constructor() {
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
 

@@ -9,4 +9,5 @@ require( ['detector', 'maze', 'container'],
     }
 
     maze.init();
+    maze.update();
 });
