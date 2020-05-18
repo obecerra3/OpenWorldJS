@@ -27,7 +27,7 @@ if (!isset($_SESSION["username"])) {
             var username = "Abujindad";
         </script>
         <script src="js/config.js"></script>
-        <script data-main="../../build" src="js/require.js"></script>
+        <script data-main="../main" src="js/require.js"></script>
     </head>
     <body>
         <div id="threejs-container">Loading...</div>

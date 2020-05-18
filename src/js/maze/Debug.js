@@ -11,19 +11,21 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
     {
         stats_fps: new Stats(),
         stats_ms: new Stats(),
-        debug_drawer: new THREE.AmmoDebugDrawer(scene, Physics.physicsWorld),
+        debug_drawer: {},
 
         init: () =>
         {
-            stats_fps.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-            stats_ms.showPanel(1);
-            stats_fps.domElement.style.cssText = 'position:absolute;top:0px;left:0px;';
-            stats_ms.domElement.style.cssText = 'position:absolute;top:0px;left:80px;';
-            container.appendChild(stats_fps.dom);
-            container.appendChild(stats_ms.dom);
+            Debug.stats_fps.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+            Debug.stats_ms.showPanel(1);
+            Debug.stats_fps.domElement.style.cssText = 'position:absolute;top:0px;left:0px;';
+            Debug.stats_ms.domElement.style.cssText = 'position:absolute;top:0px;left:80px;';
+            container.appendChild(Debug.stats_fps.dom);
+            container.appendChild(Debug.stats_ms.dom);
 
             //draw collision boxes for rigidbodies
-            //debug_drawer.enable();
+            console.log(Physics);
+            debug_drawer = new THREE.AmmoDebugDrawer(scene, Physics.physicsWorld),
+            debug_drawer.enable();
         },
     };
 

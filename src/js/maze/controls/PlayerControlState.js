@@ -1,11 +1,11 @@
 //Control State currently handles input for the player and holds the state of the player's movement status.
 //this can be changed to be a subject that the player observes perhaps?
 
-define(["pointerLockControls", "camera", "container", "scene", "maze"], (PointerLockControls, camera, container, scene, maze) =>
+define(["pointerLockControls", "camera", "container", "scene", "three"], (PointerLockControls, camera, container, scene, THREE) =>
 {
     var PlayerControlState =
     {
-        controls: new PointerLockControls(camera, container),
+        controls: {},
         orbit_enabled: false,
         move_forward: false,
         move_backward: false,
@@ -13,7 +13,7 @@ define(["pointerLockControls", "camera", "container", "scene", "maze"], (Pointer
         move_right: false,
         speed: 40,
         space_pressed_time_elapsed: null, //should be initialized to null
-        clock: maze.clock,
+        clock: new THREE.Clock(),
         is_crouched: false,
         is_jumping: false,
 
@@ -27,6 +27,8 @@ define(["pointerLockControls", "camera", "container", "scene", "maze"], (Pointer
 
         init: () =>
         {
+            console.log("pussy");
+
             container.addEventListener("click", () =>
             {
                 controls.lock();

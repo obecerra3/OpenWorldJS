@@ -28,5 +28,6 @@ var require = {
         ray: "./physics/Ray",
         firstPersonControls: "./controls/FirstPersonControls",
         thirdPersonControls: "./controls/ThirdPersonControls",
+        utils: "./utils/Utils",
     }
 };

@@ -1,7 +1,12 @@
 //https://github.com/InfiniteLee/ammo-debug-drawer
 /* global Ammo,THREE */
-define(["three"], (THREE) =>
+define(["three", "ammo"], (THREE, Ammo) =>
 {
+    Ammo().then((AmmoLib) =>
+    {
+        Ammo = AmmoLib;
+    });
+
     THREE.AmmoDebugConstants = {
       NoDebug: 0,
       DrawWireframe: 1,

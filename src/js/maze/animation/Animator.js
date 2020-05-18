@@ -1,96 +1,113 @@
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_animation_skinning_blending.html
 
-class Animator {
-    constructor(mixer, animationData) {
-        this.mixer = mixer;
-        this.animationData = animationData;
-        this.clock = new THREE.Clock();
+define(["three"], (THREE) =>
+{
+    var Animator =
+    {
+        mixer: {},
+        animation_data: {},
+        clock: new THREE.Clock(),
 
-        //start everything in idle state
-        this.animationData.Idle.action.play();
-    }
+        init: (_mixer, _animation_data) =>
+        {
+            mixer = _mixer;
+            animation_data = _animation_data;
+            animation_data.Idle.action.play();
+        },
 
-    deactivateAllActions() {
-        for (var key of Object.keys(this.animationData)) {
-            this.animationData[key].action.stop();
-        }
-    }
+        update: () =>
+        {
+            mixer.update(clock.getDelta());
+        },
 
-    activateAllActions() {
-        for (var key of Object.keys(this.animationData)) {
-            var currentAction = this.animationData[key].action
-            this.setWeight(currentAction, this.animationData[key].weight);
-            currentAction.play();
-        }
-    }
+        prepareCrossFade: (_start_key, _end_key, _duration, _sync_time = 0) =>
+        {
+            togglePause(false);
 
-    togglePause(value) {
-        for (var key of Object.keys(this.animationData)) {
-            this.animationData[key].paused = value;
-        }
-    }
-
-    prepareCrossFade(startKey, endKey, duration, syncTime = 0) {
-        this.togglePause(false);
-
-        if (syncTime > 0) {
-            this.synchronizeCrossFade(startKey, endKey, duration, syncTime);
-        } else {
-            this.executeCrossFade(startKey, endKey, duration);
-        }
-    }
-
-    synchronizeCrossFade(startKey, endKey, duration, syncTime) {
-        this.animationData[startKey].action.setDuration(syncTime);
-        let onLoopFinished = (event) => {
-            if (event.action === this.animationData[startKey].action) {
-                this.mixer.removeEventListener('loop', onLoopFinished);
-                this.executeCrossFade(startKey, endKey, duration);
+            if (_sync_time > 0) {
+                synchronizeCrossFade(_start_key, _end_key, _duration, _sync_time);
+            } else {
+                executeCrossFade(_start_key, _end_key, _duration);
             }
-        }
-        this.mixer.addEventListener('loop', onLoopFinished);
-    }
+        },
 
-    executeCrossFade(startKey, endKey, duration) {
-        // Not only the start action, but also the end action must get a weight of 1 before fading
-        // (concerning the start action this is already guaranteed in this place)
-        let endAction = this.animationData[endKey].action;
-        let startAction = this.animationData[startKey].action;
-        this.setWeight(endAction, 1);
-        endAction.time = 0;
-        // Crossfade with warping - you can also try without warping by setting the third parameter to false
-        startAction.crossFadeTo(endAction, duration, true);
-        endAction.play();
-    }
+        synchronizeCrossFade: (_start_key, _end_key, _duration, _sync_time) =>
+        {
+            animation_data[_start_key].action.setDuration(_sync_time);
+            var onLoopFinished = (event) =>
+            {
+                if (event.action === animation_data[_start_key].action)
+                {
+                    mixer.removeEventListener('loop', onLoopFinished);
+                    executeCrossFade(_start_key, _end_key, _duration);
+                }
+            }
+            mixer.addEventListener('loop', onLoopFinished);
+        },
 
-    // This is needed, since animationAction.crossFadeTo() disables its start action and sets
-    // the start action's timeScale to ((start animation's duration) / (end animation's duration))
-    setWeight(action, weight) {
-        action.enabled = true;
-        action.setEffectiveTimeScale(1);
-        action.setEffectiveWeight(weight);
-    }
+        executeCrossFade: (_start_key, _end_key, _duration) =>
+        {
+            // Not only the start action, but also the end action must get a weight of 1 before fading
+            // (concerning the start action this is already guaranteed in this place)
+            var end_action = animation_data[_end_key].action;
+            var start_action = animation_data[_start_key].action;
+            setWeight(end_action, 1);
+            end_action.time = 0;
+            // Crossfade with warping - you can also try without warping by setting the third parameter to false
+            start_action.crossFadeTo(end_action, _duration, true);
+            end_action.play();
+        },
 
-    playAnimation(key, weight = 1, fadeInDuration = 0.5) {
-        this.togglePause(false);
-        let action = this.animationData[key].action;
-        this.setWeight(action, weight);
-        action.time = 0;
-        action.fadeIn(fadeInDuration);
-        action.play();
-    }
+        // This is needed, since animationAction.crossFadeTo() disables its start action and sets
+        // the start action's timeScale to ((start animation's duration) / (end animation's duration))
+        setWeight: (_action, _weight) =>
+        {
+            _action.enabled = true;
+            _action.setEffectiveTimeScale(1);
+            _action.setEffective_weight(_weight);
+        },
 
-    stopAnimation(key, weight = 0, fadeOutDuration = 0.5) {
-        let action = this.animationData[key].action;
-        this.setWeight(action, weight);
-        action.fadeOut(fadeOutDuration);
-        action.stop();
-    }
+        playAnimation: (_key, _weight = 1, _fade_in_duration = 0.5) =>
+        {
+            togglePause(false);
+            var action = animation_data[_key].action;
+            setWeight(action, _weight);
+            action.time = 0;
+            action.fadeIn(_fade_in_duration);
+            action.play();
+        },
 
-    animate() {
-        this.mixer.update(this.clock.getDelta());
-    }
+        stopAnimation: (_key, _weight = 0, _fade_out_duration = 0.5) =>
+        {
+            var action = animation_data[_key].action;
+            setWeight(action, _weight);
+            action.fadeOut(_fade_out_duration);
+            action.stop();
+        },
 
-}
+        togglePause: (_value) =>
+        {
+            for (var key of Object.keys(animation_data)) {
+                animation_data[key].paused = _value;
+            }
+        },
 
-module.exports = Animator;
+        activateAllActions: () =>
+        {
+            var current_action;
+            for (var key of Object.keys(animation_data)) {
+                current_action = animation_data[key].action
+                setWeight(current_action, animation_data[key].weight);
+                current_action.play();
+            }
+        },
+
+        deactivateAllActions: () =>
+        {
+            for (var key of Object.keys(animation_data)) {
+                animation_data[key].action.stop();
+            }
+        },
+    };
+    return Animator;
+});
