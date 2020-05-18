@@ -1,9 +1,9 @@
+//Class for the Physics within the game that works on top of ammo.js
 define(["ammo", "ammoDebugDrawer"],
 (Ammo, ammoDebugDrawer) =>
 {
     var Physics =
     {
-        player: {},
         dynamicRigidBodies: [], //array of PhysicsObjects
         tempBtTransform: new Ammo.btVector3(),
         physicsWorld: {},

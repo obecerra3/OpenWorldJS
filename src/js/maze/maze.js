@@ -1,18 +1,17 @@
 define( ["three", "camera", "container", "renderer", "scene", "physics", "world", "player", "debug"],
-(THREE, camera, container, renderer, scene, physics, world, player, Debug) =>
+(THREE, camera, container, renderer, scene, Physics, World, Player, Debug) =>
 {
     var maze =
     {
         clock: new THREE.Clock(),
-        Physics: new Physics(),
         event_queue: [],
 
         init: () =>
         {
             THREE.Cache.enabled = true;
-            world.init();
+            World.init();
             Physics.init();
-            player.init();
+            Player.init();
             Debug.init();
         },
 

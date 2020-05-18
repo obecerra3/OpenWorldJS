@@ -1,11 +1,8 @@
-class FirstPersonControls {
-    constructor() {
+define([], () =>
+{
+    var FirstPersonControls =
+    {
 
-    }
-
-    update() {
-
-    }
-}
-
-module.exports = FirstPersonControls;
+    };
+    return FirstPersonControls;
+});

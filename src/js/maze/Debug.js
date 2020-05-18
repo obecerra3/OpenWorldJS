@@ -1,3 +1,9 @@
+//Class for Debugging purposes
+//stats_fps show fps of game
+//stats_ms show memory usage of game
+//debug_drawer is a 3rd party library that will draw the ammojs rigidbody collision boxes
+//TODO: toggle debug stats with a button click and toggle debug_drawer with a button click
+
 define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
 (THREE, scene, Physics, container, Stats, ammoDebugDrawer) =>
 {
@@ -15,6 +21,9 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
             stats_ms.domElement.style.cssText = 'position:absolute;top:0px;left:80px;';
             container.appendChild(stats_fps.dom);
             container.appendChild(stats_ms.dom);
+
+            //draw collision boxes for rigidbodies
+            //debug_drawer.enable();
         },
     };
 

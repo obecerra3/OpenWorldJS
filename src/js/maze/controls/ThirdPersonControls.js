@@ -1,11 +1,8 @@
-class ThirdPersonControls {
-    constructor() {
+define([], () =>
+{
+    var ThirdPersonControls =
+    {
 
-    }
-
-    update() {
-
-    }
-}
-
-module.exports = ThirdPersonControls;
+    };
+    return ThirdPersonControls;
+});

@@ -21,7 +21,12 @@ var require = {
         three: "../lib/three",
         threeCore: "../lib/three.min",
         //game code
+        animator: "./animation/Animator",
+        collider: "./physics/Collider",
+        playerControlState: "./controls/PlayerControlState",
         physics: "./physics/Physics",
-        
+        ray: "./physics/Ray",
+        firstPersonControls: "./controls/FirstPersonControls",
+        thirdPersonControls: "./controls/ThirdPersonControls",
     }
 };
