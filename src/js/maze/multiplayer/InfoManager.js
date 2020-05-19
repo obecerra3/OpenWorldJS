@@ -1,3 +1,6 @@
+
+
+
 class InfoManager {
 
   addPlayerInfo (player, displayClass=false) {

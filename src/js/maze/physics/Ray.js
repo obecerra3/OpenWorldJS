@@ -1,6 +1,6 @@
-define(["three", "scene"], (THREE, scene) =>
+define(["three"], (THREE) =>
 {
-    var RayConstructor = () =>
+    var RayConstructor = (_scene, _direction, _length = 1, _ground_ray = false, _origin_offset = new THREE.Vector3(), _color = 0x0000ff) =>
     {
         var Ray =
         {
@@ -12,32 +12,33 @@ define(["three", "scene"], (THREE, scene) =>
             ground_ray: false,
             color: 0,
 
-            init: (_direction, _length = 1, _ground_ray = false, _origin_offset = new THREE.Vector3(), _color = 0x0000ff) =>
+            init: (_scene, _direction, _length = 1, _ground_ray = false, _origin_offset = new THREE.Vector3(), _color = 0x0000ff) =>
             {
-                direction = _direction.normalize();
-                ground_ray = _ground_ray;
-                length = _length;
-                origin_offset = _origin_offset;
-                color = _color;
+                Ray.direction = _direction.normalize();
+                Ray.ground_ray = _ground_ray;
+                Ray.length = _length;
+                Ray.origin_offset = _origin_offset;
+                Ray.color = _color;
 
-                debug_ray = new THREE.ArrowHelper(direction, new THREE.Vector3(), length, color);
-                scene.add(debug_ray);
+                Ray.debug_ray = new THREE.ArrowHelper(Ray.direction, new THREE.Vector3(), Ray.length, Ray.color);
+                _scene.add(Ray.debug_ray);
             },
 
             update: (_origin) =>
             {
-                if (visible)
+                if (Ray.visible)
                 {
-                    debug_ray.position.copy(_origin);
+                    Ray.debug_ray.position.copy(_origin);
                 }
             },
 
             toggleVisible: (_value) =>
             {
-                visible = _value;
-                debug_ray.visible = _value;
+                Ray.visible = _value;
+                Ray.debug_ray.visible = _value;
             }
         };
+        Ray.init(_scene, _direction, _length, _ground_ray, _origin_offset, _color);
         return Ray;
     }
     return RayConstructor;

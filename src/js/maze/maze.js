@@ -1,5 +1,5 @@
-define( ["three", "camera", "container", "renderer", "scene", "physics", "world", "player", "debug"],
-(THREE, camera, container, renderer, scene, Physics, World, Player, Debug) =>
+define( ["three", "camera", "container", "renderer", "scene", "physics", "world", "player", "debug", "multiplayer"],
+(THREE, camera, container, renderer, scene, Physics, World, Player, Debug, Multiplayer) =>
 {
     var maze =
     {
@@ -9,6 +9,7 @@ define( ["three", "camera", "container", "renderer", "scene", "physics", "world"
         init: () =>
         {
             THREE.Cache.enabled = true;
+            Multiplayer.init();
             Physics.init();
             Debug.init();
             Player.init();

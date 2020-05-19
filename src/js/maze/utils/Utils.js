@@ -1,7 +1,12 @@
-define(["three"], (THREE) =>
+define(["three", "Ammo"], (THREE, Ammo) =>
 {
-    var Utils = {
+    Ammo().then((AmmoLib) =>
+    {
+        Ammo = AmmoLib;
+    });
 
+    var Utils =
+    {
         //PLAYER CONSTANTS
         PLAYER_HEIGHT: 10,
         PLAYER_SIZE: 5,
@@ -43,14 +48,16 @@ define(["three"], (THREE) =>
         _X_Z : new THREE.Vector3(-1, 0, -1),
 
 
-        pair: (a, b) => {
+        pair: (a, b) =>
+        {
             /* http://szudzik.com/ElegantPairing.pdf */
             var A = a >= 0 ? 2 * a : -2 * a - 1;
             var B = b >= 0 ? 2 * b : -2 * b - 1;
             return A >= B ? A * A + A + B : A + B * B;
         },
 
-        getRandomColor: () => {
+        getRandomColor: () =>
+        {
             var letters = '0123456789ABCDEF';
             var color = '#';
             for (var i = 0; i < 6; i++) {
@@ -59,7 +66,8 @@ define(["three"], (THREE) =>
             return color;
         },
 
-        inRange: (c) => {
+        inRange: (c) =>
+        {
           return [{x: c.x-1, z: c.z-1},
                   {x: c.x-1, z: c.z},
                   {x: c.x-1, z: c.z+1},
@@ -71,14 +79,26 @@ define(["three"], (THREE) =>
                   {x: c.x+1, z: c.z+1}];
         },
 
-        vector3ToString: (v) => {
+        vector3ToString: (v) =>
+        {
             return v.x + "," + v.y + "," + v.z;
         },
 
-        stringToVector3: (s) => {
+        stringToVector3: (s) =>
+        {
             let values = s.split(",");
             return new THREE.Vector3(parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]));
-        }
+        },
+
+        btVector3: (v) =>
+        {
+            return new Ammo.btVector3(v.x, v.y, v.z);
+        },
+
+        vector3: (v) =>
+        {
+            return new THREE.Vector3(v.x(), v.y(), v.z());
+        },
     }
     return Utils;
 });
