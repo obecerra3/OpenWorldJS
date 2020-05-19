@@ -7,7 +7,6 @@ require( ['detector', 'maze', 'container'],
         Detector.addGetWebGLMessage();
         container.innerHTML = "";
     }
-    console.log("Main init");
     maze.init();
     maze.update();
 });

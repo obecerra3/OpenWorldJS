@@ -23,9 +23,8 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
             container.appendChild(Debug.stats_ms.dom);
 
             //draw collision boxes for rigidbodies
-            console.log(Physics);
-            debug_drawer = new THREE.AmmoDebugDrawer(scene, Physics.physicsWorld),
-            debug_drawer.enable();
+            debug_drawer = new THREE.AmmoDebugDrawer(scene, Physics.physicsWorld);
+            // debug_drawer.enable();
         },
     };
 

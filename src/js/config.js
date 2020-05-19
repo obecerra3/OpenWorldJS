@@ -21,13 +21,16 @@ var require = {
         three: "../lib/three",
         threeCore: "../lib/three.min",
         //game code
-        animator: "./animation/Animator",
+        animator: "./utils/Animator",
         collider: "./physics/Collider",
-        playerControlState: "./controls/PlayerControlState",
+        debug: "./utils/Debug",
+        game: "./multiplayer/Game",
+        infoManager: "./multiplayer/InfoManager",
+        messageBuilder: "./multiplayer/MessageBuilder",
+        multiplayer: "./multiplayer/Multiplayer",
         physics: "./physics/Physics",
         ray: "./physics/Ray",
-        firstPersonControls: "./controls/FirstPersonControls",
-        thirdPersonControls: "./controls/ThirdPersonControls",
         utils: "./utils/Utils",
+        world: "./world/World",
     }
 };

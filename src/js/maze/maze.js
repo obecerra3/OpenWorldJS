@@ -9,13 +9,9 @@ define( ["three", "camera", "container", "renderer", "scene", "physics", "world"
         init: () =>
         {
             THREE.Cache.enabled = true;
-
-            physics = new Physics();
-            console.log(physics);
-            // World.init();
-            // Physics.init();
-            // Debug.init();
-            // Player.init();
+            Physics.init();
+            Debug.init();
+            Player.init();
         },
 
         update: () =>

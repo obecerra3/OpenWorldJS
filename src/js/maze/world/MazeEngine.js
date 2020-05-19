@@ -1,6 +1,6 @@
 require('../lib/three-instanced-mesh/index.js')(THREE);
 
-class MazeBuilder {
+class MazeEngine {
 
     constructor () {
         this.geometries = new Map();
