@@ -12,9 +12,9 @@ define(["three"], (THREE) =>
 
             init: (_mixer, _animation_data) =>
             {
-                Animation.mixer = _mixer;
-                Animation.animation_data = _animation_data;
-                Animation.animation_data.Idle.action.play();
+                Animator.mixer = _mixer;
+                Animator.animation_data = _animation_data;
+                Animator.animation_data.Idle.action.play();
             },
 
             update: () =>

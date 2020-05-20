@@ -3,7 +3,7 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-define("three", (THREE) => {
+define(["three"], (THREE) => {
     var PointerLockControls = function ( camera, domElement ) {
 
     	if ( domElement === undefined ) {
@@ -26,11 +26,11 @@ define("three", (THREE) => {
     	var lockEvent = { type: 'lock' };
     	var unlockEvent = { type: 'unlock' };
 
-    	var euler = new Three.Euler( 0, 0, 0, 'YXZ' );
+    	var euler = new THREE.Euler( 0, 0, 0, 'YXZ' );
 
     	var PI_2 = Math.PI / 2;
 
-    	var vec = new Three.Vector3();
+    	var vec = new THREE.Vector3();
 
     	function onMouseMove( event ) {
 
@@ -41,7 +41,7 @@ define("three", (THREE) => {
 
     		euler.setFromQuaternion( camera.quaternion );
 
-            let lookDirection = new Three.Vector3( 0, 0, - 1 ).applyQuaternion(camera.quaternion);
+            let lookDirection = new THREE.Vector3( 0, 0, - 1 ).applyQuaternion(camera.quaternion);
 
             if (lookDirection.y > -0.97) {
                 euler.y -= movementX * 0.002;
@@ -111,7 +111,7 @@ define("three", (THREE) => {
 
     	this.getDirection = function () {
 
-    		var direction = new Three.Vector3( 0, 0, - 1 );
+    		var direction = new THREE.Vector3( 0, 0, - 1 );
 
     		return function ( v ) {
 
@@ -158,7 +158,7 @@ define("three", (THREE) => {
 
     };
 
-    PointerLockControls.prototype = Object.create( Three.EventDispatcher.prototype );
+    PointerLockControls.prototype = Object.create( THREE.EventDispatcher.prototype );
     PointerLockControls.prototype.constructor = PointerLockControls;
 
     return PointerLockControls;

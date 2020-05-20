@@ -1,16 +1,10 @@
-define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "ammo", "scene", "utils", "states"],
-(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, Ammo, scene, Utils, States) => {
-
-    Ammo().then((AmmoLib) =>
-    {
-        Ammo = AmmoLib;
-    });
+define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "scene", "utils", "states", "playerInputHandler"],
+(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, Utils, States, PlayerInputHandler) => {
 
     var Player =
     {
         username: "",
-        position: {},
-        input_handler: {},
+        input_handler: PlayerInputHandler,
         collider: {},
         state: States.IDLE,
         running: false,
@@ -30,23 +24,17 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         rigidbody: {},
         event_queue: [],
 
+        //====================================================================
+        //====================================================================
+        //  Init Methods
+        //====================================================================
+        //====================================================================
+
         init: (_username = "empty_username", _position = new THREE.Vector3()) =>
         {
+            Player.input_handler.init();
             Player.initGraphics();
             Player.initPhysics();
-        },
-
-        update: () =>
-        {
-            if (Player.event_queue.length > 0)
-            {
-                var event_obj = Player.event_queue[0];
-                if (event_obj.verify())
-                {
-                    event_obj.action.apply(this, event_obj.arguments);
-                    Player.event_queue.shift();
-                }
-            }
         },
 
         //Collider is used to check if the player is grounded to decide if we can jump when jump is pressed.
@@ -68,13 +56,13 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             {
                 verify: () =>
                 {
-                    return Player.body != {};
+                    return Object.keys(Player.body).length > 0;
                 },
                 action: () =>
                 {
-                    var capsule_shape = new Ammo.btCapsuleShape(2, 6.5);
-                    var rigidbody = Physics.createRigidBody(Player.body, capsule_shape, Utils.PLAYER_MASS, Player.position, Player.body.quaternion, Player.rigidbody_offset);
-                    body.setAngularFactor(new Ammo.btVector3(0.0, 0.0, 0.0));
+                    var capsule_shape = new Physics.ammo.btCapsuleShape(2, 6.5);
+                    var rigidbody = Physics.createRigidBody(Player.body, capsule_shape, Utils.PLAYER_MASS, Player.body.position, Player.body.quaternion, Player.rigidbody_offset);
+                    rigidbody.setAngularFactor(new Physics.ammo.btVector3(0.0, 0.0, 0.0));
                     Player.rigidbody = rigidbody;
                 },
                 arguments: []
@@ -188,7 +176,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 "fallIdle to idle" : () => {
                     Player.animator.prepareCrossFade('FallIdle', 'Idle', 0.25);
                 },
-                "any to jumpCharging" : (weight = 0.5) => {
+                "any to jump_charging" : (weight = 0.5) => {
                     Player.animator.playAnimation('CrouchIdle', weight);
                 },
                 "any to fallIdle" : () => {
@@ -197,6 +185,167 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 }
             }
         },
+
+        //====================================================================
+        //====================================================================
+        //  Update Methods
+        //====================================================================
+        //====================================================================
+
+        update: (_delta) =>
+        {
+            Player.eventQueueUpdate();
+
+            if (Object.keys(Player.rigidbody) > 0)
+            {
+                Player.updateAnimation();
+            }
+
+        },
+
+        //This is going to change to use a PlayerState Class which will contain different
+        //definitiosn for player states and handle animation switching/ state switching there
+        //https://gameprogrammingpatterns.com/state.html
+        updateAnimation: () =>
+        {
+            if (Object.keys(Player.animator).length > 0) Player.animator.update();
+
+            switch (Player.state) {
+                case States.IDLE:
+                    if (Player.input_handler.move_forward || Player.input_handler.move_left || Player.input_handler.move_right || Player.input_handler.move_backward)
+                    {
+                        Player.state = States.WALK;
+                        Player.transitions["idle to walk"]();
+                    } else if (Player.crouching)
+                    {
+                        Player.state = States.CROUCH_IDLE;
+                        Player.transitions["idle to crouchIdle"]();
+                    } else if (Player.jump_pressed)
+                    {
+                        Player.jump_charging = true;
+                        Player.transitions["any to jump_charging"](0.75);
+                        Player.jump_pressed = false;
+                    } else if (Player.jump_charging)
+                    {
+
+                    }
+
+                    break;
+                case States.WALK:
+                    if (!Player.input_handler.move_forward && !Player.input_handler.move_left && !Player.input_handler.move_right && !Player.input_handler.move_backward)
+                    {
+                        Player.state = States.IDLE;
+                        Player.transitions["walk to idle"]();
+                    } else if (Player.running)
+                    {
+                        Player.state = States.RUN;
+                        Player.transitions["walk to run"]();
+                    } else if (Player.crouching)
+                    {
+                        Player.state = States.CROUCH_WALK;
+                        Player.transitions["walk to crouchWalk"]();
+                    } else if (Player.jump_pressed)
+                    {
+                        Player.jump_charging = true;
+                        Player.transitions["any to jump_charging"](0.2);
+                        Player.jump_pressed = false;
+                    }
+                    break;
+                case States.RUN:
+                    if (!Player.input_handler.move_forward && !Player.input_handler.move_left && !Player.input_handler.move_right && !Player.input_handler.move_backward)
+                    {
+                        Player.state = States.IDLE;
+                        Player.transitions["run to idle"]();
+                    } else if (!Player.running)
+                    {
+                        Player.state = States.WALK;
+                        Player.transitions["run to walk"]();
+                    } else if (Player.jump_pressed)
+                    {
+                        Player.jump_charging = true;
+                        Player.transitions["any to jump_charging"](0.25);
+                        Player.jump_pressed = false;
+                    }
+
+                    break;
+                case States.CROUCH_IDLE:
+                    if (Player.crouching)
+                    {
+                        if (Player.input_handler.move_forward || Player.input_handler.move_left || Player.input_handler.move_right || Player.input_handler.move_backward)
+                        {
+                            Player.state = States.CROUCH_WALK;
+                            Player.transitions["crouchIdle to crouchWalk"]();
+                        }
+                    } else
+                    {
+                        if (Player.input_handler.move_forward || Player.input_handler.move_left || Player.input_handler.move_right || Player.input_handler.move_backward)
+                        {
+                            Player.state = States.WALK;
+                            Player.transitions["crouchIdle to walk"]();
+                        } else
+                        {
+                            Player.state = States.IDLE;
+                            Player.transitions["crouchIdle to idle"]();
+                        }
+                    }
+                    break;
+                case States.CROUCH_WALK:
+                    if (Player.crouching)
+                    {
+                        if (!Player.input_handler.move_forward && !Player.input_handler.move_left && !Player.input_handler.move_right && !Player.input_handler.move_backward)
+                        {
+                            Player.state = States.CROUCH_IDLE;
+                            Player.transitions["crouchWalk to crouchIdle"]();
+                        }
+                    } else
+                    {
+                        if (Player.input_handler.move_forward || Player.input_handler.move_left || Player.input_handler.move_right || Player.input_handler.move_backward)
+                        {
+                            Player.state = States.WALK;
+                            Player.transitions["crouchWalk to walk"]();
+                        } else
+                        {
+                            Player.state = States.IDLE;
+                            Player.transitions["crouchWalk to idle"]();
+                        }
+                    }
+                    break;
+                case States.FALL_IDLE:
+                    var currentVelocity = Player.rigidbody.getLinearVelocity();
+                    // console.log(currentVelocity.y());
+                    if (currentVelocity.y() < -20)
+                    {
+                        Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(currentVelocity.x(), 0, currentVelocity.z()));
+                    }
+                    if (Player.collider.isGrounded(Player))
+                    {
+                        // console.log(currentVelocity.y());
+                        Player.state = States.IDLE;
+                        Player.transitions["fallIdle to idle"]();
+                    }
+                    break;
+                }
+
+                if (!(Player.state == States.FALL_IDLE) && Player.body && !Player.collider.isGrounded(Player))
+                {
+                    Player.state = States.FALL_IDLE;
+                    Player.transitions["any to fallIdle"]();
+                }
+        },
+
+        eventQueueUpdate: () =>
+        {
+            if (Player.event_queue.length > 0)
+            {
+                var event_obj = Player.event_queue[0];
+                if (event_obj.verify())
+                {
+                    event_obj.action.apply(this, event_obj.arguments);
+                    Player.event_queue.shift();
+                }
+            }
+        },
+
     }
     return Player;
 });

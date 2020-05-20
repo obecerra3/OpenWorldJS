@@ -17,7 +17,31 @@ define( ["three", "camera", "container", "renderer", "scene", "physics", "world"
 
         update: () =>
         {
+            requestAnimationFrame(maze.update);
 
+            Debug.updateStart();
+
+            var time = performance.now();
+            var delta = maze.clock.getDelta();
+
+            Physics.update(delta, Player);
+            Player.update(delta);
+            Multiplayer.update(time);
+            // World.update(delta);
+
+            renderer.render(scene, camera);
+
+            if (maze.event_queue.length > 0)
+            {
+                var event_obj = maze.event_queue[0];
+                if (event_obj.verify())
+                {
+                    event_obj.action.apply(this, event_obj.arguments);
+                    maze.event_queue.shift();
+                }
+            }
+
+            Debug.updateEnd();
         },
 
 

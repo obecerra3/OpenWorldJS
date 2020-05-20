@@ -30,6 +30,11 @@ if (!isset($_SESSION["username"])) {
         <script data-main="../main" src="js/require.js"></script>
     </head>
     <body>
-        <div id="threejs-container">Loading...</div>
+        <div id="threejs-container">
+            <!-- <div id="blocker">
+                <div id="info">
+                </div>
+            </div> -->
+        </div>
     </body>
 </html>

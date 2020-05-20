@@ -1,10 +1,5 @@
-define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "ammo", "scene", "utils", "states"],
-(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, Ammo, scene, Utils, States) => {
-
-    Ammo().then((AmmoLib) =>
-    {
-        Ammo = AmmoLib;
-    });
+define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "scene", "utils", "states"],
+(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, Utils, States) => {
 
     var OnlinePlayerConstructor = (_username, _position) =>
     {
@@ -76,9 +71,9 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     },
                     action: () =>
                     {
-                        var capsule_shape = new Ammo.btCapsuleShape(2, 6.5);
+                        var capsule_shape = new Physics.ammo.btCapsuleShape(2, 6.5);
                         var rigidbody = Physics.createRigidBody(OnlinePlayer.body, capsule_shape, Utils.PLAYER_MASS, OnlinePlayer.position, OnlinePlayer.body.quaternion, OnlinePlayer.rigidbody_offset);
-                        body.setAngularFactor(new Ammo.btVector3(0.0, 0.0, 0.0));
+                        body.setAngularFactor(new Physics.ammo.btVector3(0.0, 0.0, 0.0));
                         OnlinePlayer.rigidbody = rigidbody;
                     },
                     arguments: []

@@ -3,9 +3,9 @@
 
 define(["pointerLockControls", "camera", "container", "scene", "three"], (PointerLockControls, camera, container, scene, THREE) =>
 {
-    var PlayerControlState =
+    var PlayerInput =
     {
-        controls: {},
+        controls: new PointerLockControls(camera, container),
         orbit_enabled: false,
         move_forward: false,
         move_backward: false,
@@ -27,96 +27,94 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
 
         init: () =>
         {
-            console.log("pussy");
-
             container.addEventListener("click", () =>
             {
-                controls.lock();
+                PlayerInput.controls.lock();
             }, false);
 
-            controls.addEventListener("lock", () =>
+            PlayerInput.controls.addEventListener("lock", () =>
             {
                 container.style.display = "none";
             });
 
-            controls.addEventListener("unlock", () =>
+            PlayerInput.controls.addEventListener("unlock", () =>
             {
                 container.style.display = "block";
             });
 
-            scene.add(controls.getObject());
+            scene.add(PlayerInput.controls.getObject());
 
             document.addEventListener('keydown', (event) => {
-                if (controls.isLocked) {
-                    if (orbit_enabled) {
+                if (PlayerInput.controls.isLocked) {
+                    if (PlayerInput.orbit_enabled) {
                         //ORBIT CONTROLS USED FOR DEBUGGING
                         let offset = new THREE.Vector3();
                         switch (event.keyCode) {
                             case 38: //w
                             case 87: //forward arrow
-                                offset = controls.getDirection(new THREE.Vector3())
-                                worldState.camera.position.add(offset.multiplyScalar(speed));
+                                offset = PlayerInput.controls.getDirection(new THREE.Vector3())
+                                camera.position.add(offset.multiplyScalar(PlayerInput.speed));
                                 break;
                             case 40: //s
                             case 83: //backward arrow
-                                offset = controls.getDirection(new THREE.Vector3())
-                                worldState.camera.position.add(offset.multiplyScalar(-speed));
+                                offset = PlayerInput.controls.getDirection(new THREE.Vector3())
+                                camera.position.add(offset.multiplyScalar(-PlayerInput.speed));
                                 break;
                             case 49: //1
-                                speed -= 5;
+                                PlayerInput.speed -= 5;
                                 break;
                             case 57: //9
-                                speed += 5;
+                                PlayerInput.speed += 5;
                                 break;
                             case 48: //0
-                                orbit_enabled = !orbit_enabled;
+                                PlayerInput.orbit_enabled = !PlayerInput.orbit_enabled;
                                 break;
                         }
                     } else {
                         //REGULAR CONTROLS
                         switch (event.keyCode) {
                             case 70: //f
-                                toggleFlashlight();
+                                PlayerInput.toggleFlashlight();
                                 break;
                             case 67: //c
-                                if (!is_crouched) {
-                                    toggleCrouch();
-                                    is_crouched = true;
+                                if (!PlayerInput.is_crouched) {
+                                    PlayerInput.toggleCrouch();
+                                    PlayerInput.is_crouched = true;
                                 }
                                 break;
                             case 16: //shift
-                                toggleRun(true);
+                                PlayerInput.toggleRun(true);
                                 break;
                             case 38: // up
                             case 87: // w
-                                move_forward = true;
+                                PlayerInput.move_forward = true;
                                 break;
                             case 37: // left
                             case 65: // a
-                                move_left = true;
+                                PlayerInput.move_left = true;
                                 break;
                             case 40: // down
                             case 83: // s
-                                move_backward = true;
+                                PlayerInput.move_backward = true;
                                 break;
                             case 39: // right
                             case 68: // d
-                                move_right = true;
+                                PlayerInput.move_right = true;
                                 break;
                             case 32: // space
-                                if (!space_pressed_time_elapsed) {
-                                    space_pressed_time_elapsed = clock.elapsedTime;
-                                    toggleJump(0);
+                                if (!PlayerInput.space_pressed_time_elapsed) {
+                                    PlayerInput.space_pressed_time_elapsed = PlayerInput.clock.elapsedTime;
+                                    PlayerInput.toggleJump(0);
                                 }
                                 break;
                             case 80: // p
-                                printState();
+                                PlayerInput.printState();
                                 break;
                             case 79: // o
-                                toggleFlight();
+                                PlayerInput.toggleFlight();
                                 break;
                             case 48: //0
-                                orbit_enabled = !orbit_enabled;
+                                PlayerInput.orbit_enabled = !PlayerInput.orbit_enabled;
                                 break;
                         }
                     }
@@ -124,33 +122,33 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
             }, false);
 
             document.addEventListener('keyup', (event) => {
-                if (controls.isLocked && !orbit_enabled) {
+                if (PlayerInput.controls.isLocked && !PlayerInput.orbit_enabled) {
                     switch (event.keyCode) {
                         case 16: //shift
-                            toggleRun(false);
+                            PlayerInput.toggleRun(false);
                             break;
                         case 67: //c
-                            is_crouched = false;
+                            PlayerInput.is_crouched = false;
                             break;
                         case 38: // up
                         case 87: // w
-                            move_forward = false;
+                            PlayerInput.move_forward = false;
                             break;
                         case 37: // left
                         case 65: // a
-                            move_left = false;
+                            PlayerInput.move_left = false;
                             break;
                         case 40: // down
                         case 83: // s
-                            move_backward = false;
+                            PlayerInput.move_backward = false;
                             break;
                         case 39: // right
                         case 68: // d
-                            move_right = false;
+                            PlayerInput.move_right = false;
                             break;
                         case 32: //space
-                            toggleJump(clock.elapsedTime - space_pressed_time_elapsed);
-                            space_pressed_time_elapsed = null;
+                            PlayerInput.toggleJump(PlayerInput.clock.elapsedTime - PlayerInput.space_pressed_time_elapsed);
+                            PlayerInput.space_pressed_time_elapsed = null;
                             break;
                     }
                 }
@@ -158,5 +156,5 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
         },
 
     };
-    return PlayerControlState;
+    return PlayerInput;
 });

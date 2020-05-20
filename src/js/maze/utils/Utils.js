@@ -1,4 +1,4 @@
-define(["three", "Ammo"], (THREE, Ammo) =>
+define(["three", "ammo"], (THREE, Ammo) =>
 {
     Ammo().then((AmmoLib) =>
     {

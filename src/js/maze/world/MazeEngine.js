@@ -1,6 +1,6 @@
 // require('../lib/three-instanced-mesh/index.js')(THREE);
 
-define(["three", "instancedMesh", "Physics", "Player"], (THREE, InstancedMesh, Physics, Player) =>
+define(["three", "instancedMesh", "physics", "player"], (THREE, InstancedMesh, Physics, Player) =>
 {
     var MazeEngine =
     {

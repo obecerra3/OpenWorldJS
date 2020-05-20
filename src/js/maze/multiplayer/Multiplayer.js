@@ -1,15 +1,11 @@
-define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine", "utils", "ammo", "messageBuilder"],
-(THREE, InfoManager, scene, onlinePlayer, Player, MazeEngine, Utils, Ammo, MessageBuilder) =>
+define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine", "utils", "messageBuilder", "physics"],
+(THREE, InfoManager, scene, onlinePlayer, Player, MazeEngine, Utils, MessageBuilder, Physics) =>
 {
-    Ammo().then((AmmoLib) =>
-    {
-        Ammo = AmmoLib;
-    });
-
     var Multiplayer =
     {
         online_players: {},
         socket: new WebSocket("wss://themaze.io:8000"),
+        previous_update_time: -Utils.UPDATE_DELTA,
 
         init: () =>
         {
@@ -24,9 +20,14 @@ define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine",
             };
         },
 
-        update: () =>
+        update: (_time) =>
         {
-
+            if (Player.body && _time - Multiplayer.previous_update_time >= Utils.UPDATE_DELTA
+                && Multiplayer.socket.readyState == WebSocket.OPEN)
+            {
+                Multiplayer.socket.send(MessageBuilder.state(Player));
+                Multiplayer.previous_update_time = _time;
+            }
         },
 
         processIntroduction: (buffer) =>
@@ -110,7 +111,7 @@ define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine",
             var newVelocity = new THREE.Vector3(positionX - otherPlayer.body.position.x, 0, positionZ - otherPlayer.body.position.z).divideScalar(Utils.UPDATE_DELTA);
             otherPlayer.rigidbody.setLinearVelocity(Utils.btVector3(newVelocity));
             var current_velocity = otherPlayer.rigidbody.getLinearVelocity();
-            otherPlayer.setLinearVelocity(new Ammo.btVector3(current_velocity.x(), y_velocity, current_velocity.z()));
+            otherPlayer.setLinearVelocity(new Physics.ammo.btVector3(current_velocity.x(), y_velocity, current_velocity.z()));
             otherPlayer.lookDirection.x = lookDirectionX;
             otherPlayer.lookDirection.y = lookDirectionY;
             otherPlayer.lookDirection.z = lookDirectionZ;
