@@ -32,15 +32,15 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
                 PlayerInput.controls.lock();
             }, false);
 
-            PlayerInput.controls.addEventListener("lock", () =>
-            {
-                container.style.display = "none";
-            });
-
-            PlayerInput.controls.addEventListener("unlock", () =>
-            {
-                container.style.display = "block";
-            });
+            // PlayerInput.controls.addEventListener("lock", () =>
+            // {
+            //     container.style.display = "none";
+            // });
+            //
+            // PlayerInput.controls.addEventListener("unlock", () =>
+            // {
+            //     container.style.display = "block";
+            // });
 
             scene.add(PlayerInput.controls.getObject());
 

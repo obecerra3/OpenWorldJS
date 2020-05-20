@@ -4,6 +4,7 @@ require( ['detector', 'maze', 'container'],
 {
     if (!Detector.webgl)
     {
+        console.log("ERROR: WebGl is not supported");
         Detector.addGetWebGLMessage();
         container.innerHTML = "";
     }

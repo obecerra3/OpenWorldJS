@@ -26,7 +26,7 @@ define(["ammo", "utils"],
 
         update: (_delta, _player) =>
         {
-            // Physics.physicsWorld.stepSimulation(_delta, 10);
+            Physics.physicsWorld.stepSimulation(_delta, 10);
 
             Physics.updateDynamicRigidbodies();
         },

@@ -1,5 +1,5 @@
-define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "scene", "utils", "states", "playerInputHandler"],
-(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, Utils, States, PlayerInputHandler) => {
+define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "scene", "camera", "utils", "states", "playerInputHandler"],
+(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, camera, Utils, States, PlayerInputHandler) => {
 
     var Player =
     {
@@ -33,6 +33,12 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         init: (_username = "empty_username", _position = new THREE.Vector3()) =>
         {
             Player.input_handler.init();
+            Player.input_handler.toggleJump = Player.toggleJump.bind(Player);
+            Player.input_handler.toggleCrouch = Player.toggleCrouch.bind(Player);
+            Player.input_handler.toggleFlashlight = Player.toggleFlashlight.bind(Player);
+            Player.input_handler.printState = Player.printState.bind(Player);
+            Player.input_handler.toggleFlight = Player.toggleFlight.bind(Player);
+            Player.input_handler.toggleRun = Player.toggleRun.bind(Player);
             Player.initGraphics();
             Player.initPhysics();
         },
@@ -192,14 +198,22 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         //====================================================================
         //====================================================================
 
-        update: (_delta) =>
+        update: (delta) =>
         {
             Player.eventQueueUpdate();
 
-            if (Object.keys(Player.rigidbody) > 0)
-            {
-                Player.updateAnimation();
-            }
+            if (Object.keys(Player.rigidbody) > 0) Player.updateAnimation();
+
+            if (Player.input_handler) Player.input_handler.controls.getDirection(Player.look_direction);
+
+            if (Player.body) Player.collider.update(Player);
+
+            Player.updateMoveDirection();
+            Player.updateVelocity(delta);
+            Player.updateRotation();
+            Player.updateFlashlight();
+
+            if (!Player.input_handler.orbit_enabled) Player.updateCameraPosition();
 
         },
 
@@ -333,6 +347,143 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 }
         },
 
+        updateMoveDirection: () =>
+        {
+            Player.move_direction.z = Number(Player.input_handler.move_forward) - Number(Player.input_handler.move_backward);
+            Player.move_direction.x = Number(Player.input_handler.move_left) - Number(Player.input_handler.move_right);
+            Player.move_direction.normalize();
+            let theta = 0;
+
+            if (Player.look_direction.z > 0)
+            {
+                theta = Math.atan(Player.look_direction.x / Player.look_direction.z);
+            } else if (Player.look_direction.x > 0)
+            {
+                theta = Math.PI/2 + Math.atan(-Player.look_direction.z/ Player.look_direction.x);
+            } else
+            {
+                if (Player.look_direction.x == 0)
+                {
+                    theta = Math.PI;
+                } else
+                {
+                    theta = -Math.PI/2 - Math.atan(-Player.look_direction.z/ -Player.look_direction.x);
+                }
+            }
+            Player.move_direction.applyAxisAngle(Utils.Y, theta);
+        },
+
+        updateVelocity: (delta) =>
+        {
+            if (Object.keys(Player.rigidbody).length > 0)
+            {
+                let yVelocity = Player.rigidbody.getLinearVelocity().y();
+
+                if (Player.running)
+                {
+                    Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(Player.move_direction.x * Utils.PLAYER_RUNNING_SPEED * delta, yVelocity, Player.move_direction.z * Utils.PLAYER_RUNNING_SPEED * delta));
+                } else
+                {
+                    Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(Player.move_direction.x * Utils.PLAYER_WALKING_SPEED * delta, yVelocity, Player.move_direction.z * Utils.PLAYER_WALKING_SPEED * delta));
+                }
+            }
+        },
+
+        updateRotation: () =>
+        {
+            if (Object.keys(Player.body).length > 0 && Player.look_direction.y > -0.97)
+            {
+                Player.body.rotation.y = Math.atan2(Player.look_direction.x, Player.look_direction.z);
+            }
+        },
+
+        updateCameraPosition: () =>
+        {
+            if (Object.keys(Player.body).length > 0)
+            {
+                if (Player.look_direction.y > -0.97)
+                {
+                    let offset = new THREE.Vector3(Player.look_direction.x, 0, Player.look_direction.z); //used to be * 1.75
+                    offset.normalize();
+                    offset.multiplyScalar(-15); //2 for fps -10 for 3rd person
+                    camera.position.x = Player.body.position.x + offset.x;
+                    camera.position.z = Player.body.position.z + offset.z;
+                }
+                camera.position.y = Player.body.position.y + 15;
+
+                if (Player.running && Player.state == States.RUN)
+                {
+                    let max = 0.07;
+                    let min = -0.07;
+                    camera.position.x += Math.random() * (max - min) + min;
+                    camera.position.z += Math.random() * (max - min) + min;
+                    camera.position.y += Math.random() * (max - min) + min;
+                }
+            }
+        },
+
+        updateFlashlight: () =>
+        {
+            Player.flashlight.position.copy(camera.position);
+
+            Player.flashlight.position.y -= 1;
+            Player.flashlight.position.x += Player.look_direction.x * 1.5;
+            Player.flashlight.position.z += Player.look_direction.z * 1.5;
+
+            Player.flashlight.target.position.set(Player.flashlight.position.x + Player.look_direction.x,
+                                                Player.flashlight.position.y + Player.look_direction.y,
+                                                Player.flashlight.position.z + Player.look_direction.z);
+
+            Player.flashlight.target.updateMatrixWorld();
+        },
+
+        //====================================================================
+        //====================================================================
+        //  Input Handler Method Callbacks
+        //====================================================================
+        //====================================================================
+
+        toggleCrouch: () =>
+        {
+            Player.crouching = !Player.crouching;
+        },
+
+        toggleJump: (time_pressed) =>
+        {
+            if ((Player.collider.isGrounded(Player) && !Player.crouching) || Player.flight_emabled) {
+                if (time_pressed == 0) {
+                    Player.jump_pressed = true;
+                    return;
+                }
+
+                time_pressed = time_pressed % 5;
+                let y_velocity = 200 + (time_pressed * 50);
+                Player.jump_charging = false;
+                Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(Player.rigidbody.getLinearVelocity().x(), y_velocity, Player.rigidbody.getLinearVelocity().z()));
+            }
+        },
+
+        toggleFlight: () =>
+        {
+            Player.flight_enabled = !Player.flight_enabled;
+        },
+
+        toggleFlashlight: () =>
+        {
+            Player.flashlight.visible = !Player.flashlight.visible;
+        },
+
+        toggleRun: (_value) =>
+        {
+            Player.running = _value;
+        },
+
+        //====================================================================
+        //====================================================================
+        //  Util Methods
+        //====================================================================
+        //====================================================================
+
         eventQueueUpdate: () =>
         {
             if (Player.event_queue.length > 0)
@@ -344,6 +495,15 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     Player.event_queue.shift();
                 }
             }
+        },
+
+        printState: () =>
+        {
+            console.log("PrintState is for player debugging");
+            console.log("Player.body");
+            console.log(Player.body);
+            console.log("Player");
+            console.log(Player);
         },
 
     }

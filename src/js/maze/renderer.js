@@ -2,20 +2,22 @@ define(["three", "container"],
 (THREE, container) =>
 {
     container.innerHTML = "";
-    var renderer = new THREE.WebGLRenderer({clearColor: 0x000000});
+    var renderer = new THREE.WebGLRenderer({antialias: true, clearColor: 0x000000});
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.sortObjects = false;
     renderer.autoClear = false;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.gammaFactor = 2.2;
     container.appendChild(renderer.domElement);
 
-    var updateSize = () =>
+    window.addEventListener('resize', () =>
     {
-        renderer.setSize( container.offsetWidth, container.offsetHeight );
-        // For a smoother render double the pixel ratio
+        renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio( 2 );
-    };
-
-    window.addEventListener('resize', updateSize, false);
-    updateSize();
+    }, false);
 
     return renderer;
 });

@@ -1,14 +1,10 @@
-define( ["three", "container"], function ( THREE, container ) {
-  var camera = new THREE.PerspectiveCamera( 70, 1, 1, 5000 );
-  camera.position.z = 80;
-  camera.up = new THREE.Vector3( 0, 0, 1 );
+define( ["three", "container"], function (THREE, container) {
+  var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
 
-  var updateSize = function () {
-    camera.aspect = container.offsetWidth / container.offsetHeight;
-    camera.updateProjectionMatrix();
-  };
-  window.addEventListener( 'resize', updateSize, false );
-  updateSize();
+  window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+  }, false);
 
   return camera;
 } );

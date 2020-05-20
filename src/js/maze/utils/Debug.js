@@ -4,8 +4,8 @@
 //ammo_drawer is a 3rd party library that will draw the ammojs rigidbody collision boxes
 //TODO: toggle debug stats with a button click and toggle ammo_drawer with a button click
 
-define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
-(THREE, scene, Physics, container, Stats, AmmoDebugDrawer) =>
+define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer", "renderer"],
+(THREE, scene, Physics, container, Stats, AmmoDebugDrawer, renderer) =>
 {
     var Debug =
     {
@@ -13,7 +13,7 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
         stats_ms: new Stats(),
         ammo_drawer: {},
         show_render_calls: false,
-        show_ammo_drawer: false,
+        show_ammo_drawer: true,
 
         init: () =>
         {
@@ -32,7 +32,7 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer"],
         {
             Debug.stats_fps.begin();
             Debug.stats_ms.begin();
-            // Debug.ammo_drawer.update();
+            Debug.ammo_drawer.update();
 
             if (Debug.show_render_calls)
             {
