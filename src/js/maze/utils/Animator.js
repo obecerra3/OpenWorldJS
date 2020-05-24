@@ -24,12 +24,14 @@ define(["three"], (THREE) =>
 
             prepareCrossFade: (_start_key, _end_key, _duration, _sync_time = 0) =>
             {
-                togglePause(false);
+                Animator.togglePause(false);
 
-                if (_sync_time > 0) {
-                    synchronizeCrossFade(_start_key, _end_key, _duration, _sync_time);
-                } else {
-                    executeCrossFade(_start_key, _end_key, _duration);
+                if (_sync_time > 0)
+                {
+                    Animator.synchronizeCrossFade(_start_key, _end_key, _duration, _sync_time);
+                } else
+                {
+                    Animator.executeCrossFade(_start_key, _end_key, _duration);
                 }
             },
 
@@ -41,7 +43,7 @@ define(["three"], (THREE) =>
                     if (event.action === Animator.animation_data[_start_key].action)
                     {
                         Animator.mixer.removeEventListener('loop', onLoopFinished);
-                        executeCrossFade(_start_key, _end_key, _duration);
+                        Animator.executeCrossFade(_start_key, _end_key, _duration);
                     }
                 }
                 Animator.mixer.addEventListener('loop', onLoopFinished);
@@ -53,7 +55,7 @@ define(["three"], (THREE) =>
                 // (concerning the start action this is already guaranteed in this place)
                 var end_action = Animator.animation_data[_end_key].action;
                 var start_action = Animator.animation_data[_start_key].action;
-                setWeight(end_action, 1);
+                Animator.setWeight(end_action, 1);
                 end_action.time = 0;
                 // Crossfade with warping - you can also try without warping by setting the third parameter to false
                 start_action.crossFadeTo(end_action, _duration, true);
@@ -66,14 +68,14 @@ define(["three"], (THREE) =>
             {
                 _action.enabled = true;
                 _action.setEffectiveTimeScale(1);
-                _action.setEffective_weight(_weight);
+                _action.setEffectiveWeight(_weight);
             },
 
             playAnimation: (_key, _weight = 1, _fade_in_duration = 0.5) =>
             {
-                togglePause(false);
+                Animator.togglePause(false);
                 var action = Animator.animation_data[_key].action;
-                setWeight(action, _weight);
+                Animator.setWeight(action, _weight);
                 action.time = 0;
                 action.fadeIn(_fade_in_duration);
                 action.play();
@@ -82,7 +84,7 @@ define(["three"], (THREE) =>
             stopAnimation: (_key, _weight = 0, _fade_out_duration = 0.5) =>
             {
                 var action = Animator.animation_data[_key].action;
-                setWeight(action, _weight);
+                Animator.setWeight(action, _weight);
                 action.fadeOut(_fade_out_duration);
                 action.stop();
             },
@@ -99,7 +101,7 @@ define(["three"], (THREE) =>
                 var current_action;
                 for (var key of Object.keys(Animator.animation_data)) {
                     current_action = Animator.animation_data[key].action
-                    setWeight(current_action, Animator.animation_data[key].weight);
+                    Animator.setWeight(current_action, Animator.animation_data[key].weight);
                     current_action.play();
                 }
             },

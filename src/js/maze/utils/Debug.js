@@ -26,6 +26,7 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer", "r
 
             //draw collision boxes for rigidbodies
             Debug.ammo_drawer = new THREE.AmmoDebugDrawer(scene, Physics.physicsWorld);
+            Debug.toggleAmmoDrawer(Debug.show_ammo_drawer);
         },
 
         updateStart: () =>

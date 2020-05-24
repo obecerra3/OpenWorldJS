@@ -16,16 +16,11 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
             var light = new THREE.AmbientLight(0x404040);
             scene.add(light);
 
-            var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000);
-            floorGeometry.rotateX(-Math.PI/2);
-            let floorMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(0x8CE78C)});
-            var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            scene.add(floor);
-
             Multiplayer.init();
             Physics.init();
             Debug.init();
-            Player.init();
+            Player.init(maze.clock);
+            World.init();
         },
 
         update: () =>
@@ -37,10 +32,10 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
             var time = performance.now();
             var delta = maze.clock.getDelta();
 
-            Physics.update(delta, Player);
+            Physics.update(delta);
             Player.update(delta);
             Multiplayer.update(time);
-            // World.update(delta);
+            World.update(delta, Player);
 
             renderer.render(scene, camera);
 

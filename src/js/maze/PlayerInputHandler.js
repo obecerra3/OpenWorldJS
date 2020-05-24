@@ -1,11 +1,13 @@
 //Control State currently handles input for the player and holds the state of the player's movement status.
 //this can be changed to be a subject that the player observes perhaps?
 
-define(["pointerLockControls", "camera", "container", "scene", "three"], (PointerLockControls, camera, container, scene, THREE) =>
+define(["pointerLockControls", "camera", "container", "scene", "three"],
+(PointerLockControls, camera, container, scene, THREE) =>
 {
     var PlayerInput =
     {
         controls: new PointerLockControls(camera, container),
+        clock: {},
         orbit_enabled: false,
         move_forward: false,
         move_backward: false,
@@ -13,7 +15,6 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
         move_right: false,
         speed: 40,
         space_pressed_time_elapsed: null, //should be initialized to null
-        clock: new THREE.Clock(),
         is_crouched: false,
         is_jumping: false,
 
@@ -25,8 +26,10 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
         toggleFlight: null,
         toggleRun: null,
 
-        init: () =>
+        init: (_clock) =>
         {
+            PlayerInput.clock = _clock;
+
             container.addEventListener("click", () =>
             {
                 PlayerInput.controls.lock();
@@ -102,7 +105,8 @@ define(["pointerLockControls", "camera", "container", "scene", "three"], (Pointe
                                 PlayerInput.move_right = true;
                                 break;
                             case 32: // space
-                                if (!PlayerInput.space_pressed_time_elapsed) {
+                                if (PlayerInput.space_pressed_time_elapsed == null)
+                                {
                                     PlayerInput.space_pressed_time_elapsed = PlayerInput.clock.elapsedTime;
                                     PlayerInput.toggleJump(0);
                                 }

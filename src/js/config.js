@@ -14,20 +14,23 @@ var require = {
         detector: "../lib/Detector",
         dracoLoader: "../lib/draco/DRACOLoader",
         gltfLoader: "../lib/GLTFLoader",
-        instancedMesh: "../lib/three-instanced-mesh/index",
         pointerLockControls: "../lib/PointerLockControls",
-        shader: "../lib/shader",
-        shaders: "../shaders",
         stats: "../lib/stats.min",
         text: "../lib/text",
         three: "../lib/three",
         threeCore: "../lib/three.min",
+
+        //this is how we access the shaders we write
+        shader: "../lib/shader",
+        shaders: "../shaders",
+
         //game code
         animator: "./utils/Animator",
         collider: "./physics/Collider",
         debug: "./utils/Debug",
         game: "./multiplayer/Game",
         infoManager: "./multiplayer/InfoManager",
+        
         mazeEngine: "./world/MazeEngine",
         messageBuilder: "./multiplayer/MessageBuilder",
         multiplayer: "./multiplayer/Multiplayer",

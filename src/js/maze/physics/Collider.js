@@ -27,7 +27,7 @@ define(["three"], (THREE) =>
                     Collider.rays.forEach((ray) => {
                         origin = new THREE.Vector3(0, 0, 0);
                         origin.add(_player.body.position);
-                        origin.add(_player.center_offset);
+                        origin.add(_player.rigidbody_offset);
                         origin.add(ray.origin_offset);
                         ray.update(origin);
                     });
@@ -97,7 +97,7 @@ define(["three"], (THREE) =>
                         {
                             Collider.raycaster.far = ray.length;
                             Collider.raycaster.ray.origin.copy(_player.body.position);
-                            Collider.raycaster.ray.origin.add(_player.center_offset);
+                            Collider.raycaster.ray.origin.add(_player.rigidbody_offset);
                             Collider.raycaster.ray.origin.add(ray.origin_offset);
                             Collider.raycaster.ray.direction.copy(ray.direction);
                             intersections = intersections.concat(Collider.raycaster.intersectObject(mesh));
