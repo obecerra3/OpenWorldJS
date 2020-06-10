@@ -30,10 +30,11 @@ var require = {
         debug: "./utils/Debug",
         game: "./multiplayer/Game",
         infoManager: "./multiplayer/InfoManager",
-        
+
         mazeEngine: "./world/MazeEngine",
         messageBuilder: "./multiplayer/MessageBuilder",
         multiplayer: "./multiplayer/Multiplayer",
+        observerUtils: "./utils/observerUtils",
         onlinePlayer: "./multiplayer/OnlinePlayer",
         physics: "./physics/Physics",
         ray: "./physics/Ray",
