@@ -1,8 +1,8 @@
 //Control State currently handles input for the player and holds the state of the player's movement status.
 //this can be changed to be a subject that the player observes perhaps?
 
-define(["pointerLockControls", "camera", "container", "scene", "three"],
-(PointerLockControls, camera, container, scene, THREE) =>
+define(["pointerLockControls", "camera", "container", "scene", "three", "utils"],
+(PointerLockControls, camera, container, scene, THREE, Utils) =>
 {
     var PlayerInput =
     {
@@ -13,7 +13,7 @@ define(["pointerLockControls", "camera", "container", "scene", "three"],
         move_backward: false,
         move_left: false,
         move_right: false,
-        speed: 40,
+        speed: Utils.ORBIT_SPEED,
         space_pressed_time_elapsed: null, //should be initialized to null
         is_crouched: false,
         is_jumping: false,
@@ -64,10 +64,10 @@ define(["pointerLockControls", "camera", "container", "scene", "three"],
                                 camera.position.add(offset.multiplyScalar(-PlayerInput.speed));
                                 break;
                             case 49: //1
-                                PlayerInput.speed -= 5;
+                                PlayerInput.speed -= 1;
                                 break;
                             case 57: //9
-                                PlayerInput.speed += 5;
+                                PlayerInput.speed += 1;
                                 break;
                             case 48: //0
                                 PlayerInput.orbit_enabled = !PlayerInput.orbit_enabled;

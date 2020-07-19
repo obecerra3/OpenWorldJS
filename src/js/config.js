@@ -14,6 +14,7 @@ var require = {
         detector: "../lib/Detector",
         dracoLoader: "../lib/draco/DRACOLoader",
         gltfLoader: "../lib/GLTFLoader",
+        noise: "../lib/noise",
         pointerLockControls: "../lib/PointerLockControls",
         stats: "../lib/stats.min",
         text: "../lib/text",
@@ -30,7 +31,6 @@ var require = {
         debug: "./utils/Debug",
         game: "./multiplayer/Game",
         infoManager: "./multiplayer/InfoManager",
-        
         mazeEngine: "./world/MazeEngine",
         messageBuilder: "./multiplayer/MessageBuilder",
         multiplayer: "./multiplayer/Multiplayer",
@@ -38,6 +38,8 @@ var require = {
         physics: "./physics/Physics",
         ray: "./physics/Ray",
         states: "./utils/States",
+        terrain: "./world/Terrain",
+        texture: "../textures/texture",
         utils: "./utils/Utils",
         world: "./world/World",
     }

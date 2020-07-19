@@ -1,16 +1,23 @@
-define(["three", "mazeEngine", "utils"],
-(THREE, MazeEngine, Utils) =>
+define(["three", "mazeEngine", "utils", "terrain"],
+(THREE, MazeEngine, Utils, Terrain) =>
 {
     var World = {
 
         init: () =>
         {
-            World.readMazeFile();
+            // World.readMazeFile();
+            Terrain.init();
+
+        },
+
+        render: () =>
+        {
+            Terrain.render();
         },
 
         update: (_delta, _player) =>
         {
-
+            Terrain.update();
         },
 
         readMazeFile: () =>
