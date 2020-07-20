@@ -16,7 +16,7 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
             var light = new THREE.AmbientLight(0x404040);
             scene.add(light);
 
-            Multiplayer.init();
+            // Multiplayer.init();
             Physics.init();
             Debug.init();
             Player.init(maze.clock);
@@ -34,7 +34,7 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
 
             Physics.update(delta);
             Player.update(delta);
-            Multiplayer.update(time);
+            // Multiplayer.update(time);
             World.update(delta, Player);
 
             renderer.render(scene, camera);

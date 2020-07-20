@@ -117,36 +117,36 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         initGraphics: () =>
         {
             //flashlight
-            Player.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
-            Player.flashlight.castShadow = true;
-            Player.flashlight.visible = false;
-            scene.add(Player.flashlight);
+            // Player.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
+            // Player.flashlight.castShadow = true;
+            // Player.flashlight.visible = false;
+            // scene.add(Player.flashlight);
 
             //gltf body
-            var loader = new THREE.GLTFLoader();
-            var dracoLoader = new THREE.DRACOLoader();
-            dracoLoader.setDecoderPath("../lib/draco/");
-            loader.setDRACOLoader(dracoLoader);
-            loader.load("./js/models/fpsCharacter.glb", (gltf) =>
-            {
-                Player.model = gltf;
-                Player.body = gltf.scene;
-
-                Player.body.traverse(function (object)
-                {
-                    object.castShadow = true;
-                    object.receiveShadow = true;
-                    //need to fix the bounding sphere of the model's geometry in order to enable frustum culling
-                    object.frustumCulled = false;
-                });
-
-                Player.initAnimations(gltf.animations);
-
-                scene.add(Player.body);
-            }, undefined, (error) =>
-            {
-                console.error("Player.js: gltf loader error: ", error);
-            });
+            // var loader = new THREE.GLTFLoader();
+            // var dracoLoader = new THREE.DRACOLoader();
+            // dracoLoader.setDecoderPath("../lib/draco/");
+            // loader.setDRACOLoader(dracoLoader);
+            // loader.load("./js/models/fpsCharacter.glb", (gltf) =>
+            // {
+            //     Player.model = gltf;
+            //     Player.body = gltf.scene;
+            //
+            //     Player.body.traverse(function (object)
+            //     {
+            //         object.castShadow = true;
+            //         object.receiveShadow = true;
+            //         //need to fix the bounding sphere of the model's geometry in order to enable frustum culling
+            //         object.frustumCulled = false;
+            //     });
+            //
+            //     Player.initAnimations(gltf.animations);
+            //
+            //     scene.add(Player.body);
+            // }, undefined, (error) =>
+            // {
+            //     console.error("Player.js: gltf loader error: ", error);
+            // });
         },
 
         initAnimations: (_animations) =>

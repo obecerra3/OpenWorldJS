@@ -70,20 +70,6 @@ define(["three", "ammo"], (THREE, Ammo) =>
             return value;
         },
 
-        // public static float noise(float x, float y, float frequency = 1, int octaves = 1, float multiplier = 15f, float amplitude = 1f, float lacunarity = 2, float persistence = 0.25f)
-        // {
-        //     //convert v2 values into floating point
-        //     Vector2 v2 = new Vector2((x / multiplier) + 0.1f,(y / multiplier) + 0.1f) * frequency;
-        //     float value = 0;
-        //     for (int n = 0; n < octaves; n++)
-        //     {
-        //         value += Mathf.PerlinNoise(v2.x + perlin_seed, v2.y + perlin_seed) * amplitude;
-        //         v2 *= lacunarity;
-        //         amplitude *= persistence;
-        //     }
-        //     return (float) System.Math.Round(value, 2);
-        // }
-
         random : () =>
         {
             var x = Math.sin(Utils.SEED++) * 10000;

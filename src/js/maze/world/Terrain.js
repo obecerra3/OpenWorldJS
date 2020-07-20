@@ -32,21 +32,15 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
             Terrain.geometry = new THREE.PlaneBufferGeometry(Terrain.WIDTH, Terrain.WIDTH, Terrain.RESOLUTION, Terrain.RESOLUTION);
             Terrain.geometry.rotateX(-Math.PI/2);
 
-            // setup material
-            Terrain.material = Terrain.createMaterial();
-
             // load
             Terrain.load();
         },
 
         load: () =>
         {
-            terrain_vert_shader.define("TILE_RESOLUTION", Terrain.RESOLUTION.toFixed(1));
-            frag_shader = terrain_frag_shader;
-            Terrain.mesh = new THREE.Mesh(Terrain.geometry, Terrain.material);
-            Terrain.obj.add(Terrain.mesh);
+            Terrain.frag_shader = terrain_frag_shader;
             Terrain.createHeightData();
-            Terrain.loaded = true
+            Terrain.material = Terrain.createMaterial();
             Terrain.render();
         },
 
@@ -57,14 +51,21 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
             var center = new THREE.Vector3(0, 0, 0);
             var top_left = center - new THREE.Vector3(width / 2, 0, width / 2);
             var data = [];
+            var max = -10.0;
 
             for (var i = 0; i < size; i++)
             {
                 var x = i % width;
-                var z = Math.floor(x / width);
-                data[i] = Utils.perlinNoise(x, z, Terrain.NOISE_FREQ);
-            }
+                var z = Math.floor(i / width);
 
+                var height = Utils.perlinNoise(x, z).toFixed(2)
+                data[i] = height;
+
+                if (height > max)
+                {
+                    max = height;
+                }
+            }
             Terrain.height_data = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
             Terrain.height_data.wrapS = THREE.MirroredRepeatWrapping;
             Terrain.height_data.wrapT = THREE.MirroredRepeatWrapping;
@@ -76,6 +77,8 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
 
         render: () =>
         {
+            Terrain.mesh = new THREE.Mesh(Terrain.geometry, Terrain.material);
+            Terrain.obj.add(Terrain.mesh);
             scene.add(Terrain.obj);
         },
 
@@ -96,16 +99,17 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
 
         createMaterial: () =>
         {
-            return new THREE.ShaderMaterial(
+            var material = new THREE.ShaderMaterial(
             {
-                uniforms:
+                uniforms :
                 {
                     uHeightData: { type: "t", value: Terrain.height_data },
                     uResolution: { type: "f", value: Terrain.RESOLUTION },
                 },
-                vertexShader: terrain_vert_shader.value,
-                fragmentShader: Terrain.frag_shader.value,
+                vertexShader : terrain_vert_shader.value,
+                fragmentShader : Terrain.frag_shader.value,
             });
+            return material;
         },
     };
     return Terrain;

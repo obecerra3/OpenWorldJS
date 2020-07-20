@@ -6,19 +6,18 @@ uniform float uResolution;
 
 varying vec3 vPosition;
 
-float lod = 0.0f;
-
 float getHeight(vec3 pos)
 {
-    vec2 st = pos.xz / uResolution;
+    vec2 st = pos.xy / uResolution;
+    float lod = 0.0;
 
-    float height = textureLod(uHeightData, st, lod).a * 1000.0;
+    float height = 1024.0 * textureLod(uHeightData, st, lod).a;
 
     return height;
 }
 
 void main()
 {
-    vec3 vPosition = position + vec3(0.0f, 1.0f, 0.0f) * getHeight(position);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
+    // vPosition = position + normal * getHeight(position);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
