@@ -1,5 +1,5 @@
-define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"],
-(THREE, Utils, scene, terrain_vert_shader, terrain_frag_shader) =>
+define(["three", "utils", "scene", "improvedNoise", "shader!terrain.vert", "shader!terrain.frag"],
+(THREE, Utils, scene, ImprovedNoise, terrain_vert_shader, terrain_frag_shader) =>
 {
     var Terrain =
     {
@@ -7,9 +7,8 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
         event_queue: [],
 
         // Constants
-        WIDTH: 50.0,
-        RESOLUTION: 128.0,
-        NOISE_FREQ: 0.3,
+        WORLD_WIDTH: 1024,
+        RESOLUTION: 64.0,
 
         // rendering
         obj: new THREE.Object3D(),
@@ -25,11 +24,8 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
 
         init: () =>
         {
-            // seed the noise generator
-            noise.seed(Utils.TERRAIN_SEED);
-
             // init the geometry
-            Terrain.geometry = new THREE.PlaneBufferGeometry(Terrain.WIDTH, Terrain.WIDTH, Terrain.RESOLUTION, Terrain.RESOLUTION);
+            Terrain.geometry = new THREE.PlaneBufferGeometry(7500, 7500, 256, 256);
             Terrain.geometry.rotateX(-Math.PI/2);
 
             // load
@@ -46,26 +42,39 @@ define(["three", "utils", "scene", "shader!terrain.vert", "shader!terrain.frag"]
 
         createHeightData: () =>
         {
-            var width = Terrain.RESOLUTION;
+            var width = Terrain.WORLD_WIDTH;
             var size = width * width;
-            var center = new THREE.Vector3(0, 0, 0);
-            var top_left = center - new THREE.Vector3(width / 2, 0, width / 2);
-            var data = [];
-            var max = -10.0;
+            var data = new Uint8Array(size);
+            var perlin = new ImprovedNoise();
+            var quality = 1;
+            var z = Math.random() * 100;
+            var max = Number.NEGATIVE_INFINITY;
+            var min = Number.POSITIVE_INFINITY;
 
-            for (var i = 0; i < size; i++)
+            for (var j = 0; j < 4; j++)
             {
-                var x = i % width;
-                var z = Math.floor(i / width);
-
-                var height = Utils.perlinNoise(x, z).toFixed(2)
-                data[i] = height;
-
-                if (height > max)
+                for (var i = 0; i < size; i++)
                 {
-                    max = height;
+                    var x = i % width;
+                    var y = Math.floor(i / width);
+
+                    data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality );
+
+                    if (j == 3)
+                    {
+                        //last iteration so time to check the heights for the stats
+                        if (data[i]> max) max = data[i];
+
+                        if (data[i] < min) min = data[i];
+                    }
                 }
+                quality *= 5;
             }
+
+            console.log("Data Stats: max: " +  max + ", min: " +  min);
+            console.log("Data: ");
+            console.log(data);
+
             Terrain.height_data = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
             Terrain.height_data.wrapS = THREE.MirroredRepeatWrapping;
             Terrain.height_data.wrapT = THREE.MirroredRepeatWrapping;

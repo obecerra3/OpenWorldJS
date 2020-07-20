@@ -1,46 +1,49 @@
 // Configure Require.js
-var require = {
+var require =
+{
     // Default load path for js files
-    baseUrl: "js/maze",
-    shim: {
-        "threeCore": { exports: "THREE" },
-        "detector": { exports: "Detector" },
-        "stats": { exports: "Stats" }
+    baseUrl : "js/maze",
+    shim :
+    {
+        "threeCore" : { exports : "THREE" },
+        "detector" : { exports : "Detector" },
+        "stats" : { exports : "Stats" }
     },
-    paths: {
+    paths :
+    {
         //libraries
-        ammo: "../lib/ammo",
-        ammoDebugDrawer: "../lib/AmmoDebugDrawer",
-        detector: "../lib/Detector",
-        dracoLoader: "../lib/draco/DRACOLoader",
-        gltfLoader: "../lib/GLTFLoader",
-        noise: "../lib/noise",
-        pointerLockControls: "../lib/PointerLockControls",
-        stats: "../lib/stats.min",
-        text: "../lib/text",
-        three: "../lib/three",
-        threeCore: "../lib/three.min",
+        ammo : "../lib/ammo",
+        ammoDebugDrawer : "../lib/AmmoDebugDrawer",
+        detector : "../lib/Detector",
+        dracoLoader : "../lib/draco/DRACOLoader",
+        gltfLoader : "../lib/GLTFLoader",
+        improvedNoise : "../lib/ImprovedNoise",
+        pointerLockControls : "../lib/PointerLockControls",
+        stats : "../lib/stats.min",
+        text : "../lib/text",
+        three : "../lib/three",
+        threeCore : "../lib/three.min",
 
         //this is how we access the shaders we write
-        shader: "../lib/shader",
-        shaders: "../shaders",
+        shader : "../lib/shader",
+        shaders : "../shaders",
 
         //game code
-        animator: "./utils/Animator",
-        collider: "./physics/Collider",
-        debug: "./utils/Debug",
-        game: "./multiplayer/Game",
-        infoManager: "./multiplayer/InfoManager",
-        mazeEngine: "./world/MazeEngine",
-        messageBuilder: "./multiplayer/MessageBuilder",
-        multiplayer: "./multiplayer/Multiplayer",
-        onlinePlayer: "./multiplayer/OnlinePlayer",
-        physics: "./physics/Physics",
-        ray: "./physics/Ray",
-        states: "./utils/States",
-        terrain: "./world/Terrain",
-        texture: "../textures/texture",
-        utils: "./utils/Utils",
-        world: "./world/World",
+        animator : "./utils/Animator",
+        collider : "./physics/Collider",
+        debug : "./utils/Debug",
+        game : "./multiplayer/Game",
+        infoManager : "./multiplayer/InfoManager",
+        mazeEngine : "./world/MazeEngine",
+        messageBuilder : "./multiplayer/MessageBuilder",
+        multiplayer : "./multiplayer/Multiplayer",
+        onlinePlayer : "./multiplayer/OnlinePlayer",
+        physics : "./physics/Physics",
+        ray : "./physics/Ray",
+        states : "./utils/States",
+        terrain : "./world/Terrain",
+        texture : "../textures/texture",
+        utils : "./utils/Utils",
+        world : "./world/World",
     }
 };

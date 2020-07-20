@@ -53,23 +53,6 @@ define(["three", "ammo"], (THREE, Ammo) =>
         SEED : 8483,
         TERRAIN_SEED : 192,
 
-        perlinNoise : (x, y, frequency = 1, octaves = 1, multiplier = 15,
-                       amplitude = 1, lacunarity = 2, persistence = 0.25) =>
-        {
-            var v2 = new THREE.Vector2((x / multiplier) + 0.1, (y / multiplier) + 0.1);
-            v2.multiplyScalar(frequency);
-            var value = 0;
-
-            for (var i = 0; i < octaves; i++)
-            {
-                value += noise.perlin2(v2.x, v2.y) * amplitude;
-                v2 *= lacunarity;
-                amplitude *= persistence;
-            }
-
-            return value;
-        },
-
         random : () =>
         {
             var x = Math.sin(Utils.SEED++) * 10000;

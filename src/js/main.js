@@ -1,6 +1,6 @@
 //start the maze, detector will detect if the client's computer supports webgl
-require( ['detector', 'maze', 'container', 'noise'],
-(Detector, maze, container, noise) =>
+require( ['detector', 'maze', 'container'],
+(Detector, maze, container) =>
 {
     if (!Detector.webgl)
     {
