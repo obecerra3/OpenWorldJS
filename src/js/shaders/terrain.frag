@@ -4,7 +4,7 @@
 
 varying vec3 vPosition;
 
-#define MAX_HEIGHT 120.0
+#define MAX_HEIGHT 30.0
 
 void main()
 {

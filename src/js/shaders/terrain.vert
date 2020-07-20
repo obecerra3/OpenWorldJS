@@ -10,7 +10,7 @@ float getHeight(vec3 pos)
 {
     vec2 st = pos.xz / uResolution;
     float lod = 0.0;
-    float height = 1024.0 * textureLod(uHeightData, st, lod).a;
+    float height = 100.0 * textureLod(uHeightData, st, lod).a;
 
     return height;
 }
