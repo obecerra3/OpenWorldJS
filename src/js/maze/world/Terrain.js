@@ -2,8 +2,8 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "improvedNoise", "shader!terrain.vert", "shader!terrain.frag"],
-(THREE, Utils, scene, ImprovedNoise, terrain_vert_shader, terrain_frag_shader) =>
+define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!terrain.vert", "shader!terrain.frag"],
+(THREE, Utils, scene, ImprovedNoise, noise, camera, terrain_vert_shader, terrain_frag_shader) =>
 {
     var Edge =
     {
@@ -37,7 +37,7 @@ define(["three", "utils", "scene", "improvedNoise", "shader!terrain.vert", "shad
         init : () =>
         {
             // create height_data
-            Terrain.createHeightData();
+            // Terrain.createHeightData();
 
             // set the frag shader
             Terrain.frag_shader = terrain_frag_shader;
@@ -110,7 +110,7 @@ define(["three", "utils", "scene", "improvedNoise", "shader!terrain.vert", "shad
                 {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : Terrain.global_offset },
-                    uHeightData   :  { type : "t", value : Terrain.height_data },
+                    uHeightData   :  { type : "t", value : noise },
                     uResolution   :  { type : "f", value : Terrain.RESOLUTION },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
@@ -139,7 +139,7 @@ define(["three", "utils", "scene", "improvedNoise", "shader!terrain.vert", "shad
                     var x = i % width;
                     var y = Math.floor(i / width);
 
-                    data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality );
+                    data[i] += Math.abs( perlin.noise((x / quality), (y / quality), z ) * quality);
 
                     if (j == 3)
                     {
@@ -177,6 +177,9 @@ define(["three", "utils", "scene", "improvedNoise", "shader!terrain.vert", "shad
 
         update : () =>
         {
+            Terrain.global_offset.x = camera.position.x;
+            Terrain.global_offset.z = camera.position.z;
+
             Terrain.checkEventQueue();
         },
 

@@ -7,7 +7,9 @@ var require =
     {
         "threeCore" : { exports : "THREE" },
         "detector" : { exports : "Detector" },
-        "stats" : { exports : "Stats" }
+        "stats" : { exports : "Stats" },
+        "ImprovedNoise": { exports: "ImprovedNoise" },
+
     },
     paths :
     {
@@ -17,7 +19,7 @@ var require =
         detector : "../lib/Detector",
         dracoLoader : "../lib/draco/DRACOLoader",
         gltfLoader : "../lib/GLTFLoader",
-        improvedNoise : "../lib/ImprovedNoise",
+        ImprovedNoise : "../lib/ImprovedNoise",
         pointerLockControls : "../lib/PointerLockControls",
         stats : "../lib/stats.min",
         text : "../lib/text",
@@ -37,6 +39,7 @@ var require =
         mazeEngine : "./world/MazeEngine",
         messageBuilder : "./multiplayer/MessageBuilder",
         multiplayer : "./multiplayer/Multiplayer",
+        noise : "./utils/noise",
         onlinePlayer : "./multiplayer/OnlinePlayer",
         physics : "./physics/Physics",
         ray : "./physics/Ray",
