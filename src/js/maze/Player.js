@@ -80,21 +80,21 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
             Player.collider = Collider(rays, 4);
 
-            var floorGeometry = new THREE.PlaneBufferGeometry(100, 100);
-            floorGeometry.rotateX(-Math.PI/2);
-            var floorMaterial = new THREE.MeshBasicMaterial(
-            {
-                opacity : 0.0,
-                transparent: true,
-            });
-            var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            scene.add(floor);
-            Player.collider.addMesh("floor", floor);
-            var floor_width = 5;
-            var colShape = new Physics.ammo.btBoxShape(new Physics.ammo.btVector3(floor.geometry.parameters.width * 0.5, floor_width, floor.geometry.parameters.height * 0.5));
-            var floor_offset = new THREE.Vector3(0, -floor_width, 0);
-            var body = Physics.createRigidbody(floor, colShape, 0, floor.position, floor.quaternion, floor_offset);
-            floor.userData.physicsBody = body;
+            // var floorGeometry = new THREE.PlaneBufferGeometry(100, 100);
+            // floorGeometry.rotateX(-Math.PI/2);
+            // var floorMaterial = new THREE.MeshBasicMaterial(
+            // {
+            //     opacity : 0.0,
+            //     transparent: true,
+            // });
+            // var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            // scene.add(floor);
+            // Player.collider.addMesh("floor", floor);
+            // var floor_width = 5;
+            // var colShape = new Physics.ammo.btBoxShape(new Physics.ammo.btVector3(floor.geometry.parameters.width * 0.5, floor_width, floor.geometry.parameters.height * 0.5));
+            // var floor_offset = new THREE.Vector3(0, -floor_width, 0);
+            // var body = Physics.createRigidbody(floor, colShape, 0, floor.position, floor.quaternion, floor_offset);
+            // floor.userData.physicsBody = body;
 
             Player.event_queue.push(
             {

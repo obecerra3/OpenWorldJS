@@ -7,12 +7,11 @@ define(["three", "mazeEngine", "utils", "terrain"],
         {
             // World.readMazeFile();
             Terrain.init();
-
         },
 
         render: () =>
         {
-            Terrain.render();
+            // Terrain.render();
         },
 
         update: (_delta, _player) =>

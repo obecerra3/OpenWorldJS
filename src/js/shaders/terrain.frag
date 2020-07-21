@@ -1,3 +1,4 @@
+// https://github.com/felixpalmer/lod-terrain
 // ----------------------
 // Terrain Frag Shader
 // ----------------------
