@@ -15,12 +15,14 @@ define(["three", "ammo", "utils"],
 
         init: () =>
         {
-            var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(),
-                dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
-                overlappingPairCache = new Ammo.btDbvtBroadphase(),
-                solver = new Ammo.btSequentialImpulseConstraintSolver();
+            var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+            var dispatcher             = new Ammo.btCollisionDispatcher(collisionConfiguration);
+            var overlappingPairCache   = new Ammo.btDbvtBroadphase();
+            var solver                 = new Ammo.btSequentialImpulseConstraintSolver();
+
             Physics.physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-            Physics.physicsWorld.setGravity(new Ammo.btVector3(0, -Utils.GRAVITY * 100, 0));
+            Physics.physicsWorld.setGravity(new Ammo.btVector3(0, 0, -Utils.GRAVITY * 100));
+            // Physics.physicsWorld.setGravity(new Ammo.btVector3(0, 0, 0));
             Physics.tempBtTransform = new Ammo.btTransform();
         },
 

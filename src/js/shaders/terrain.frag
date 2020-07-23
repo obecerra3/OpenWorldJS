@@ -5,11 +5,11 @@
 
 varying vec3 vPosition;
 
-#define MAX_HEIGHT 30.0
+#define MAX_HEIGHT 60.0
 
 void main()
 {
-    float height = vPosition.y;
+    float height = vPosition.z;
 
     vec4 white = vec4(1.0, 1.0, 1.0, 1.0);
     vec4 rock = vec4(0.25, 0.25, 0.28, 1.0);
@@ -26,11 +26,11 @@ void main()
     {
         gl_FragColor = rock;
     }
-    else if (height >= MAX_HEIGHT * 0.4)
+    else if (height >= MAX_HEIGHT * 0.1)
     {
         gl_FragColor = grass;
     }
-    else if (height >= MAX_HEIGHT * 0.35)
+    else if (height >= MAX_HEIGHT * 0.05)
     {
         gl_FragColor = sand;
     }
@@ -38,6 +38,5 @@ void main()
     {
         gl_FragColor = water;
     }
-
 
 }

@@ -2,8 +2,8 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!terrain.vert", "shader!terrain.frag"],
-(THREE, Utils, scene, ImprovedNoise, noise, camera, terrain_vert_shader, terrain_frag_shader) =>
+define(["three", "utils", "scene", "ImprovedNoise", "camera", "shader!terrain.vert", "shader!terrain.frag"],
+(THREE, Utils, scene, ImprovedNoise, camera, terrain_vert_shader, terrain_frag_shader) =>
 {
     var Edge =
     {
@@ -37,7 +37,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!t
         init : () =>
         {
             // create height_data
-            // Terrain.createHeightData();
+            Terrain.createHeightData();
 
             // set the frag shader
             Terrain.frag_shader = terrain_frag_shader;
@@ -47,9 +47,9 @@ define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!t
 
             // init the geometry
             Terrain.geometry = new THREE.PlaneGeometry(1, 1, Terrain.RESOLUTION, Terrain.RESOLUTION);
-            Terrain.geometry.rotateX(-Math.PI/2);
+            // Terrain.geometry.rotateX(-Math.PI / 2);
             var translation_matrix = new THREE.Matrix4();
-            translation_matrix.makeTranslation(0.5, 0, 0.5);
+            translation_matrix.makeTranslation(0.5, 0.5, 0.0);
             Terrain.geometry.applyMatrix4(translation_matrix);
 
             // init tiles
@@ -74,28 +74,28 @@ define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!t
             // create quadtree of tiles
             for (var scale = init_scale; scale < Terrain.WORLD_WIDTH; scale *= 2)
             {
-              Terrain.createTile(-2 * scale, -2 * scale, scale, Edge.BOTTOM | Edge.LEFT);
-              Terrain.createTile(-2 * scale, -scale, scale, Edge.LEFT);
-              Terrain.createTile(-2 * scale, 0, scale, Edge.LEFT);
-              Terrain.createTile(-2 * scale, scale, scale, Edge.TOP | Edge.LEFT);
+                Terrain.createTile(-2 * scale, -2 * scale, scale, Edge.BOTTOM | Edge.LEFT);
+                Terrain.createTile(-2 * scale, -scale, scale, Edge.LEFT);
+                Terrain.createTile(-2 * scale, 0, scale, Edge.LEFT);
+                Terrain.createTile(-2 * scale, scale, scale, Edge.TOP | Edge.LEFT);
 
-              Terrain.createTile(-scale, -2 * scale, scale, Edge.BOTTOM);
-              Terrain.createTile(-scale, scale, scale, Edge.TOP);
+                Terrain.createTile(-scale, -2 * scale, scale, Edge.BOTTOM);
+                Terrain.createTile(-scale, scale, scale, Edge.TOP);
 
-              Terrain.createTile(0, -2 * scale, scale, Edge.BOTTOM);
-              Terrain.createTile(0, scale, scale, Edge.TOP);
+                Terrain.createTile(0, -2 * scale, scale, Edge.BOTTOM);
+                Terrain.createTile(0, scale, scale, Edge.TOP);
 
-              Terrain.createTile(scale, -2 * scale, scale, Edge.BOTTOM | Edge.RIGHT);
-              Terrain.createTile(scale, -scale, scale, Edge.RIGHT);
-              Terrain.createTile(scale, 0, scale, Edge.RIGHT);
-              Terrain.createTile(scale, scale, scale, Edge.TOP | Edge.RIGHT);
+                Terrain.createTile(scale, -2 * scale, scale, Edge.BOTTOM | Edge.RIGHT);
+                Terrain.createTile(scale, -scale, scale, Edge.RIGHT);
+                Terrain.createTile(scale, 0, scale, Edge.RIGHT);
+                Terrain.createTile(scale, scale, scale, Edge.TOP | Edge.RIGHT);
           }
 
         },
 
-        createTile : (tile_offset_x, tile_offset_z, scale, edge_morph) =>
+        createTile : (tile_offset_x, tile_offset_y, scale, edge_morph) =>
         {
-            var tile_offset = new THREE.Vector2(tile_offset_x, tile_offset_z);
+            var tile_offset = new THREE.Vector2(tile_offset_x, tile_offset_y);
             var tile_material = Terrain.createMaterial(tile_offset, scale, edge_morph);
             var mesh = new THREE.Mesh(Terrain.geometry, tile_material);
             mesh.frustumCulled = false;
@@ -110,7 +110,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!t
                 {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : Terrain.global_offset },
-                    uHeightData   :  { type : "t", value : noise },
+                    uHeightData   :  { type : "t", value : Terrain.height_data },
                     uResolution   :  { type : "f", value : Terrain.RESOLUTION },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
@@ -128,7 +128,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!t
             var data = new Uint8Array(size);
             var perlin = new ImprovedNoise();
             var quality = 1;
-            var z = Math.random() * 100;
+            var z = Utils.terrainRandom() * 100;
             var max = Number.NEGATIVE_INFINITY;
             var min = Number.POSITIVE_INFINITY;
 
@@ -178,7 +178,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "noise", "camera", "shader!t
         update : () =>
         {
             Terrain.global_offset.x = camera.position.x;
-            Terrain.global_offset.z = camera.position.z;
+            Terrain.global_offset.y = camera.position.y;
 
             Terrain.checkEventQueue();
         },

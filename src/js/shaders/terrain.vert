@@ -14,7 +14,7 @@ varying float vMorphFactor;
 
 float getHeight(vec3 pos)
 {
-    vec2 st = pos.xz / 1024.0;
+    vec2 st = pos.xy / 1024.0;
     float lod = 0.0;
     float height = 1024.0 * textureLod(uHeightData, st, lod).a;
     height += 64.0 * textureLod(uHeightData, 16.0 * st, lod).a;
@@ -26,7 +26,7 @@ vec3 getNormal()
 {
     // Get 2 vectors perpendicular to the unperturbed normal, and create at point at each (relative to position)
     float delta = (vMorphFactor + 1.0) * uScale / uResolution;
-    vec3 dA = delta * normalize(cross(normal.zyx, normal));
+    vec3 dA = delta * normalize(cross(normal.yzx, normal));
     vec3 dB = delta * normalize(cross(dA, normal));
     vec3 p = vPosition;
     vec3 pA = vPosition + dA;
@@ -54,7 +54,7 @@ void main()
     vMorphFactor = calculateMorph(position);
 
     // Move into correct place
-    vPosition = uScale * position + vec3(uTileOffset.x, 0.0, uTileOffset.y) + uGlobalOffset;
+    vPosition = uScale * position + vec3(uTileOffset, 0.0) + uGlobalOffset;
 
     // Snap to grid
     float grid = uScale / uResolution;

@@ -1,16 +1,17 @@
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author Mugen87 / https://github.com/Mugen87
+ * @edits obecerra3 / https://github.com/obecerra3
+
+ Pointer lock controls using requirejs with z axis as up vector
  */
 
 define(["three"], (THREE) => {
     var PointerLockControls = function ( camera, domElement ) {
 
     	if ( domElement === undefined ) {
-
     		console.warn( 'THREE.PointerLockControls: The second parameter "domElement" is now mandatory.' );
     		domElement = document.body;
-
     	}
 
     	this.domElement = domElement;
@@ -26,9 +27,14 @@ define(["three"], (THREE) => {
     	var lockEvent = { type: 'lock' };
     	var unlockEvent = { type: 'unlock' };
 
-    	var euler = new THREE.Euler( 0, 0, 0, 'YXZ' );
+        // change to account for z up
+    	var euler = new THREE.Euler( 0, 0, 0, 'ZYX' );
 
     	var PI_2 = Math.PI / 2;
+
+        // new constraints
+        var MAX_PI = Math.PI / 1.1;
+        var MIN_PI = 0;
 
     	var vec = new THREE.Vector3();
 
@@ -41,15 +47,12 @@ define(["three"], (THREE) => {
 
     		euler.setFromQuaternion( camera.quaternion );
 
-            let lookDirection = new THREE.Vector3( 0, 0, - 1 ).applyQuaternion(camera.quaternion);
-
-            if (lookDirection.y > -0.97) {
-                euler.y -= movementX * 0.002;
-            }
-
+            // change to account for z up
+            euler.z -= movementX * 0.002;
     		euler.x -= movementY * 0.002;
 
-    		euler.x = Math.max( - PI_2, Math.min( PI_2, euler.x ) );
+            // new constraints
+            euler.x = Math.max(MIN_PI, Math.min(MAX_PI, euler.x));
 
     		camera.quaternion.setFromEuler( euler );
 
@@ -111,7 +114,7 @@ define(["three"], (THREE) => {
 
     	this.getDirection = function () {
 
-    		var direction = new THREE.Vector3( 0, 0, - 1 );
+    		var direction = new THREE.Vector3( 0, 0, -1 );
 
     		return function ( v ) {
 

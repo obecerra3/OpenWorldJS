@@ -10,8 +10,8 @@ define(["three", "ammo"], (THREE, Ammo) =>
         // PLAYER CONSTANTS
         PLAYER_SIZE: 1.5,
         PLAYER_MASS: 50,
-        PLAYER_WALKING_SPEED: 300,
-        PLAYER_RUNNING_SPEED: 450,
+        PLAYER_WALK_SPEED: 300,
+        PLAYER_RUN_SPEED: 450,
         PLAYER_JUMP_FORCE: 150,
         VELOCITY_DAMP: 2.5,
         ORBIT_SPEED: 5,
@@ -51,7 +51,7 @@ define(["three", "ammo"], (THREE, Ammo) =>
         // -----------------------------
 
         SEED : 8483,
-        TERRAIN_SEED : 192,
+        TERRAIN_SEED : 56,
 
         random : () =>
         {

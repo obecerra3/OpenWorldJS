@@ -10,8 +10,8 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
         {
             THREE.Cache.enabled = true;
 
-            var axesHelper = new THREE.AxesHelper(10);
-            scene.add(axesHelper);
+            // var axesHelper = new THREE.AxesHelper(10);
+            // scene.add(axesHelper);
 
             var light = new THREE.AmbientLight(0x404040);
             scene.add(light);
