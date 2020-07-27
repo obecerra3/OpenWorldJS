@@ -1,12 +1,22 @@
 /*
-I'm using pool of list nodes data structure:
+This implements pool of list nodes data structure:
 https://gameprogrammingpatterns.com/observer.html
 */
 define(["utils"], (Utils) => {
+
     var Observer = function (name, onNotify)
     {
         this.name = name;
+        this.subjects = {};
         this.onNotify = onNotify;
+    }
+
+    Observer.prototype.clearSubjects = () => {
+        var subjects = this.subjects;
+        for (var entry in subjects) {
+            delete subjects[entry];
+        }
+        this.subjects = {};
     }
 
     var Subject = function (name)
@@ -16,8 +26,9 @@ define(["utils"], (Utils) => {
         this.numObservers = 0;
     }
 
-    Subject.prototype.addObserver = (head, observer) =>
+    Subject.prototype.addObserver = (observer) =>
     {
+        var head = this.head;
         var node = new Node(observer);
         if (head.nextNode === null) {
             head.nextNode = node;
@@ -25,25 +36,39 @@ define(["utils"], (Utils) => {
             node.nextNode = head.nextNode;
             head.nextNode = node;
         }
-        numObservers++;
+        observer.subjects[this.name] = this;
+        this.numObservers++;
         return true;
     }
 
-    Subject.prototype.removeObserver = (head, observer) => {
-        var prev = head;
-        var trav = head.nextNode;
-        while (trav != null) {
-            if (Utils.isEqual(trav.observer, observer)) {
-                prev.nextNode = trav.nextNode;
-                trav.nextNode = null;
-                trav.observer = null;
+    Subject.prototype.removeObserver = (observer) => {
+        var head = this.head;
+        var prevNode = head;
+        var currNode = head.nextNode;
+        while (currNode !== null) {
+            if (Utils.isEqual(currNode.observer, observer)) {
+                prevNode.nextNode = currNode.nextNode;
+                currNode.nextNode = null;
+                currNode.observer = null;
+                delete observer.subjects[this.name];
+                this.numObservers--;
                 return true;
             } else {
-                prev = trav;
-                trav = trav.nextNode;
+                prevNode = currNode;
+                currNode = currNode.nextNode;
             }
         }
         return false; // observer didn't exist in list
+    }
+
+    Subject.prototype.clearObservers = () => {
+        var currNode = this.head.nextNode;
+        while (currNode !== null) {
+            currNode.observer = null;
+            currNode = currNode.nextNode;
+        }
+        this.head.nextNode = null;
+        this.numObservers = 0;
     }
 
     var Node = function (observer)

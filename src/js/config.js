@@ -34,7 +34,7 @@ var require = {
         mazeEngine: "./world/MazeEngine",
         messageBuilder: "./multiplayer/MessageBuilder",
         multiplayer: "./multiplayer/Multiplayer",
-        observerUtils: "./utils/observerUtils",
+        observerUtils: "./utils/ObserverUtils",
         onlinePlayer: "./multiplayer/OnlinePlayer",
         physics: "./physics/Physics",
         ray: "./physics/Ray",
