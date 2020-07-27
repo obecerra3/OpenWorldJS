@@ -1,3 +1,4 @@
+// https://github.com/felixpalmer/lod-terrain
 vec3 colorForScale(float scale) {
   if ( scale > 32.0 ) {
     scale /= 32.0;

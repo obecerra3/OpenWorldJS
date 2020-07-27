@@ -24,7 +24,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         rigidbody: {},
         event_queue: [],
         initialized: false,
-        init_pos: new THREE.Vector3(0, 0, 20),
+        init_pos: new THREE.Vector3(0, 0, 10),
 
         //====================================================================
         //====================================================================
@@ -97,20 +97,20 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
                     // floor
                     // -----
-                    var floorGeometry = new THREE.PlaneBufferGeometry(1000, 1000);
-                    var floorMaterial = new THREE.MeshBasicMaterial(
-                    {
-                        opacity : 0.0,
-                        transparent: true,
-                    });
-                    var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-                    scene.add(floor);
-                    Player.collider.addMesh("floor", floor);
-                    var floor_width = 2;
-                    var colShape = new Physics.ammo.btBoxShape(new Physics.ammo.btVector3(floor.geometry.parameters.width * 0.5, floor.geometry.parameters.height * 0.5, floor_width));
-                    var floor_offset = new THREE.Vector3(0, 0, -floor_width);
-                    var body = Physics.createRigidbody(floor, colShape, 0, floor.position, floor.quaternion, floor_offset);
-                    floor.userData.physicsBody = body;
+                    // var floorGeometry = new THREE.PlaneBufferGeometry(1000, 1000);
+                    // var floorMaterial = new THREE.MeshBasicMaterial(
+                    // {
+                    //     opacity : 0.0,
+                    //     transparent: true,
+                    // });
+                    // var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+                    // scene.add(floor);
+                    // Player.collider.addMesh("floor", floor);
+                    // var floor_width = 2;
+                    // var colShape = new Physics.ammo.btBoxShape(new Physics.ammo.btVector3(floor.geometry.parameters.width * 0.5, floor.geometry.parameters.height * 0.5, floor_width));
+                    // var floor_offset = new THREE.Vector3(0, 0, -floor_width);
+                    // var body = Physics.createRigidbody(floor, colShape, 0, floor.position, floor.quaternion, floor_offset);
+                    // floor.userData.physicsBody = body;
                 },
                 arguments: []
             });
@@ -120,10 +120,10 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         initGraphics: () =>
         {
             //flashlight
-            Player.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
-            Player.flashlight.castShadow = true;
-            Player.flashlight.visible = false;
-            scene.add(Player.flashlight);
+            // Player.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
+            // Player.flashlight.castShadow = true;
+            // Player.flashlight.visible = false;
+            // scene.add(Player.flashlight);
 
             //gltf body
             var loader = new THREE.GLTFLoader();
@@ -542,6 +542,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             // console.log(camera.up);
             console.log("Player.look_direction: ");
             console.log(Player.look_direction);
+            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY));
         },
 
     }

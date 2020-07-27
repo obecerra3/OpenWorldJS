@@ -1,3 +1,4 @@
+// https://github.com/felixpalmer/lod-terrain
 uniform int uEdgeMorph;
 
 #define EGDE_MORPH_TOP 1
