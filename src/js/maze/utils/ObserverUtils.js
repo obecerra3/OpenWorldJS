@@ -4,7 +4,9 @@ https://gameprogrammingpatterns.com/observer.html
 */
 define(["utils"], (Utils) => {
 
-    var Observer = function (name, onNotify)
+	var ObserverUtils = () => {
+
+		var Observer = function (name, onNotify)
     {
         this.name = name;
         this.subjects = {};
@@ -76,4 +78,7 @@ define(["utils"], (Utils) => {
         this.observer = observer;
         this.nextNode = null;
     }
+	}
+
+	return ObserverUtils;
 });

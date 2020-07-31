@@ -19,6 +19,8 @@
     "homepage": "https://github.com/bnwlkr/Maze#readme",
     "devDependencies": {
         "browserify": "^16.5.0",
+        "chai": "^4.2.0",
+        "requirejs": "^2.3.6",
         "watchify": "^3.11.1"
     },
     "dependencies": {
