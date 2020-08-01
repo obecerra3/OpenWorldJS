@@ -14,7 +14,8 @@ define(["three", "ammo"], (THREE, Ammo) =>
         PLAYER_RUN_SPEED : 2000,//450,
         PLAYER_JUMP_FORCE : 150,
         VELOCITY_DAMP : 2.5,
-        ORBIT_SPEED : 5,
+        ORBIT_SPEED : 1,
+        ORBIT_SPEED_DELTA : 0.25,
 
         // WORLD CONSTANTS
         GRAVITY : 9.8,
@@ -86,12 +87,7 @@ define(["three", "ammo"], (THREE, Ammo) =>
             return new THREE.Vector3(parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]));
         },
 
-        btVector3 : (v) =>
-        {
-            return new Ammo.btVector3(v.x, v.y, v.z);
-        },
-
-        vector3 : (v) =>
+        vector3FromBt : (v) =>
         {
             return new THREE.Vector3(v.x(), v.y(), v.z());
         },

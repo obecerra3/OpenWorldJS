@@ -23,8 +23,8 @@ define(["three", "ammo", "utils"],
             var solver                 = new Physics.ammo.btSequentialImpulseConstraintSolver();
 
             Physics.physicsWorld = new Physics.ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-            // Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY * 100));
-            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY));
+            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY * 100));
+            // Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY));
             // Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, 0));
             Physics.tempBtTransform = new Physics.ammo.btTransform();
         },
@@ -122,24 +122,38 @@ define(["three", "ammo", "utils"],
         // width_extents,
         // height_extents,
         // height_data,
+        // center_pos,
         createTerrainCollider: (cd) =>
         {
             // need max_height, min_height
             var shape = Physics.createTerrainShape(cd);
             var transform = new Physics.ammo.btTransform();
             transform.setIdentity();
-            // Shifts the terrain, since bullet re-centers it on its bounding box.
-            // transform.setOrigin(new Physics.ammo.btVector3(0, 0, (cd.max_height + cd.min_height) / 2));
-            transform.setOrigin(new Physics.ammo.btVector3(0, 0, 5));
-            // var q = new THREE.Quaternion();
-            // q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-            // transform.setRotation(new Physics.ammo.btQuaternion(q.x, q.y, q.z, q.w));
+            transform.setOrigin(new Physics.ammo.btVector3(
+                cd.center_pos.x, cd.center_pos.y,
+                    (cd.min_height + cd.max_height) / 2));
             var mass = 0;
             var local_inertia = new Physics.ammo.btVector3(0, 0, 0);
             var motion_state = new Physics.ammo.btDefaultMotionState(transform);
-            var rb = new Physics.ammo.btRigidBody(new Physics.ammo.btRigidBodyConstructionInfo(mass, motion_state, shape, local_inertia));
+            var rb = new Physics.ammo.btRigidBody(
+                new Physics.ammo.btRigidBodyConstructionInfo(
+                    mass, motion_state, shape, local_inertia));
             Physics.physicsWorld.addRigidBody(rb);
             return rb;
+        },
+
+        updateTerrainCollider: (cd, collider) =>
+        {
+            // need max_height, min_height
+            var shape = Physics.createTerrainShape(cd);
+            var transform = new Physics.ammo.btTransform();
+            transform.setIdentity();
+            transform.setOrigin(
+                new Physics.ammo.btVector3(cd.center_pos.x, cd.center_pos.y,
+                    (cd.min_height + cd.max_height) / 2));
+            collider.setCollisionShape(shape);
+            collider.setWorldTransform(transform);
+            collider.getMotionState().setWorldTransform(transform);
         },
 
         // takes as input a TerrainData object passed from Physics.createTerrainCollider()
@@ -195,7 +209,7 @@ define(["three", "ammo", "utils"],
             shape.setLocalScaling(new Physics.ammo.btVector3(scaleX, scaleY, 1));
 
             // May need to change this ?????
-            shape.setMargin(0.05);
+            shape.setMargin(2.0);
 
             return shape;
         }

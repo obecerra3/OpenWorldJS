@@ -542,7 +542,6 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             // console.log(camera.up);
             console.log("Player.look_direction: ");
             console.log(Player.look_direction);
-            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY));
         },
 
     }

@@ -12,14 +12,18 @@ varying vec3 vNormal;
 varying vec3 vPosition;
 varying float vMorphFactor;
 
+const float lod = 0.0;
+
 float getHeight(vec3 pos)
 {
     vec2 st = pos.xy / 1024.0;
-    float lod = 0.0;
-    float height = 1024.0 * textureLod(uHeightData, st, lod).a;
-    height += 64.0 * textureLod(uHeightData, 16.0 * st, lod).a;
-    height += 4.0 * textureLod(uHeightData, 256.0 * st, lod).a;
-    return height * height / 2000.0;
+    // float lod = 0.0;
+    // float height = 1024.0 * textureLod(uHeightData, st, lod).a;
+    // height += 64.0 * textureLod(uHeightData, 16.0 * st, lod).a;
+    // height += 4.0 * textureLod(uHeightData, 256.0 * st, lod).a;
+    // return height * height / 2000.0;
+    float height = 250.0 * textureLod(uHeightData, st, lod).a;
+    return height;
 }
 
 vec3 getNormal()
@@ -72,7 +76,8 @@ void main()
     }
 
     // Get height and calculate normal
-    vPosition = vPosition + normal * getHeight(vPosition);
+    vec3 my_normal = vec3(0, 0, 1);
+    vPosition = vPosition + my_normal * getHeight(vPosition);
     vNormal = getNormal();
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);

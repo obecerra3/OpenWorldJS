@@ -4,7 +4,7 @@
 // ----------------------
 varying vec3 vPosition;
 
-#define MAX_HEIGHT 60.0
+#define MAX_HEIGHT 30.0
 
 void main()
 {
@@ -18,7 +18,7 @@ void main()
     vec4 water = vec4(0.52, 0.76, 0.87, alpha);
 
 
-    if (height >= MAX_HEIGHT * 0.95)
+    if (height >= MAX_HEIGHT * 0.99)
     {
         gl_FragColor = white;
     }

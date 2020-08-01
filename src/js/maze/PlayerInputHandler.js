@@ -64,10 +64,10 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
                                 camera.position.add(offset.multiplyScalar(-PlayerInput.speed));
                                 break;
                             case 49: //1
-                                PlayerInput.speed -= 1;
+                                PlayerInput.speed -= Utils.ORBIT_SPEED_DELTA;
                                 break;
                             case 57: //9
-                                PlayerInput.speed += 1;
+                                PlayerInput.speed += Utils.ORBIT_SPEED_DELTA;
                                 break;
                             case 48: //0
                                 PlayerInput.orbit_enabled = !PlayerInput.orbit_enabled;
