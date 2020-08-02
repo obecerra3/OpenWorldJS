@@ -254,9 +254,9 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             console.log(Terrain.init_chunk_pos);
             var count = 0;
 
-            for (var y = Terrain.init_chunk_pos.y - width; y < Terrain.init_chunk_pos.y + width; y+=2)
+            for (var y = Terrain.init_chunk_pos.y - width; y < Terrain.init_chunk_pos.y + width; y++)
             {
-                for (var x = Terrain.init_chunk_pos.x - width; x < Terrain.init_chunk_pos.x + width; x+=2)
+                for (var x = Terrain.init_chunk_pos.x - width; x < Terrain.init_chunk_pos.x + width; x++)
                 {
                     // flip check
                     xw = Math.floor(Math.abs(x) / Terrain.WORLD_WIDTH);
@@ -275,20 +275,26 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     // mod and absolute x, y
                     xi = Math.abs(x % Terrain.WORLD_WIDTH);
                     yi = Math.abs(y % Terrain.WORLD_WIDTH);
+                    if (xi == 0 && Math.abs(x) >= 1024)
+                    {
+                        xi = 1;
+                    }
+                    if (yi == 0 && Math.abs(y) >= 1024)
+                    {
+                        yi = 1;
+                    }
 
                     // flip
                     if (flipX)
                     {
                         flipX = false;
                         xi = Terrain.WORLD_WIDTH - xi;
-                        if (xi < 0) console.log("yikes xi");
                     }
 
                     if (flipY)
                     {
                         flipY = false;
                         yi = Terrain.WORLD_WIDTH - yi;
-                        if (yi < 0) console.log("yikes yi");
                     }
 
                     // assign height and find min/ max
@@ -301,8 +307,8 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
             // cd stands for Chunk Data
             var cd = {};
-            cd.width = width;
-            cd.depth = width;
+            cd.width = width * 2;
+            cd.depth = width * 2;
             cd.min_height = min_height;
             cd.max_height = max_height;
             cd.width_extents = width * 2;
