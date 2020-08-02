@@ -1,6 +1,5 @@
 //start the maze, detector will detect if the client's computer supports webgl
-require( ['detector', 'maze', 'container'],
-(Detector, maze, container) =>
+require(['detector', 'maze', 'container'], (Detector, maze, container) =>
 {
     if (!Detector.webgl)
     {
@@ -8,6 +7,7 @@ require( ['detector', 'maze', 'container'],
         Detector.addGetWebGLMessage();
         container.innerHTML = "";
     }
+    
     maze.init();
     maze.update();
 });

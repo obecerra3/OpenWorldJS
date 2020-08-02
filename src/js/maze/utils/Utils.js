@@ -11,7 +11,7 @@ define(["three", "ammo"], (THREE, Ammo) =>
         PLAYER_SIZE : 1.5,
         PLAYER_MASS : 50,
         PLAYER_WALK_SPEED : 600,
-        PLAYER_RUN_SPEED : 1000,//450,
+        PLAYER_RUN_SPEED : 3000,//450,
         PLAYER_JUMP_FORCE : 150,
         VELOCITY_DAMP : 2.5,
         ORBIT_SPEED : 1,

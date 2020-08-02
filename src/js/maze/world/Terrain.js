@@ -254,7 +254,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             console.log(Terrain.init_chunk_pos);
             var count = 0;
 
-            var debug_log = [];
             for (var y = Terrain.init_chunk_pos.y - width; y < Terrain.init_chunk_pos.y + width; y+=2)
             {
                 for (var x = Terrain.init_chunk_pos.x - width; x < Terrain.init_chunk_pos.x + width; x+=2)
@@ -263,56 +262,33 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     xw = Math.floor(Math.abs(x) / Terrain.WORLD_WIDTH);
                     yw = Math.floor(Math.abs(y) / Terrain.WORLD_WIDTH);
 
-                    // debug_log.push(x);
-                    // debug_log.push(y);
-                    // debug_log.push(xw);
-                    // debug_log.push(yw);
+                    if (xw >= 1 && xw % 2 == 1)
+                    {
+                        flipX = true;
+                    }
 
-                    // if ((x >= 0 && xw % 2 == 1) || (x < 0 && xw % 2 == 0))
-                    // {
-                    //     flipX = true;
-                    // }
-                    //
-                    // if ((y >= 0 && yw % 2 == 1) || (y < 0 && yw % 2 == 0))
-                    // {
-                    //     flipY = true;
-                    // }
-                    // debug_log.push(flipX);
-                    // debug_log.push(flipY);
+                    if (yw >= 1 && yw % 2 == 1)
+                    {
+                        flipY = true;
+                    }
 
                     // mod and absolute x, y
                     xi = Math.abs(x % Terrain.WORLD_WIDTH);
                     yi = Math.abs(y % Terrain.WORLD_WIDTH);
-                    debug_log.push(new THREE.Vector2(xi, yi));
-                    // xi = (xi > 0) ? xi : Terrain.WORLD_WIDTH - xi;
-                    // yi = (yi > 0) ? Terrain.WORLD_WIDTH - yi : Math.abs(yi);
 
                     // flip
-                    // if (flipX)
-                    // {
-                    //     flipX = false;
-                    //     xi = Terrain.WORLD_WIDTH - xi;
-                    // }
-
-                    // if (flipY)
-                    // {
-                    //     flipY = false;
-                    //     yi = Terrain.WORLD_WIDTH - yi;
-                    // }
-
-                    if (xi < 0)
+                    if (flipX)
                     {
-                        console.log("xi negative");
-                    } else if (xi > Terrain.WORLD_WIDTH)
-                    {
-                        console.log("xi over bounds");
+                        flipX = false;
+                        xi = Terrain.WORLD_WIDTH - xi;
+                        if (xi < 0) console.log("yikes xi");
                     }
-                    if (yi < 0)
+
+                    if (flipY)
                     {
-                        console.log("yi negative");
-                    } else if (yi > Terrain.WORLD_WIDTH)
-                    {
-                        console.log("yi over bounds");
+                        flipY = false;
+                        yi = Terrain.WORLD_WIDTH - yi;
+                        if (yi < 0) console.log("yikes yi");
                     }
 
                     // assign height and find min/ max
@@ -322,8 +298,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     if (h < min_height) min_height = h;
                 }
             }
-            console.log("debug_log");
-            console.log(debug_log);
 
             // cd stands for Chunk Data
             var cd = {};
