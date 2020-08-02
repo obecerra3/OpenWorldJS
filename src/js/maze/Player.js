@@ -24,7 +24,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         rigidbody: {},
         event_queue: [],
         initialized: false,
-        init_pos: new THREE.Vector3(0, 0, 10),
+        init_pos: new THREE.Vector3(0, 0, 40),
 
         //====================================================================
         //====================================================================

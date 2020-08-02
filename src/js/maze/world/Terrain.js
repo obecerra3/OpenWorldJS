@@ -111,6 +111,8 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             Terrain.height_data_texture = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
             Terrain.height_data_texture.wrapS = THREE.MirroredRepeatWrapping;
             Terrain.height_data_texture.wrapT = THREE.MirroredRepeatWrapping;
+            // Terrain.height_data_texture.wrapS = THREE.RepeatWrapping;
+            // Terrain.height_data_texture.wrapT = THREE.RepeatWrapping;
             Terrain.height_data_texture.magFilter = THREE.LinearFilter;
             Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
             Terrain.height_data_texture.generateMipmaps = true;
@@ -216,6 +218,8 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
         updateCollider : () =>
         {
+            // pause gravity
+
             // get chunk data
             var cd = Terrain.getChunkData();
 
@@ -230,6 +234,9 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             {
                 Physics.updateTerrainCollider(cd, Terrain.collider);
             }
+
+            // resume gravity
+
         },
 
         getChunkData : () =>
@@ -243,41 +250,55 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
             Terrain.init_chunk_pos.x = Math.round(Terrain.global_offset.x);
             Terrain.init_chunk_pos.y = Math.round(Terrain.global_offset.y);
+            console.log("Terrain.init_chunk_pos");
+            console.log(Terrain.init_chunk_pos);
+            var count = 0;
 
-            for (var y = Terrain.init_chunk_pos.y + width; y > Terrain.init_chunk_pos.y - width; y-=4)
+            var debug_log = [];
+            for (var y = Terrain.init_chunk_pos.y - width; y < Terrain.init_chunk_pos.y + width; y+=2)
             {
-                for (var x = Terrain.init_chunk_pos.x - width; x < Terrain.init_chunk_pos.x + width; x+=4)
+                for (var x = Terrain.init_chunk_pos.x - width; x < Terrain.init_chunk_pos.x + width; x+=2)
                 {
                     // flip check
-                    xw = Math.floor(x / Terrain.WORLD_WIDTH);
-                    yw = Math.floor(y / Terrain.WORLD_WIDTH);
+                    xw = Math.floor(Math.abs(x) / Terrain.WORLD_WIDTH);
+                    yw = Math.floor(Math.abs(y) / Terrain.WORLD_WIDTH);
 
-                    if ((xw >= 0 && xw % 2 != 0) || (xw < 0 && xw % 2 == 0))
-                    {
-                        flipX = true;
-                    }
+                    // debug_log.push(x);
+                    // debug_log.push(y);
+                    // debug_log.push(xw);
+                    // debug_log.push(yw);
 
-                    if ((yw >= 0 && yw % 2 != 0) || (yw < 0 && yw % 2 == 0))
-                    {
-                        flipY = true;
-                    }
+                    // if ((x >= 0 && xw % 2 == 1) || (x < 0 && xw % 2 == 0))
+                    // {
+                    //     flipX = true;
+                    // }
+                    //
+                    // if ((y >= 0 && yw % 2 == 1) || (y < 0 && yw % 2 == 0))
+                    // {
+                    //     flipY = true;
+                    // }
+                    // debug_log.push(flipX);
+                    // debug_log.push(flipY);
 
                     // mod and absolute x, y
                     xi = Math.abs(x % Terrain.WORLD_WIDTH);
                     yi = Math.abs(y % Terrain.WORLD_WIDTH);
+                    debug_log.push(new THREE.Vector2(xi, yi));
+                    // xi = (xi > 0) ? xi : Terrain.WORLD_WIDTH - xi;
+                    // yi = (yi > 0) ? Terrain.WORLD_WIDTH - yi : Math.abs(yi);
 
                     // flip
-                    if (flipX)
-                    {
-                        flipX = false;
-                        xi = Terrain.WORLD_WIDTH - xi;
-                    }
+                    // if (flipX)
+                    // {
+                    //     flipX = false;
+                    //     xi = Terrain.WORLD_WIDTH - xi;
+                    // }
 
-                    if (flipY)
-                    {
-                        flipY = false;
-                        yi = Terrain.WORLD_WIDTH - yi;
-                    }
+                    // if (flipY)
+                    // {
+                    //     flipY = false;
+                    //     yi = Terrain.WORLD_WIDTH - yi;
+                    // }
 
                     if (xi < 0)
                     {
@@ -301,11 +322,13 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     if (h < min_height) min_height = h;
                 }
             }
+            console.log("debug_log");
+            console.log(debug_log);
 
             // cd stands for Chunk Data
             var cd = {};
-            cd.width = width / 2;
-            cd.depth = width / 2;
+            cd.width = width;
+            cd.depth = width;
             cd.min_height = min_height;
             cd.max_height = max_height;
             cd.width_extents = width * 2;

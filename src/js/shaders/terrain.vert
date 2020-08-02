@@ -18,7 +18,7 @@ float getHeight(vec3 pos)
 {
     vec2 st = pos.xy / 1024.0;
     // float lod = 0.0;
-    // float height = 1024.0 * textureLod(uHeightData, st, lod).a;
+    // float height = 1024.0 * textureLod (uHeightData, st, lod).a;
     // height += 64.0 * textureLod(uHeightData, 16.0 * st, lod).a;
     // height += 4.0 * textureLod(uHeightData, 256.0 * st, lod).a;
     // return height * height / 2000.0;
