@@ -1,6 +1,6 @@
 # Maze.io
 
-_An internet maze_
+_3D game engine using three.js as a graphics library and ammo.js for a physics library. Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components._
 
 ## Setup
 
@@ -17,22 +17,6 @@ _An internet maze_
     - **Address:** <http://localhost:8000/maze.php>
 
 ## Basic structure
-
-- ### WorldState
-
-  Global object holding a lot of info about the current game state.
-
-- ### Resource Manager
-
-  The managers are initialized by Resource Manager and are supposed to decide when to spawn/ de-spawn/ to what level of detail to draw different things according to the player position (a level of detail implementation using chunks).
-
-- ### Terrain
-
-  Skeleton code for how I plan to implement the terrain. For different graphics aspects, we can just put them in their separate folder.
-
-- ### Enable Debugger
-
-  In 'maze.js', uncomment the line `worldState.debugDrawer.enable();` in `initDebu()` on line 102 to view containers for the physics containers in the scene for debugging.
 
 - ### Libraries
 
@@ -58,7 +42,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
 - ### Main Game Loop
 
-  The main game loop is in maze.js in the `animate()` function. Most classes have an update loop that gets called either from there or from another class that feeds them the info
+  The main game loop is in maze.js in the `update()` function. Most classes have an update loop that gets called either from there or from another class that feeds them the info.
 
 - ### Constants
 
@@ -76,21 +60,13 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
 ## Next Steps
 
-- ### Action Function
-
-  - This is an example of something that should be its own class in Utils
-
-  - This is a poor solution to coupling with how we do the current player stuff (not sure what this means)
-
-- ### Single Responsibility
-
-  - **'maze.js'** should be cleaned so that it is easier to read and and doesn't do a thousand things in the same file
-
-  - Do the same thing for the player class since it currently handles way more than it should
-
 - ### Animations
 
-  Animations are also still buggy since my finite state machine is not implemented yet so I have to fix that.
+  Animations are also still buggy since the Player finite state machine is not tested fully.
+  
+- ### Terrain
+  
+  Finish implementing first a simple terrain on a single Plane Mesh. This will use height values calculated from a noise function. This noise function will later be dependent on the biome the current terrain belongs to. The heightmap generated will also undergo a processing stage using feature agents to carve terrain features (such as lakes, rivers, valleys, mountains, plains, etc...). From here the heightmap data can be used by a vertex shader to place vertices according to heights. A fragment shader will get texture information from the current biome of the chunk and the gradient of the terrain to place the correct texture. 
 
 - ### Observer Pattern
 
@@ -98,6 +74,6 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
 ## Notes
 
-- On MacOS `cmd-option-j` opens the **javascript console** on Google Chrome (Windows shortcut unknown)
+- On MacOS `cmd-option-j` opens the **javascript console** on Google Chrome
 
-- Most of the time questions you have when developing should have 'threejs' alongside them to get the best results from Google.
+- You can enable debug drawing of the ammo physics colliders by toggling **show_ammo_drawer** in **src/js/maze/utils/Debug.js**
