@@ -29,6 +29,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         clock : {},
         air_time : null,
         TIME_TO_FALL : 0.5,
+        walk_speed : Utils.PLAYER_WALK_SPEED,
+        run_speed : Utils.PLAYER_RUN_SPEED,
 
         //====================================================================
         //====================================================================
@@ -70,6 +72,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             Player.input_handler.printState = Player.printState.bind(Player);
             Player.input_handler.toggleRun = Player.toggleRun.bind(Player);
             Player.input_handler.toggleGravity = Player.toggleGravity.bind(Player);
+            Player.input_handler.toggleFast = Player.toggleFast.bind(Player);
+            Player.input_handler.toggleZeroVelocity = Player.toggleZeroVelocity.bind(Player);
         },
 
         //Collider is used to check if the player is grounded to decide if we can jump when jump is pressed.
@@ -217,12 +221,17 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     Player.animator.prepareCrossFade('CrouchIdle', 'FallIdle', 0.1);
                 },
                 "fallIdle to idle" : () => {
+                    Player.animator.stopAnimation('FallIdle');
+                    Player.animator.stopAnimation('Jump');
+                    Player.animator.stopAnimation('CrouchIdle');
                     Player.animator.prepareCrossFade('FallIdle', 'Idle', 0.25);
                 },
                 "any to jump_charging" : (weight = 0.5) => {
                     Player.animator.playAnimation('CrouchIdle', weight);
                 },
                 "any to fallIdle" : () => {
+                    Player.animator.stopAnimation('Jump');
+                    Player.animator.stopAnimation('CrouchIdle');
                     Player.animator.prepareCrossFade(Player.state, 'FallIdle', 0.5);
                 },
                 "any to jump" : () => {
@@ -404,15 +413,15 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             {
                 Player.rigidbody.setLinearVelocity(
                     new Physics.ammo.btVector3(
-                        Player.move_direction.x * Utils.PLAYER_RUN_SPEED * delta,
-                        Player.move_direction.y * Utils.PLAYER_RUN_SPEED * delta,
+                        Player.move_direction.x * Player.run_speed * delta,
+                        Player.move_direction.y * Player.run_speed * delta,
                         z_velocity));
             } else
             {
                 Player.rigidbody.setLinearVelocity(
                     new Physics.ammo.btVector3(
-                        Player.move_direction.x * Utils.PLAYER_WALK_SPEED * delta,
-                        Player.move_direction.y * Utils.PLAYER_WALK_SPEED * delta,
+                        Player.move_direction.x * Player.walk_speed * delta,
+                        Player.move_direction.y * Player.walk_speed * delta,
                         z_velocity));
             }
         },
@@ -508,22 +517,37 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             Player.running = _value;
         },
 
-        toggleGravity : () =>
+        toggleGravity : (index = null) =>
         {
-            Player.gravity_index = (Player.gravity_index + 1) % 3;
+            if (index == null)
+            {
+                Player.gravity_index = (Player.gravity_index + 1) % 3;
+                index = Player.gravity_index;
+            }
 
-            switch (Player.gravity_index)
+            switch (index)
             {
                 case (0):
-                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, 0));
+                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_ZERO));
                     break;
                 case (1):
-                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY));
+                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_LOW));
                     break;
                 case (2):
-                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, -Utils.GRAVITY * 50));
+                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_NORMAL));
                     break;
             }
+        },
+
+        toggleFast : (value) =>
+        {
+            Player.walk_speed = (value) ? Utils.PLAYER_WALK_SPEED_FAST : Utils.PLAYER_WALK_SPEED;
+            Player.run_speed = (value) ? Utils.PLAYER_RUN_SPEED_FAST : Utils.PLAYER_RUN_SPEED;
+        },
+
+        toggleZeroVelocity : () =>
+        {
+            Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(0, 0, 0));
         },
 
         //====================================================================

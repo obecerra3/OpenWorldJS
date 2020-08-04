@@ -14,7 +14,7 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer", "r
         ammo_drawer: {},
         debug_geometry: {},
         show_render_calls: false,
-        show_ammo_drawer: true,
+        show_ammo_drawer: false,
 
         init: () =>
         {
@@ -45,7 +45,6 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer", "r
             debugMesh.frustumCulled = false;
             scene.add(debugMesh);
             Debug.ammo_drawer = new AmmoDebugDrawer(null, debugVertices, debugColors, Physics.physicsWorld);
-            Debug.toggleAmmoDrawer(Debug.show_ammo_drawer);
         },
 
         updateStart: () =>
@@ -80,6 +79,7 @@ define(["three", "scene", "physics", "container", "stats", "ammoDebugDrawer", "r
         toggleAmmoDrawer: (_value) =>
         {
             (_value) ? Debug.ammo_drawer.enable() : Debug.ammo_drawer.disable();
+            Debug.show_ammo_drawer = _value;
         },
     };
 

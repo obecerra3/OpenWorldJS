@@ -31,5 +31,6 @@ if (!isset($_SESSION["username"])) {
     </head>
     <body>
         <div id="threejs-container"></div>
+        <input type = "text" id = "command_console"></input>
     </body>
 </html>

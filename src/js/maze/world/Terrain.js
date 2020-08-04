@@ -28,6 +28,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
         frag_shader : terrain_frag_shader,
         init_scale : 64.0,
         global_offset : new THREE.Vector3(0, 0, 0),
+        alpha : new THREE.Vector2(1.0, 0.0),
 
         // physics
         collider_meshes : [],
@@ -42,6 +43,21 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
         init : () =>
         {
+            // Event for passing data to player
+            Terrain.event_queue.push(
+            {
+                verify : () =>
+                {
+                    return Player.initialized && Object.keys(Terrain.collider_mesh).length > 0;
+                },
+                action: () =>
+                {
+                    Player.collider.addMesh("Terrain_Ground", Terrain.collider_mesh);
+                    Player.input_handler.Terrain = Terrain;
+                },
+                arguments : [],
+            });
+
             // create height_data
             Terrain.createHeightData();
 
@@ -128,20 +144,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             Terrain.createTile(0, 0, Terrain.init_scale, Edge.NONE, true);
             Terrain.createTile(0, -Terrain.init_scale, Terrain.init_scale, Edge.NONE, true);
 
-            // add event to add center mesh to Player collider
-            Terrain.event_queue.push(
-            {
-                verify : () =>
-                {
-                    return Player.initialized && Object.keys(Terrain.collider_mesh).length > 0;
-                },
-                action: () =>
-                {
-                    Player.collider.addMesh("Terrain_Ground", Terrain.collider_mesh);
-                },
-                arguments : [],
-            });
-
             // create quadtree of tiles
             for (var scale = Terrain.init_scale; scale < Terrain.WORLD_WIDTH; scale *= 2)
             {
@@ -190,11 +192,17 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     uResolution   :  { type : "f", value : Terrain.RESOLUTION },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
+                    uAlpha        :  { type : "v2", value : Terrain.alpha },
                 },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
                 transparent : true,
             });
+        },
+
+        toggleAlpha : (a) =>
+        {
+            Terrain.alpha.x = a;
         },
 
         render : () =>

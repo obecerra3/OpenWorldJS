@@ -1,8 +1,8 @@
 //Control State currently handles input for the player and holds the state of the player's movement status.
 //this can be changed to be a subject that the player observes perhaps?
 
-define(["pointerLockControls", "camera", "container", "scene", "three", "utils"],
-(PointerLockControls, camera, container, scene, THREE, Utils) =>
+define(["pointerLockControls", "camera", "container", "scene", "three", "utils", "debug"],
+(PointerLockControls, camera, container, scene, THREE, Utils, Debug) =>
 {
     var PlayerInput =
     {
@@ -14,9 +14,11 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
         move_left: false,
         move_right: false,
         speed: Utils.ORBIT_SPEED,
+        speed_delta: Utils.ORBIT_SPEED_DELTA,
         space_pressed_time_elapsed: null, //should be initialized to null
         is_crouched: false,
         is_jumping: false,
+        Terrain: {},
 
         // Callbacks defined in Player.js, example of Command Pattern
         toggleFlashlight: null,
@@ -25,10 +27,57 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
         printState: null,
         toggleRun: null,
         toggleGravity : null,
+        toggleFast : null,
+        toggleZeroVelocity : null,
 
         init: (_clock) =>
         {
             PlayerInput.clock = _clock;
+
+            document.getElementById("command_console").addEventListener('change', (event) =>
+            {
+                switch (event.target.value)
+                {
+                    case ('run0'):
+                        PlayerInput.toggleFast(false);
+                        break;
+                    case ('run1'):
+                        PlayerInput.toggleFast(true);
+                        break;
+                    case ('orbit0'):
+                        PlayerInput.speed = Utils.ORBIT_SPEED;
+                        PlayerInput.speed_delta = Utils.ORBIT_SPEED_DELTA;
+                        break;
+                    case ('orbit1'):
+                        PlayerInput.speed = Utils.ORBIT_SPEED_FAST;
+                        PlayerInput.speed_delta = Utils.ORBIT_SPEED_DELTA_FAST;
+                        break;
+                    case ('v0'):
+                        PlayerInput.toggleZeroVelocity();
+                        break;
+                    case ('g0'):
+                        PlayerInput.toggleGravity(0);
+                        break;
+                    case ('g1'):
+                        PlayerInput.toggleGravity(1);
+                        break;
+                    case ('g2'):
+                        PlayerInput.toggleGravity(2);
+                        break;
+                    case ('ta0'):
+                        PlayerInput.Terrain.toggleAlpha(0.5);
+                        break;
+                    case ('ta1'):
+                        PlayerInput.Terrain.toggleAlpha(1.0);
+                        break;
+                    case ('dd0'):
+                        Debug.toggleAmmoDrawer(false);
+                        break;
+                    case ('dd1'):
+                        Debug.toggleAmmoDrawer(true);
+                        break;
+                }
+            });
 
             container.addEventListener("click", () =>
             {
@@ -47,40 +96,48 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
 
             scene.add(PlayerInput.controls.getObject());
 
-            document.addEventListener('keydown', (event) => {
-                if (PlayerInput.controls.isLocked) {
-                    if (PlayerInput.orbit_enabled) {
+            document.addEventListener('keydown', (event) =>
+            {
+                if (PlayerInput.controls.isLocked)
+                {
+                    if (PlayerInput.orbit_enabled)
+                    {
                         //ORBIT CONTROLS USED FOR DEBUGGING
-                        let offset = new THREE.Vector3();
-                        switch (event.keyCode) {
+                        // let offset = new THREE.Vector3();
+                        switch (event.keyCode)
+                        {
                             case 38: //w
                             case 87: //forward arrow
-                                offset = PlayerInput.controls.getDirection(new THREE.Vector3())
+                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3())
                                 camera.position.add(offset.multiplyScalar(PlayerInput.speed));
                                 break;
                             case 40: //s
                             case 83: //backward arrow
-                                offset = PlayerInput.controls.getDirection(new THREE.Vector3())
+                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3())
                                 camera.position.add(offset.multiplyScalar(-PlayerInput.speed));
                                 break;
                             case 49: //1
-                                PlayerInput.speed -= Utils.ORBIT_SPEED_DELTA;
+                                PlayerInput.speed -= PlayerInput.speed_delta;
                                 break;
                             case 57: //9
-                                PlayerInput.speed += Utils.ORBIT_SPEED_DELTA;
+                                PlayerInput.speed += PlayerInput.speed_delta;
                                 break;
                             case 48: //0
                                 PlayerInput.orbit_enabled = !PlayerInput.orbit_enabled;
                                 break;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         //REGULAR CONTROLS
-                        switch (event.keyCode) {
+                        switch (event.keyCode)
+                        {
                             case 70: //f
                                 PlayerInput.toggleFlashlight();
                                 break;
                             case 67: //c
-                                if (!PlayerInput.is_crouched) {
+                                if (!PlayerInput.is_crouched)
+                                {
                                     PlayerInput.toggleCrouch();
                                     PlayerInput.is_crouched = true;
                                 }
@@ -125,9 +182,12 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
                 }
             }, false);
 
-            document.addEventListener('keyup', (event) => {
-                if (PlayerInput.controls.isLocked && !PlayerInput.orbit_enabled) {
-                    switch (event.keyCode) {
+            document.addEventListener('keyup', (event) =>
+            {
+                if (PlayerInput.controls.isLocked && !PlayerInput.orbit_enabled)
+                {
+                    switch (event.keyCode)
+                    {
                         case 16: //shift
                             PlayerInput.toggleRun(false);
                             break;
