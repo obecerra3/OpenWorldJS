@@ -109,9 +109,3 @@ The libraries we are using are in the **lib** directory
 
 - **'three.min.js'** is the graphics library.
 
-
-## Notes
-
-- On MacOS `cmd-option-j` opens the **javascript console** on Google Chrome
-
-- You can enable debug drawing of the ammo physics colliders by toggling **show_ammo_drawer** in **src/js/maze/utils/Debug.js**
