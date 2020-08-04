@@ -67,12 +67,12 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 {
                     verify: () =>
                     {
-                        return OnlinePlayer.body != {};
+                        return OnlinePlayer.threeObj != {};
                     },
                     action: () =>
                     {
                         var capsule_shape = new Physics.ammo.btCapsuleShape(2, 6.5);
-                        var rigidbody = Physics.createRigidBody(OnlinePlayer.body, capsule_shape, Utils.PLAYER_MASS, OnlinePlayer.position, OnlinePlayer.body.quaternion, OnlinePlayer.rigidbody_offset);
+                        var rigidbody = Physics.createRigidBody(OnlinePlayer.threeObj, capsule_shape, Utils.PLAYER_MASS, OnlinePlayer.position, OnlinePlayer.threeObj.quaternion, OnlinePlayer.rigidbody_offset);
                         body.setAngularFactor(new Physics.ammo.btVector3(0.0, 0.0, 0.0));
                         OnlinePlayer.rigidbody = rigidbody;
                     },
@@ -97,9 +97,9 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 loader.load("./js/models/fpsCharacter.glb", (gltf) =>
                 {
                     OnlinePlayer.model = gltf;
-                    OnlinePlayer.body = gltf.scene;
+                    OnlinePlayer.threeObj = gltf.scene;
 
-                    OnlinePlayer.body.traverse(function (object)
+                    OnlinePlayer.threeObj.traverse(function (object)
                     {
                         object.castShadow = true;
                         object.receiveShadow = true;
@@ -109,8 +109,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
                     OnlinePlayer.initAnimations(gltf.animations);
 
-                    OnlinePlayer.body.scale.set(6, 6, 6);
-                    scene.add(OnlinePlayer.body);
+                    OnlinePlayer.threeObj.scale.set(6, 6, 6);
+                    scene.add(OnlinePlayer.threeObj);
                 }, undefined, (error) =>
                 {
                     console.error("OnlinePlayer.js: gltf loader error: ", error);
@@ -119,7 +119,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
             initAnimations: (_animations) =>
             {
-                mixer = new THREE.AnimationMixer(OnlinePlayer.body);
+                mixer = new THREE.AnimationMixer(OnlinePlayer.threeObj);
 
                 let animationData = {};
 

@@ -1,5 +1,5 @@
-define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "scene", "camera", "utils", "states", "playerInputHandler"],
-(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, camera, Utils, States, PlayerInputHandler) => {
+define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "physics", "scene", "camera", "utils", "states", "playerInputHandler", "container"],
+(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, camera, Utils, States, PlayerInputHandler, container) => {
 
     var Player =
     {
@@ -13,17 +13,25 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         jump_charging: false,
         flashlight: {},
         model: {},
-        body: {},
+        threeObj: {},
         animator: {},
         transitions: {},
         look_direction: new THREE.Vector3(),
         prev_position: new THREE.Vector3(),
         move_direction: new THREE.Vector3(),
-        rigidbody_offset: new THREE.Vector3(0, 5, 0),
-        flight_enabled: false,
+        rigidbody_offset: new THREE.Vector3(0, 0, 0.83),
         rigidbody: {},
         event_queue: [],
         initialized: false,
+        init_pos: new THREE.Vector3(0, 0, 10),
+        gravity_index: 0,
+        debug_count : 0,
+        clock : {},
+        air_time : null,
+        TIME_TO_FALL : 0.5,
+        walk_speed : Utils.PLAYER_WALK_SPEED,
+        run_speed : Utils.PLAYER_RUN_SPEED,
+        first_person_enabled : false,
 
         //====================================================================
         //====================================================================
@@ -33,6 +41,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         init: (_clock, _username = "empty_username", _position = new THREE.Vector3()) =>
         {
+            Player.clock = _clock;
             Player.initInput(_clock);
             Player.initGraphics();
             Player.initPhysics();
@@ -41,10 +50,11 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             {
                 verify: () =>
                 {
-                    return Object.keys(Player.body).length > 0 &&
-                            Object.keys(Player.animator).length > 0 &&
-                            Object.keys(Player.rigidbody).length > 0 &&
-                            Object.keys(Player.input_handler).length > 0;
+                    return Object.keys(Player.threeObj).length > 0
+                           && Object.keys(Player.animator).length > 0
+                           && Object.keys(Player.rigidbody).length > 0
+                           && Object.keys(Player.input_handler).length > 0
+                           && Object.keys(Player.collider).length > 0;
                 },
                 action: () =>
                 {
@@ -61,8 +71,11 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             Player.input_handler.toggleCrouch = Player.toggleCrouch.bind(Player);
             Player.input_handler.toggleFlashlight = Player.toggleFlashlight.bind(Player);
             Player.input_handler.printState = Player.printState.bind(Player);
-            Player.input_handler.toggleFlight = Player.toggleFlight.bind(Player);
             Player.input_handler.toggleRun = Player.toggleRun.bind(Player);
+            Player.input_handler.toggleGravity = Player.toggleGravity.bind(Player);
+            Player.input_handler.toggleFast = Player.toggleFast.bind(Player);
+            Player.input_handler.toggleZeroVelocity = Player.toggleZeroVelocity.bind(Player);
+            Player.input_handler.toggleFirstPerson = Player.toggleFirstPerson.bind(Player);
         },
 
         //Collider is used to check if the player is grounded to decide if we can jump when jump is pressed.
@@ -70,36 +83,34 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         //The player's rigidbody will be a capsule
         initPhysics: () =>
         {
-            //Collider
+            // Collider
+            // --------
             var rays = [
-                Ray(scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils.X.multiplyScalar(1.5), 0xff00ff),
-                Ray(scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils._X.multiplyScalar(1.5), 0xff00ff),
-                Ray(scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils.Z.multiplyScalar(1.5), 0xff00ff),
-                Ray(scene, Utils._Y, Utils.PLAYER_SIZE * 1.7, true, Utils._Z.multiplyScalar(1.5), 0xff00ff)
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils.X.multiplyScalar(0.5), 0xff00ff),
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils._X.multiplyScalar(0.5), 0xff00ff),
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils.Y.multiplyScalar(0.5), 0xff00ff),
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils._Y.multiplyScalar(0.5), 0xff00ff)
             ];
 
             Player.collider = Collider(rays, 4);
 
-            var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000);
-            floorGeometry.rotateX(-Math.PI/2);
-            var floorMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(0x8CE78C)});
-            var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            scene.add(floor);
-            Player.collider.addMesh("floor", floor);
-            var colShape = new Physics.ammo.btBoxShape(new Physics.ammo.btVector3(floor.geometry.parameters.width * 0.5, 1, floor.geometry.parameters.height * 0.5));
-            var body = Physics.createRigidbody(floor, colShape, 0, floor.position, floor.quaternion);
-            floor.userData.physicsBody = body;
+            Player.input_handler.toggleShowRays = Player.collider.toggleShowRays.bind(Player.collider);
 
+            // Rigidbody
+            // ---------
             Player.event_queue.push(
             {
                 verify: () =>
                 {
-                    return Object.keys(Player.body).length > 0;
+                    return Object.keys(Player.threeObj).length > 0;
                 },
                 action: () =>
                 {
-                    var capsule_shape = new Physics.ammo.btCapsuleShape(2, 6.5);
-                    var rigidbody = Physics.createRigidbody(Player.body, capsule_shape, Utils.PLAYER_MASS, Player.body.position, Player.body.quaternion, Player.rigidbody_offset);
+                    var capsule_shape = new Physics.ammo.btCapsuleShape(0.3, 1.1);
+                    var rigidbody = Physics.createRigidbody(
+                        Player.threeObj, capsule_shape, Utils.PLAYER_MASS,
+                        Player.threeObj.position, Player.threeObj.quaternion,
+                        Player.rigidbody_offset, true);
                     rigidbody.setAngularFactor(new Physics.ammo.btVector3(0.0, 0.0, 0.0));
                     Player.rigidbody = rigidbody;
                 },
@@ -111,12 +122,12 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         initGraphics: () =>
         {
             //flashlight
-            Player.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
-            Player.flashlight.castShadow = true;
-            Player.flashlight.visible = false;
-            scene.add(Player.flashlight);
+            // Player.flashlight = new THREE.SpotLight(0xffffff, 1, 300, 0.5, 0.1, 10.0);
+            // Player.flashlight.castShadow = true;
+            // Player.flashlight.visible = false;
+            // scene.add(Player.flashlight);
 
-            //gltf body
+            // ThreeObject from GLTF Loader
             var loader = new THREE.GLTFLoader();
             var dracoLoader = new THREE.DRACOLoader();
             dracoLoader.setDecoderPath("../lib/draco/");
@@ -124,9 +135,12 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             loader.load("./js/models/fpsCharacter.glb", (gltf) =>
             {
                 Player.model = gltf;
-                Player.body = gltf.scene;
+                Player.threeObj = gltf.scene;
+                Player.threeObj.rotateX(Math.PI / 2);
+                Player.threeObj.position.copy(Player.init_pos);
+                Player.threeObj.userData = { "name" : "player" };
 
-                Player.body.traverse(function (object)
+                Player.threeObj.traverse(function (object)
                 {
                     object.castShadow = true;
                     object.receiveShadow = true;
@@ -135,9 +149,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 });
 
                 Player.initAnimations(gltf.animations);
-
-                Player.body.scale.set(6, 6, 6);
-                scene.add(Player.body);
+                scene.add(Player.threeObj);
             }, undefined, (error) =>
             {
                 console.error("Player.js: gltf loader error: ", error);
@@ -146,7 +158,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         initAnimations: (_animations) =>
         {
-            mixer = new THREE.AnimationMixer(Player.body);
+            mixer = new THREE.AnimationMixer(Player.threeObj);
 
             let animationData = {};
 
@@ -212,15 +224,22 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     Player.animator.prepareCrossFade('CrouchIdle', 'FallIdle', 0.1);
                 },
                 "fallIdle to idle" : () => {
+                    Player.animator.stopAnimation('FallIdle');
+                    Player.animator.stopAnimation('Jump');
+                    Player.animator.stopAnimation('CrouchIdle');
                     Player.animator.prepareCrossFade('FallIdle', 'Idle', 0.25);
                 },
                 "any to jump_charging" : (weight = 0.5) => {
                     Player.animator.playAnimation('CrouchIdle', weight);
                 },
                 "any to fallIdle" : () => {
-                    Player.animator.stopAnimation('CrouchIdle', 0);
-                    Player.animator.playAnimation('FallIdle', 1, 0.1);
-                }
+                    Player.animator.stopAnimation('Jump');
+                    Player.animator.stopAnimation('CrouchIdle');
+                    Player.animator.prepareCrossFade(Player.state, 'FallIdle', 0.5);
+                },
+                "any to jump" : () => {
+                    Player.animator.prepareCrossFade(Player.state, 'Jump', 0.5);
+                },
             }
         },
 
@@ -236,7 +255,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             {
                 Player.updateAnimation();
 
-                Player.input_handler.controls.getDirection(Player.look_direction);
+                camera.getWorldDirection(Player.look_direction);
 
                 Player.collider.update(Player);
 
@@ -251,14 +270,16 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             Player.eventQueueUpdate();
         },
 
-        //This is going to change to use a PlayerState Class which will contain different
-        //definitiosn for player states and handle animation switching/ state switching there
-        //https://gameprogrammingpatterns.com/state.html
+        // This is going to change to use a PlayerState Class which will contain different
+        // definitions for player states and handle animation switching/ state switching there
+        // (hierarchical and concurrent FSMs)
+        // https://gameprogrammingpatterns.com/state.html
         updateAnimation: () =>
         {
             Player.animator.update();
 
-            switch (Player.state) {
+            switch (Player.state)
+            {
                 case States.IDLE:
                     if (Player.input_handler.move_forward || Player.input_handler.move_left || Player.input_handler.move_right || Player.input_handler.move_backward)
                     {
@@ -273,11 +294,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                         Player.jump_charging = true;
                         Player.transitions["any to jump_charging"](0.75);
                         Player.jump_pressed = false;
-                    } else if (Player.jump_charging)
-                    {
-
                     }
-
                     break;
                 case States.WALK:
                     if (!Player.input_handler.move_forward && !Player.input_handler.move_left && !Player.input_handler.move_right && !Player.input_handler.move_backward)
@@ -314,7 +331,6 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                         Player.transitions["any to jump_charging"](0.25);
                         Player.jump_pressed = false;
                     }
-
                     break;
                 case States.CROUCH_IDLE:
                     if (Player.crouching)
@@ -359,113 +375,102 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     }
                     break;
                 case States.FALL_IDLE:
-                    var currentVelocity = Player.rigidbody.getLinearVelocity();
-                    // console.log(currentVelocity.y());
-                    if (currentVelocity.y() < -20)
-                    {
-                        Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(currentVelocity.x(), 0, currentVelocity.z()));
-                    }
                     if (Player.collider.isGrounded(Player))
                     {
-                        // console.log(currentVelocity.y());
+                        Player.air_time = null;
                         Player.state = States.IDLE;
                         Player.transitions["fallIdle to idle"]();
                     }
                     break;
                 }
 
-                if (!(Player.state == States.FALL_IDLE) && Player.body && !Player.collider.isGrounded(Player))
+                if (!(Player.state == States.FALL_IDLE) && !Player.collider.isGrounded(Player))
                 {
-                    Player.state = States.FALL_IDLE;
-                    Player.transitions["any to fallIdle"]();
+                    if (Player.air_time == null)
+                    {
+                        Player.air_time = Player.clock.elapsedTime;
+                    }
+
+                    if (Player.clock.elapsedTime - Player.air_time >= Player.TIME_TO_FALL)
+                    {
+                        Player.transitions["any to fallIdle"]();
+                        Player.state = States.FALL_IDLE;
+                    }
                 }
         },
 
         updateMoveDirection: () =>
         {
-            Player.move_direction.z = Number(Player.input_handler.move_forward) - Number(Player.input_handler.move_backward);
+            Player.move_direction.y = Number(Player.input_handler.move_backward) - Number(Player.input_handler.move_forward);
             Player.move_direction.x = Number(Player.input_handler.move_left) - Number(Player.input_handler.move_right);
             Player.move_direction.normalize();
-            let theta = 0;
-
-            if (Player.look_direction.z > 0)
-            {
-                theta = Math.atan(Player.look_direction.x / Player.look_direction.z);
-            } else if (Player.look_direction.x > 0)
-            {
-                theta = Math.PI/2 + Math.atan(-Player.look_direction.z/ Player.look_direction.x);
-            } else
-            {
-                if (Player.look_direction.x == 0)
-                {
-                    theta = Math.PI;
-                } else
-                {
-                    theta = -Math.PI/2 - Math.atan(-Player.look_direction.z/ -Player.look_direction.x);
-                }
-            }
-            Player.move_direction.applyAxisAngle(Utils.Y, theta);
+            let theta = Math.atan2(Player.look_direction.x, -Player.look_direction.y);
+            Player.move_direction.applyAxisAngle(Utils.Z, theta);
         },
 
         updateVelocity: (delta) =>
         {
-            var yVelocity = Player.rigidbody.getLinearVelocity().y();
+            var z_velocity = Player.rigidbody.getLinearVelocity().z();
 
             if (Player.running)
             {
-                Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(Player.move_direction.x * Utils.PLAYER_RUNNING_SPEED * delta, yVelocity, Player.move_direction.z * Utils.PLAYER_RUNNING_SPEED * delta));
-            } else
+                Player.rigidbody.setLinearVelocity(
+                    new Physics.ammo.btVector3(
+                        Player.move_direction.x * Player.run_speed * delta,
+                        Player.move_direction.y * Player.run_speed * delta,
+                        z_velocity));
+            }
+            else
             {
-                Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(Player.move_direction.x * Utils.PLAYER_WALKING_SPEED * delta, yVelocity, Player.move_direction.z * Utils.PLAYER_WALKING_SPEED * delta));
+                Player.rigidbody.setLinearVelocity(
+                    new Physics.ammo.btVector3(
+                        Player.move_direction.x * Player.walk_speed * delta,
+                        Player.move_direction.y * Player.walk_speed * delta,
+                        z_velocity));
             }
         },
 
         updateRotation: () =>
         {
-            if (Object.keys(Player.body).length > 0 && Player.look_direction.y > -0.97)
-            {
-                Player.body.rotation.y = Math.atan2(Player.look_direction.x, Player.look_direction.z);
-            }
+            Player.threeObj.rotation.y = Math.atan2(Player.look_direction.x, -Player.look_direction.y);
         },
 
         updateCameraPosition: () =>
         {
-            if (Object.keys(Player.body).length > 0)
+            if (Player.look_direction.z > -0.97)
             {
-                if (Player.look_direction.y > -0.97)
-                {
-                    let offset = new THREE.Vector3(Player.look_direction.x, 0, Player.look_direction.z); //used to be * 1.75
-                    offset.normalize();
-                    offset.multiplyScalar(-15); //2 for fps -10 for 3rd person
-                    camera.position.x = Player.body.position.x + offset.x;
-                    camera.position.z = Player.body.position.z + offset.z;
-                }
-                camera.position.y = Player.body.position.y + 15;
-
-                if (Player.running && Player.state == States.RUN)
-                {
-                    let max = 0.07;
-                    let min = -0.07;
-                    camera.position.x += Math.random() * (max - min) + min;
-                    camera.position.z += Math.random() * (max - min) + min;
-                    camera.position.y += Math.random() * (max - min) + min;
-                }
+                let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0); //used to be * 1.75
+                offset.normalize();
+                offset.multiplyScalar(-3); //2 for fps -10 for 3rd person
+                camera.position.x = Player.threeObj.position.x + offset.x;
+                camera.position.y = Player.threeObj.position.y + offset.y;
             }
+            camera.position.z = Player.threeObj.position.z + 3;
+
+            // naive camera shake
+            // if (Player.running && Player.state == States.RUN)
+            // {
+            //     let max = 0.01;
+            //     let min = -0.01;
+            //     camera.position.x += Math.random() * (max - min) + min;
+            //     camera.position.z += Math.random() * (max - min) + min;
+            //     camera.position.y += Math.random() * (max - min) + min;
+            // }
         },
 
         updateFlashlight: () =>
         {
-            Player.flashlight.position.copy(camera.position);
-
-            Player.flashlight.position.y -= 1;
-            Player.flashlight.position.x += Player.look_direction.x * 1.5;
-            Player.flashlight.position.z += Player.look_direction.z * 1.5;
-
-            Player.flashlight.target.position.set(Player.flashlight.position.x + Player.look_direction.x,
-                                                Player.flashlight.position.y + Player.look_direction.y,
-                                                Player.flashlight.position.z + Player.look_direction.z);
-
-            Player.flashlight.target.updateMatrixWorld();
+            // Player.flashlight.position.copy(camera.position);
+            //
+            // Player.flashlight.position.y -= 1;
+            // Player.flashlight.position.x += Player.look_direction.x * 1.5;
+            // Player.flashlight.position.z += Player.look_direction.z * 1.5;
+            //
+            // Player.flashlight.target.position.set(Player.flashlight.position.x + Player.look_direction.x,
+            //                                     Player.flashlight.position.y + Player.look_direction.y,
+            //                                     Player.flashlight.position.z + Player.look_direction.z);
+            //
+            // Player.flashlight.target.updateMatrixWorld();
         },
 
         //====================================================================
@@ -481,23 +486,23 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         toggleJump: (time_pressed) =>
         {
-            if ((Player.collider.isGrounded(Player) && !Player.crouching) || Player.flight_emabled)
+            if (Player.collider.isGrounded(Player) && !Player.crouching)
             {
                 if (time_pressed == 0)
                 {
                     Player.jump_pressed = true;
                     return;
                 }
+                Player.transitions["any to jump"]();
                 time_pressed = time_pressed % 5;
-                let y_velocity = 200 + (time_pressed * 50);
+                let z_velocity = Utils.PLAYER_JUMP_FORCE + (time_pressed * 50);
                 Player.jump_charging = false;
-                Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(Player.rigidbody.getLinearVelocity().x(), y_velocity, Player.rigidbody.getLinearVelocity().z()));
+                Player.rigidbody.setLinearVelocity(
+                    new Physics.ammo.btVector3(
+                        Player.rigidbody.getLinearVelocity().x(),
+                        Player.rigidbody.getLinearVelocity().y(),
+                        z_velocity));
             }
-        },
-
-        toggleFlight: () =>
-        {
-            Player.flight_enabled = !Player.flight_enabled;
         },
 
         toggleFlashlight: () =>
@@ -508,6 +513,44 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         toggleRun: (_value) =>
         {
             Player.running = _value;
+        },
+
+        toggleGravity : (index = null) =>
+        {
+            if (index == null)
+            {
+                Player.gravity_index = (Player.gravity_index + 1) % 3;
+                index = Player.gravity_index;
+            }
+
+            switch (index)
+            {
+                case (0):
+                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_ZERO));
+                    break;
+                case (1):
+                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_LOW));
+                    break;
+                case (2):
+                    Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_NORMAL));
+                    break;
+            }
+        },
+
+        toggleFast : (value) =>
+        {
+            Player.walk_speed = (value) ? Utils.PLAYER_WALK_SPEED_FAST : Utils.PLAYER_WALK_SPEED;
+            Player.run_speed = (value) ? Utils.PLAYER_RUN_SPEED_FAST : Utils.PLAYER_RUN_SPEED;
+        },
+
+        toggleZeroVelocity : () =>
+        {
+            Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(0, 0, 0));
+        },
+
+        toggleFirstPerson : () =>
+        {
+            Player.first_person_enabled = !Player.first_person_enabled;
         },
 
         //====================================================================
@@ -531,9 +574,10 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         printState: () =>
         {
-            console.log("PrintState is for player debugging");
-            console.log("Player");
-            console.log(Player);
+            console.log("IsGrounded");
+            console.log(Player.collider.isGrounded(Player));
+            console.log("Player Collider mesh");
+            console.log(Player.collider.mesh_map);
         },
 
     }

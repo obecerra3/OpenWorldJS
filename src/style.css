@@ -69,3 +69,12 @@ canvas {
     z-index: 100;
     display:block;
 }
+
+#command_console {
+    position:fixed;
+    right:40px;
+    top:40px;
+    z-index:1;
+    width:5%;
+    height:30px;
+}

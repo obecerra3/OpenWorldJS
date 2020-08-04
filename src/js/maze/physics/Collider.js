@@ -4,10 +4,10 @@ define(["three"], (THREE) =>
     {
         var Collider =
         {
-            raycaster: new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3, 0, 1),
+            raycaster: new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 1),
             rays: [],
             mesh_map: {},
-            show_rays: false,
+            show_rays: true,
             ground_ray_count: 0,
 
             init: (_rays, _ground_ray_count) =>
@@ -18,32 +18,28 @@ define(["three"], (THREE) =>
 
             update: (_player) =>
             {
-                for (var key of Object.keys(Collider.mesh_map)) {
-                    Collider.collide(_player, Collider.mesh_map[key]);
-                }
-
-                if (Collider.show_rays) {
-                    var origin;
-                    Collider.rays.forEach((ray) => {
-                        origin = new THREE.Vector3(0, 0, 0);
-                        origin.add(_player.body.position);
-                        origin.add(_player.rigidbody_offset);
-                        origin.add(ray.origin_offset);
-                        ray.update(origin);
-                    });
-                }
+                var origin;
+                Collider.rays.forEach((ray) =>
+                {
+                    origin = new THREE.Vector3(0, 0, 0);
+                    origin.add(_player.threeObj.position);
+                    origin.add(_player.rigidbody_offset);
+                    origin.add(ray.origin_offset);
+                    ray.update(origin);
+                });
             },
 
             collide: (_player, _mesh) =>
             {
                 var intersections = [];
 
-                Collider.rays.forEach((ray) => {
+                Collider.rays.forEach((ray) =>
+                {
                     if (!ray.ground_ray) {
                         Collider.raycaster.far = ray.length;
-                        Collider.raycaster.ray.origin.copy(_player.body.position);
-                        Collider.raycaster.ray.origin.add(_player.centerOffset);
-                        Collider.raycaster.ray.origin.add(ray.originOffset);
+                        Collider.raycaster.ray.origin.copy(_player.threeObj.position);
+                        Collider.raycaster.ray.origin.add(_player.rigidbody_offset);
+                        Collider.raycaster.ray.origin.add(ray.origin_offset);
                         Collider.raycaster.ray.direction.copy(ray.direction);
                         intersections = intersections.concat(Collider.raycaster.intersectObject(_mesh));
                     }
@@ -89,14 +85,15 @@ define(["three"], (THREE) =>
                 var intersections = [];
                 var mesh;
 
-                for (var key of Object.keys(Collider.mesh_map)) {
+                for (var key of Object.keys(Collider.mesh_map))
+                {
                     mesh = Collider.mesh_map[key];
                     Collider.rays.forEach((ray) =>
                     {
                         if (ray.ground_ray)
                         {
                             Collider.raycaster.far = ray.length;
-                            Collider.raycaster.ray.origin.copy(_player.body.position);
+                            Collider.raycaster.ray.origin.copy(_player.threeObj.position);
                             Collider.raycaster.ray.origin.add(_player.rigidbody_offset);
                             Collider.raycaster.ray.origin.add(ray.origin_offset);
                             Collider.raycaster.ray.direction.copy(ray.direction);
@@ -105,7 +102,8 @@ define(["three"], (THREE) =>
                     });
                 }
 
-                if (intersections.length > Math.ceil(Collider.ground_ray_count / 2)) {
+                if (intersections.length > Math.ceil(Collider.ground_ray_count / 2))
+                {
                     return true;
                 }
 
