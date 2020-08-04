@@ -1,4 +1,5 @@
-//different functions will carve different features into a heightmap. River agent, cave agent, coast agent, plain agent, plateau agent, canyon agent, mountain agent
+//different functions will carve different features into a heightmap. River agent,
+// coast agent, plain agent, plateau agent, canyon agent, mountain agent, etc..
 class FeatureAgents
 {
     constructor()

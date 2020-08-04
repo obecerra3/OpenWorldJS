@@ -18,9 +18,8 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
         space_pressed_time_elapsed: null, //should be initialized to null
         is_crouched: false,
         is_jumping: false,
-        Terrain: {},
 
-        // Callbacks defined in Player.js, example of Command Pattern
+        // Callbacks defined in Player and Terrain, Command Pattern
         toggleFlashlight: null,
         toggleCrouch: null,
         toggleJump: null,
@@ -29,6 +28,9 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
         toggleGravity : null,
         toggleFast : null,
         toggleZeroVelocity : null,
+        toggleFirstPerson : null,
+        toggleAlpha : null,
+        toggleShowRays : null,
 
         init: (_clock) =>
         {
@@ -44,11 +46,11 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                     case ('run1'):
                         PlayerInput.toggleFast(true);
                         break;
-                    case ('orbit0'):
+                    case ('orb0'):
                         PlayerInput.speed = Utils.ORBIT_SPEED;
                         PlayerInput.speed_delta = Utils.ORBIT_SPEED_DELTA;
                         break;
-                    case ('orbit1'):
+                    case ('orb1'):
                         PlayerInput.speed = Utils.ORBIT_SPEED_FAST;
                         PlayerInput.speed_delta = Utils.ORBIT_SPEED_DELTA_FAST;
                         break;
@@ -65,16 +67,22 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                         PlayerInput.toggleGravity(2);
                         break;
                     case ('ta0'):
-                        PlayerInput.Terrain.toggleAlpha(0.5);
+                        PlayerInput.toggleAlpha(0.5);
                         break;
                     case ('ta1'):
-                        PlayerInput.Terrain.toggleAlpha(1.0);
+                        PlayerInput.toggleAlpha(1.0);
                         break;
-                    case ('dd0'):
+                    case ('ad0'):
                         Debug.toggleAmmoDrawer(false);
                         break;
-                    case ('dd1'):
+                    case ('ad1'):
                         Debug.toggleAmmoDrawer(true);
+                        break;
+                    case ('ray0'):
+                        PlayerInput.toggleShowRays(false);
+                        break;
+                    case ('ray1'):
+                        PlayerInput.toggleShowRays(true);
                         break;
                 }
             });
@@ -86,11 +94,13 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
 
             // PlayerInput.controls.addEventListener("lock", () =>
             // {
+            //     //resume game
             //     container.style.display = "none";
             // });
             //
             // PlayerInput.controls.addEventListener("unlock", () =>
             // {
+            //     //pause game
             //     container.style.display = "block";
             // });
 
@@ -103,17 +113,28 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                     if (PlayerInput.orbit_enabled)
                     {
                         //ORBIT CONTROLS USED FOR DEBUGGING
-                        // let offset = new THREE.Vector3();
                         switch (event.keyCode)
                         {
                             case 38: //w
                             case 87: //forward arrow
-                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3())
+                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3());
                                 camera.position.add(offset.multiplyScalar(PlayerInput.speed));
                                 break;
                             case 40: //s
                             case 83: //backward arrow
-                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3())
+                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3());
+                                camera.position.add(offset.multiplyScalar(-PlayerInput.speed));
+                                break;
+                            case 39: // right
+                            case 68: // d
+                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3());
+                                offset.cross(new THREE.Vector3(0, 0, 1));
+                                camera.position.add(offset.multiplyScalar(PlayerInput.speed));
+                                break;
+                            case 37: // left
+                            case 65: // a
+                                var offset = PlayerInput.controls.getDirection(new THREE.Vector3());
+                                offset.cross(new THREE.Vector3(0, 0, 1));
                                 camera.position.add(offset.multiplyScalar(-PlayerInput.speed));
                                 break;
                             case 49: //1
@@ -176,6 +197,9 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                                 break;
                             case 71: //g
                                 PlayerInput.toggleGravity();
+                                break;
+                            case 67: // c
+                                PlayerInput.toggleFirstPerson();
                                 break;
                         }
                     }

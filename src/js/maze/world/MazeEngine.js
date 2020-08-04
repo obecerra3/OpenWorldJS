@@ -7,6 +7,43 @@ define(["three", "physics", "scene", "utils"],
         wall_color: new THREE.Color(0xdfdfdf),
         walls: [],
 
+        init : () =>
+        {
+            MazeEngine.readMazeFile();
+        },
+
+        readMazeFile: () =>
+        {
+            var loader = new THREE.FileLoader();
+
+            loader.setResponseType("arraybuffer");
+
+            loader.load("maze.bin", (buffer) =>
+            {
+                var byteArray = new Uint8Array(buffer);
+
+                var mazeArray = byteArray.reduce((array, curr, idx) =>
+                {
+                    var i, type, overall;
+                    for (i = 0; i < 8; i++)
+                    {
+                        type = curr >> (7-i) & 1;
+                        overall = idx * 8 + i;
+                        if ((overall % Utils.MAZE_SIZE) == 0)
+                        {
+                            array.push([type]);
+                        } else
+                        {
+                            array[Math.floor(overall / Utils.MAZE_SIZE)].push(type);
+                        }
+                    }
+                    return array;
+                }, []);
+
+                MazeEngine.build(mazeArray, Utils.MAZE_SIZE, Utils.CELL_SIZE);
+            });
+        },
+
         createWallObject: (_walls_mesh, _wall_index, _wall_shape, _position) =>
         {
             MazeEngine.walls.push(

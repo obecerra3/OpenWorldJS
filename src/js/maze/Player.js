@@ -31,6 +31,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         TIME_TO_FALL : 0.5,
         walk_speed : Utils.PLAYER_WALK_SPEED,
         run_speed : Utils.PLAYER_RUN_SPEED,
+        first_person_enabled : false,
 
         //====================================================================
         //====================================================================
@@ -74,6 +75,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             Player.input_handler.toggleGravity = Player.toggleGravity.bind(Player);
             Player.input_handler.toggleFast = Player.toggleFast.bind(Player);
             Player.input_handler.toggleZeroVelocity = Player.toggleZeroVelocity.bind(Player);
+            Player.input_handler.toggleFirstPerson = Player.toggleFirstPerson.bind(Player);
         },
 
         //Collider is used to check if the player is grounded to decide if we can jump when jump is pressed.
@@ -91,7 +93,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             ];
 
             Player.collider = Collider(rays, 4);
-            Player.collider.toggleShowRays(true);
+
+            Player.input_handler.toggleShowRays = Player.collider.toggleShowRays.bind(Player.collider);
 
             // Rigidbody
             // ---------
@@ -416,7 +419,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                         Player.move_direction.x * Player.run_speed * delta,
                         Player.move_direction.y * Player.run_speed * delta,
                         z_velocity));
-            } else
+            }
+            else
             {
                 Player.rigidbody.setLinearVelocity(
                     new Physics.ammo.btVector3(
@@ -428,36 +432,30 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         updateRotation: () =>
         {
-            if (Object.keys(Player.threeObj).length > 0)
-            {
-                Player.threeObj.rotation.y = Math.atan2(Player.look_direction.x, -Player.look_direction.y);
-            }
+            Player.threeObj.rotation.y = Math.atan2(Player.look_direction.x, -Player.look_direction.y);
         },
 
         updateCameraPosition: () =>
         {
-            if (Object.keys(Player.threeObj).length > 0)
+            if (Player.look_direction.z > -0.97)
             {
-                if (Player.look_direction.z > -0.97)
-                {
-                    let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0); //used to be * 1.75
-                    offset.normalize();
-                    offset.multiplyScalar(-3); //2 for fps -10 for 3rd person
-                    camera.position.x = Player.threeObj.position.x + offset.x;
-                    camera.position.y = Player.threeObj.position.y + offset.y;
-                }
-                camera.position.z = Player.threeObj.position.z + 3;
-
-                // naive camera shake
-                // if (Player.running && Player.state == States.RUN)
-                // {
-                //     let max = 0.01;
-                //     let min = -0.01;
-                //     camera.position.x += Math.random() * (max - min) + min;
-                //     camera.position.z += Math.random() * (max - min) + min;
-                //     camera.position.y += Math.random() * (max - min) + min;
-                // }
+                let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0); //used to be * 1.75
+                offset.normalize();
+                offset.multiplyScalar(-3); //2 for fps -10 for 3rd person
+                camera.position.x = Player.threeObj.position.x + offset.x;
+                camera.position.y = Player.threeObj.position.y + offset.y;
             }
+            camera.position.z = Player.threeObj.position.z + 3;
+
+            // naive camera shake
+            // if (Player.running && Player.state == States.RUN)
+            // {
+            //     let max = 0.01;
+            //     let min = -0.01;
+            //     camera.position.x += Math.random() * (max - min) + min;
+            //     camera.position.z += Math.random() * (max - min) + min;
+            //     camera.position.y += Math.random() * (max - min) + min;
+            // }
         },
 
         updateFlashlight: () =>
@@ -548,6 +546,11 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         toggleZeroVelocity : () =>
         {
             Player.rigidbody.setLinearVelocity(new Physics.ammo.btVector3(0, 0, 0));
+        },
+
+        toggleFirstPerson : () =>
+        {
+            Player.first_person_enabled = !Player.first_person_enabled;
         },
 
         //====================================================================

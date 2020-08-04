@@ -53,7 +53,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                 action: () =>
                 {
                     Player.collider.addMesh("Terrain_Ground", Terrain.collider_mesh);
-                    Player.input_handler.Terrain = Terrain;
+                    Player.input_handler.toggleAlpha = Terrain.toggleAlpha.bind(Terrain);
                 },
                 arguments : [],
             });
