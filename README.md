@@ -1,6 +1,6 @@
 # Maze.io
 
-_3D game engine using three.js as a graphics library and ammo.js for a physics library. 
+_3D game engine using three.js as a graphics library and ammo.js for a physics library._
 
 ![Alt_Text](https://media.giphy.com/media/ZZqdfD1D1PsUIQooLc/giphy.gif)
 
