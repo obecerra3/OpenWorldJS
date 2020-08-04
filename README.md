@@ -1,6 +1,8 @@
 # Maze.io
 
-_3D game engine using three.js as a graphics library and ammo.js for a physics library. Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components._
+_3D game engine using three.js as a graphics library and ammo.js for a physics library. 
+
+![Alt_Text](https://media.giphy.com/media/ZZqdfD1D1PsUIQooLc/giphy.gif)
 
 ## Setup
 
@@ -24,7 +26,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
 ## Features
 
-- ### Controls
+  ### Controls
 
   WASD/ Arrow Keys to move
   C to crouch
@@ -43,17 +45,19 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   Use input in the top right corner to enter commands for debugging purposes during the game. For example
   run1 toggles faster player movement speed, run0 toggles normal player movement speed. Full uses are
   in PlayerInputHandler.js.
+  
+  ![Alt_Text](https://media.giphy.com/media/VGEuLtEW5fbwfPm5dw/giphy.gif)
 
   ### Collider.js/ Ray.js
 
   Raycasting and collider support to check for collisions with meshes or if a game entity is grounded.
-
+  
   ### Physics.js
 
   Wrapper for Ammo library functions used for initializing Ammo, creating rigidbodies, creating and
   updated dynamic rigidbodies, and creating Terrain collider meshes from height data.
 
-- ### Terrain.js
+  ### Terrain.js
 
   Uses GLSL terrain.vert and terrain.frag as well as Terrain.js and the CDLOD algorithm created by felixpalmer.
   The height_data is generated in Terrain.js and used as a sampler2D texture for the vertex shader. The current
@@ -75,6 +79,8 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   Wrapper handling animation blending and control for threejs.
 
   Player animation FSM is still in development.
+  
+  ![Alt_Text](https://media.giphy.com/media/j1t1InUsCbxO01fHX3/giphy.gif)
 
   ### Debug.js
 
@@ -108,4 +114,14 @@ The libraries we are using are in the **lib** directory
 - **'stats.min.js'** is for the stats that appear in the top left of the screen when the game is running
 
 - **'three.min.js'** is the graphics library.
+
+## Acknowledgements
+
+https://threejs.org/ and https://threejs.org/examples/
+
+Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components.
+
+Terrain CDLOD from https://github.com/felixpalmer/lod-terrain
+
+mixamo.com for animations and 3D Player models.
 
