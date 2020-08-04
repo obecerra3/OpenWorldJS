@@ -18,59 +18,97 @@ _3D game engine using three.js as a graphics library and ammo.js for a physics l
 
 ## Basic structure
 
-- ### Libraries
-
-  The libraries we are using are in the **lib** directory
-
-  - **draco** is for faster glb/gltf model loading
-
-  - **three-instanced-mesh** is to do instancing of 3d meshes to render them faster (draw a bunch of models in one draw command)
-
-  - **'ammo.js'** is the physics engine
-
-  - **'AmmoDebugDrawer.js'** is how we debug the physics
-
-  - **'GLTFLoader.js'** is for loading 3d models that are in the form of gltf/glb files which are I think the fastest way to store/load them in 3js
-
-  - **'stats.min.js'** is for the stats that appear in the top left of the screen when the game is running
-
-  - **'three.min.js'** is the graphics library.
-
 ## 'maze.js'
 
 Currently everything is initialized in the **'maze.js'** file located in **_src/js/maze.js_**
 
-- ### Main Game Loop
+## Features
 
-  The main game loop is in maze.js in the `update()` function. Most classes have an update loop that gets called either from there or from another class that feeds them the info.
+- ### Controls
 
-- ### Constants
+  WASD/ Arrow Keys to move
+  C to crouch
+  Shift to run
+  Space to Jump
 
-  Utils has a bunch of constants, so when you need a new constant you can define it there and access it any where using `Utils.SOME_CONSTANT`
+  0 to Enter/Exit Orbit Controls
+  -> WASD to move camera
+  -> 9 to increase orbit speed
+  -> 1 to decrease orbit speed
 
-- ### Event Queue
+  g to toggle Zero Gravity, Low Gravity, Normal Gravity
 
-  The event queue in **'maze.js'** is for adding an event (some code you want to be run in the action component and not letting it run until the verify function you include returns true)
+  ### Debug Commands
 
-- ### Action Function
+  Use input in the top right corner to enter commands for debugging purposes during the game. For example
+  run1 toggles faster player movement speed, run0 toggles normal player movement speed. Full uses are
+  in PlayerInputHandler.js.
 
-  - The Action Function is for initializing stuff that relies on something else to be initialized
+  ### Collider.js/ Ray.js
 
-  - You can add arguments to the action function in an arguments array
+  Raycasting and collider support to check for collisions with meshes or if a game entity is grounded.
 
-## Next Steps
+  ### Physics.js
 
-- ### Animations
+  Wrapper for Ammo library functions used for initializing Ammo, creating rigidbodies, creating and
+  updated dynamic rigidbodies, and creating Terrain collider meshes from height data.
 
-  Animations are also still buggy since the Player finite state machine is not tested fully.
-  
-- ### Terrain
-  
-  Finish implementing first a simple terrain on a single Plane Mesh. This will use height values calculated from a noise function. This noise function will later be dependent on the biome the current terrain belongs to. The heightmap generated will also undergo a processing stage using feature agents to carve terrain features (such as lakes, rivers, valleys, mountains, plains, etc...). From here the heightmap data can be used by a vertex shader to place vertices according to heights. A fragment shader will get texture information from the current biome of the chunk and the gradient of the terrain to place the correct texture. 
+- ### Terrain.js
 
-- ### Observer Pattern
+  Uses GLSL terrain.vert and terrain.frag as well as Terrain.js and the CDLOD algorithm created by felixpalmer.
+  The height_data is generated in Terrain.js and used as a sampler2D texture for the vertex shader. The current
+  idea is to use MirroredRepeatWrapping of a low frequency band of Perlin noise as the base for the terrain. From
+  here we will introduce a feature agents data structure to add terrain points procedurally that will modify
+  the final vertice heights (e.g. a mountain range set of points that increase the amplitude of the noise data).
 
-  How a lot of these classes will communicate.
+  Terrain physics is handled by a moving chunk of height data centered on the player position which is updated once
+  the player moves past Terrain.UPDATE_DISTANCE. The shape of the ammo height data mesh collider is updated
+  instead of deleting/ creating a new collider. There is also a mesh created on the CPU side (Terrain.collider_mesh)
+  which is used for raycasting to check if the player is grounded.
+
+  ### MazeEngine.js
+
+  Using static binary finally of a procedurally generated Maze. Still in development.
+
+  ### Animator.js
+
+  Wrapper handling animation blending and control for threejs.
+
+  Player animation FSM is still in development.
+
+  ### Debug.js
+
+  Holds several debugging components such as the Ammo Debug Drawer for drawing collider shapes
+  in ammo using threejs as well as stats.js.
+
+  ### Modified PointerLockControls.js
+
+  The default up vector for three objects in this scene is (0, 0, 1). PointerLockControls has been modified
+  to work with these constraints.
+
+  ### Multiplayer.js
+
+  Multiplayer support in development.
+
+
+## Libraries
+
+The libraries we are using are in the **lib** directory
+
+- **draco** is for faster glb/gltf model loading
+
+- **three-instanced-mesh** is to do instancing of 3d meshes to render them faster (draw a bunch of models in one draw command)
+
+- **'ammo.js'** is the physics engine
+
+- **'AmmoDebugDrawer.js'** is how we debug the physics
+
+- **'GLTFLoader.js'** is for loading 3d models that are in the form of gltf/glb files which are I think the fastest way to store/load them in 3js
+
+- **'stats.min.js'** is for the stats that appear in the top left of the screen when the game is running
+
+- **'three.min.js'** is the graphics library.
+
 
 ## Notes
 
