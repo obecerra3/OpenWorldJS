@@ -23,8 +23,8 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
         toggleCrouch: null,
         toggleJump: null,
         printState: null,
-        toggleFlight: null,
         toggleRun: null,
+        toggleGravity : null,
 
         init: (_clock) =>
         {
@@ -114,11 +114,11 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils"]
                             case 80: // p
                                 PlayerInput.printState();
                                 break;
-                            case 79: // o
-                                PlayerInput.toggleFlight();
-                                break;
                             case 48: //0
                                 PlayerInput.orbit_enabled = !PlayerInput.orbit_enabled;
+                                break;
+                            case 71: //g
+                                PlayerInput.toggleGravity();
                                 break;
                         }
                     }

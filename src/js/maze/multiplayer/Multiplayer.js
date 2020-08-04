@@ -22,7 +22,7 @@ define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine",
         //
         // update: (_time) =>
         // {
-        //     if (Player.body && _time - Multiplayer.previous_update_time >= Utils.UPDATE_DELTA
+        //     if (Player.threeObj && _time - Multiplayer.previous_update_time >= Utils.UPDATE_DELTA
         //         && Multiplayer.socket.readyState == WebSocket.OPEN)
         //     {
         //         Multiplayer.socket.send(MessageBuilder.state(Player));
@@ -43,14 +43,14 @@ define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine",
         //     // if (Object.keys(Multiplayer.online_players).length == NUM_HUNTERS) {
         //     //     InfoManager.showPlayerClass(Player, Multiplayer.online_players);
         //     // }
-        //     scene.add(online_player.body);
+        //     scene.add(online_player.threeObj);
         // },
         //
         // processLeft: (buffer) =>
         // {
         //     var dataView = new DataView(buffer);
         //     var id = dataView.getUint8(0);
-        //     scene.remove(Multiplayer.online_players[id].body);
+        //     scene.remove(Multiplayer.online_players[id].threeObj);
         //     delete Multiplayer.online_players[id];
         //     InfoManager.playerLeft(Player, Object.values(Multiplayer.online_players));
         // },
@@ -108,7 +108,7 @@ define(["three", "infoManager", "scene", "onlinePlayer", "player", "mazeEngine",
         //     var lookDirectionZ = dataView.getFloat32(19);
         //     var otherPlayer = Multiplayer.online_players[id];
         //     var y_velocity = otherPlayer.rigidbody.getLinearVelocity().y();
-        //     var newVelocity = new THREE.Vector3(positionX - otherPlayer.body.position.x, 0, positionZ - otherPlayer.body.position.z).divideScalar(Utils.UPDATE_DELTA);
+        //     var newVelocity = new THREE.Vector3(positionX - otherPlayer.threeObj.position.x, 0, positionZ - otherPlayer.threeObj.position.z).divideScalar(Utils.UPDATE_DELTA);
         //     otherPlayer.rigidbody.setLinearVelocity(Utils.btVector3(newVelocity));
         //     var current_velocity = otherPlayer.rigidbody.getLinearVelocity();
         //     otherPlayer.setLinearVelocity(new Physics.ammo.btVector3(current_velocity.x(), y_velocity, current_velocity.z()));

@@ -31,6 +31,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
         // physics
         collider_meshes : [],
+        collider_mesh : {},
         init_chunk_pos : new THREE.Vector2(0, 0),
         collider : {},
         last_player_pos : new THREE.Vector3(0, 0, 0),
@@ -44,6 +45,9 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             // create height_data
             Terrain.createHeightData();
 
+            // init Collider mesh and data
+            Terrain.createColliderMesh();
+
             // set the frag shader
             Terrain.frag_shader = terrain_frag_shader;
 
@@ -51,7 +55,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             Terrain.material = Terrain.createMaterial();
 
             // init the geometry
-            Terrain.geometry = new THREE.PlaneGeometry(
+            Terrain.geometry = new THREE.PlaneBufferGeometry(
                 Terrain.TILE_WIDTH, Terrain.TILE_WIDTH,
                 Terrain.RESOLUTION, Terrain.RESOLUTION);
 
@@ -61,10 +65,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
             // init tiles
             Terrain.initTiles();
-
-            // normally this will be called by GameScreen
-            Terrain.render();
-
         },
 
         // --------------
@@ -81,9 +81,10 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             var z = Utils.terrainRandom() * 100;
             var max = Number.NEGATIVE_INFINITY;
             var min = Number.POSITIVE_INFINITY;
-            var frequency = 0.25;
+            var frequency = 0.1;
+            var iterations = 3;
 
-            for (var j = 0; j < 4; j++)
+            for (var j = 0; j < iterations; j++)
             {
                 for (var i = 0; i < size; i++)
                 {
@@ -92,7 +93,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
                     data[i] += Math.abs(perlin.noise((x / quality) * frequency, (y / quality) * frequency, z  * frequency) * quality);
 
-                    if (j == 3)
+                    if (j == iterations - 1)
                     {
                         //last iteration so time to check the heights for the stats
                         if (data[i] > max) max = data[i];
@@ -103,16 +104,14 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                 quality *= 5;
             }
 
-            console.log("Data Stats : max : " +  max + ", min : " +  min);
-            console.log("Data : ");
-            console.log(data);
+            // console.log("Data Stats : max : " +  max + ", min : " +  min);
+            // console.log("Data : ");
+            // console.log(data);
 
             Terrain.height_data = data;
             Terrain.height_data_texture = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
             Terrain.height_data_texture.wrapS = THREE.MirroredRepeatWrapping;
             Terrain.height_data_texture.wrapT = THREE.MirroredRepeatWrapping;
-            // Terrain.height_data_texture.wrapS = THREE.RepeatWrapping;
-            // Terrain.height_data_texture.wrapT = THREE.RepeatWrapping;
             Terrain.height_data_texture.magFilter = THREE.LinearFilter;
             Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
             Terrain.height_data_texture.generateMipmaps = true;
@@ -128,6 +127,20 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             Terrain.createTile(-Terrain.init_scale, 0, Terrain.init_scale, Edge.NONE, true);
             Terrain.createTile(0, 0, Terrain.init_scale, Edge.NONE, true);
             Terrain.createTile(0, -Terrain.init_scale, Terrain.init_scale, Edge.NONE, true);
+
+            // add event to add center mesh to Player collider
+            Terrain.event_queue.push(
+            {
+                verify : () =>
+                {
+                    return Player.initialized && Object.keys(Terrain.collider_mesh).length > 0;
+                },
+                action: () =>
+                {
+                    Player.collider.addMesh("Terrain_Ground", Terrain.collider_mesh);
+                },
+                arguments : [],
+            });
 
             // create quadtree of tiles
             for (var scale = Terrain.init_scale; scale < Terrain.WORLD_WIDTH; scale *= 2)
@@ -202,8 +215,8 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
             // if the player exists in the scene and (the player has moved
             // UPDATE_DISTANCE or the collider is empty) --> updateCurrentChunkCollider
-            if (Object.keys(Player.body).length != 0
-                && (Utils.distance2D(Player.body.position, Terrain.last_player_pos) > Terrain.UPDATE_DISTANCE
+            if (Object.keys(Player.threeObj).length != 0
+                && (Utils.distance2D(Player.threeObj.position, Terrain.last_player_pos) > Terrain.UPDATE_DISTANCE
                 || Object.keys(Terrain.collider).length === 0))
             {
                 Terrain.updateCollider();
@@ -216,15 +229,55 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
         //    PHYSICS
         // --------------
 
+        createColliderMesh : () =>
+        {
+            var geometry = new THREE.PlaneBufferGeometry(
+                Terrain.RESOLUTION * 2, Terrain.RESOLUTION * 2,
+                Terrain.RESOLUTION * 2, Terrain.RESOLUTION * 2);
+            var material = new THREE.MeshBasicMaterial({ visible : false });
+            var mesh = new THREE.Mesh(geometry, material);
+            mesh.frustumCulled = false;
+            scene.add(mesh);
+            Terrain.collider_mesh = mesh;
+
+            var vertices = [];
+            var indices = [];
+            var width = Terrain.RESOLUTION;
+
+            var i = 0;
+
+            for (var y = -width; y < width; y++)
+            {
+                for (var x = -width; x < width; x++)
+                {
+                    // assign vertex to vertices
+                    vertices.push(x, y, 0.0);
+
+                    // // assign 2 faces per vertex
+                    if (y != width - 1 && x != width - 1)
+                    {
+                        // clockwise
+                        indices.push(i, i + 1, i + 2 * width);
+                        indices.push(i + 1, i + 1 + 2 * width, i + 2 * width);
+                    }
+
+                    // face/ vertex index
+                    i++;
+                }
+            }
+
+            // assign indices and vertices to mesh
+            Terrain.collider_mesh.geometry.setIndex(indices);
+            Terrain.collider_mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        },
+
         updateCollider : () =>
         {
-            // pause gravity
-
             // get chunk data
             var cd = Terrain.getChunkData();
 
             // update last_player_pos
-            Terrain.last_player_pos.copy(Player.body.position);
+            Terrain.last_player_pos.copy(Player.threeObj.position);
 
             // create collider if one doesn't exist, else update existing collider
             if (Object.keys(Terrain.collider).length == 0)
@@ -234,9 +287,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             {
                 Physics.updateTerrainCollider(cd, Terrain.collider);
             }
-
-            // resume gravity
-
         },
 
         getChunkData : () =>
@@ -247,12 +297,12 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             var max_height = Number.NEGATIVE_INFINITY;
             var width = Terrain.RESOLUTION;
             var xw = 0, yw = 0, flipX = false, flipY = false, xi = 0, yi = 0;
+            var vertices = [];
 
             Terrain.init_chunk_pos.x = Math.round(Terrain.global_offset.x);
             Terrain.init_chunk_pos.y = Math.round(Terrain.global_offset.y);
-            console.log("Terrain.init_chunk_pos");
-            console.log(Terrain.init_chunk_pos);
-            var count = 0;
+
+            var i = 0;
 
             for (var y = Terrain.init_chunk_pos.y - width; y < Terrain.init_chunk_pos.y + width; y++)
             {
@@ -275,6 +325,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     // mod and absolute x, y
                     xi = Math.abs(x % Terrain.WORLD_WIDTH);
                     yi = Math.abs(y % Terrain.WORLD_WIDTH);
+
                     if (xi == 0 && Math.abs(x) >= 1024)
                     {
                         xi = 1;
@@ -302,8 +353,15 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     new_height_data.push(h);
                     if (h > max_height) max_height = h;
                     if (h < min_height) min_height = h;
+
+                    // assign new height to vertex attributes
+                    vertices.push(x - Terrain.init_chunk_pos.x, y - Terrain.init_chunk_pos.y, h);
                 }
             }
+
+            // assign indices and vertices to mesh
+            Terrain.collider_mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            Terrain.collider_mesh.position.copy(new THREE.Vector3(Terrain.init_chunk_pos.x, Terrain.init_chunk_pos.y, 0.0));
 
             // cd stands for Chunk Data
             var cd = {};
@@ -343,66 +401,3 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
     return Terrain;
 });
-
-
-/*var vertices = Terrain.collider_meshes[0].geometry.vertices;
-var grid = Terrain.init_scale / Terrain.RESOLUTION;
-// vPosition = uScale * position + vec3(uTileOffset, 0.0) + uGlobalOffset;
-// float grid = uScale / uResolution;
-// vPosition = floor(vPosition / grid) * grid;
-// GETHEIGHT
-// vec2 st = pos.xy / 1024.0;
-// float lod = 0.0;
-// float height = 1024.0 * textureLod(uHeightData, st, lod).a;
-// height += 64.0 * textureLod(uHeightData, 16.0 * st, lod).a;
-// height += 4.0 * textureLod(uHeightData, 256.0 * st, lod).a;
-// return height * height / 2000.0;
-// FINAL
-// vPosition = vPosition + normal * getHeight(vPosition);
-
-for (var i = 0; i < 4; i++)
-{
-    var tile_offset = Terrain.collider_offsets[i];
-    var count = 0;
-    console.log("tile offset");
-    console.log(tile_offset);
-    for (var j = 0; j < vertices.length; j++)
-    {
-        var v = vertices[j].clone();
-        v.multiplyScalar(Terrain.init_scale);
-        v.add(tile_offset);
-        v.add(Terrain.global_offset);
-        v.divideScalar(grid);
-        v.floor();
-        v.multiplyScalar(grid);
-        var v2 = new THREE.Vector2(v.x, v.y);
-        v2.divideScalar(Terrain.WORLD_WIDTH);
-        var h = 1024 * Terrain.height_data[v2.x + Terrain.WORLD_WIDTH * v2.y];
-        if (h > max_height) max_height = h;
-        if (h < min_height) min_height = h;
-        new_height_data.push(h);
-        if (count < 10)
-        {
-            console.log("v:");
-            console.log(v);
-            console.log("v2:");
-            console.log(v2)
-        }
-        count++;
-    }
-}*/
-
-/*var width = 130;
-var perlin = new ImprovedNoise();
-var z = Utils.terrainRandom() * 100;
-for (i = 0; i <  16900; i++)
-{
-    var x = i % width;
-    var y = Math.floor(i / width);
-
-    h = Math.abs(perlin.noise(x, y, z ));
-
-    if (h > max_height) max_height = h;
-    if (h < min_height) min_height = h;
-    new_height_data.push(h);
-}*/
