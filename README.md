@@ -28,17 +28,17 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   ### Controls
 
-  WASD/ Arrow Keys to move
-  C to crouch
-  Shift to run
-  Space to Jump
+  - WASD/ Arrow Keys to move
+  - C to crouch
+  - Shift to run
+  - Space to Jump
 
-  0 to Enter/Exit Orbit Controls
-  -> WASD to move camera
-  -> 9 to increase orbit speed
-  -> 1 to decrease orbit speed
+  - 0 to Enter/Exit Orbit Controls
+    - WASD to move camera
+    - 9 to increase orbit speed
+    - 1 to decrease orbit speed
 
-  g to toggle Zero Gravity, Low Gravity, Normal Gravity
+  - g to toggle Zero Gravity, Low Gravity, Normal Gravity
 
   ### Debug Commands
 
@@ -78,7 +78,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   Wrapper handling animation blending and control for threejs.
 
-  Player animation FSM is still in development.
+  - Player animation FSM is still in development.
   
   ![Alt_Text](https://media.giphy.com/media/j1t1InUsCbxO01fHX3/giphy.gif)
 
@@ -94,7 +94,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   ### Multiplayer.js
 
-  Multiplayer support in development.
+  - Multiplayer support in development.
 
 
 ## Libraries
@@ -117,11 +117,11 @@ The libraries we are using are in the **lib** directory
 
 ## Acknowledgements
 
-https://threejs.org/ and https://threejs.org/examples/
+- https://threejs.org/ and https://threejs.org/examples/
 
-Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components.
+- Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components.
 
-Terrain CDLOD from https://github.com/felixpalmer/lod-terrain
+- Terrain CDLOD from https://github.com/felixpalmer/lod-terrain
 
-mixamo.com for animations and 3D Player models.
+- mixamo.com for animations and 3D Player models.
 
