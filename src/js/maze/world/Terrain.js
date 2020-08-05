@@ -2,8 +2,8 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag"],
-(THREE, Utils, scene, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader) =>
+define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer"],
+(THREE, Utils, scene, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer) =>
 {
     var Edge =
     {
@@ -29,6 +29,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
         init_scale : 64.0,
         global_offset : new THREE.Vector3(0, 0, 0),
         alpha : new THREE.Vector2(1.0, 0.0),
+        isWebGL2 : renderer.capabilities.isWebGL2,
 
         // physics
         collider_meshes : [],
@@ -43,6 +44,12 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
 
         init : () =>
         {
+            // WebGL2 check for using textureLod vs textured2DLod
+            if (Terrain.isWebGL2)
+            {
+                terrain_vert_shader.define("WEBGL2", 1.0);
+            }
+
             // Event for passing data to player
             Terrain.event_queue.push(
             {

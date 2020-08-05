@@ -7,7 +7,7 @@ require(['detector', 'maze', 'container'], (Detector, maze, container) =>
         Detector.addGetWebGLMessage();
         container.innerHTML = "";
     }
-    
+
     maze.init();
     maze.update();
 });

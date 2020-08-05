@@ -17,12 +17,13 @@ const float lod = 0.0;
 float getHeight(vec3 pos)
 {
     vec2 st = pos.xy / 1024.0;
-    // float lod = 0.0;
-    // float height = 1024.0 * textureLod (uHeightData, st, lod).a;
-    // height += 64.0 * textureLod(uHeightData, 16.0 * st, lod).a;
-    // height += 4.0 * textureLod(uHeightData, 256.0 * st, lod).a;
-    // return height * height / 2000.0;
-    float height = 250.0 * textureLod(uHeightData, st, lod).a;
+
+    #ifdef WEBGL2
+        float height = 250.0 * textureLod(uHeightData, st, lod).a;
+    #else
+        float height = 250.0 * texture2DLod(uHeightData, st, lod).a;
+    #endif
+
     return height;
 }
 
