@@ -198,7 +198,7 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                             case 71: //g
                                 PlayerInput.toggleGravity();
                                 break;
-                            case 67: // c
+                            case 88: // x
                                 PlayerInput.toggleFirstPerson();
                                 break;
                         }

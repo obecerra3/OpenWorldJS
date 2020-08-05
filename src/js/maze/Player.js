@@ -437,15 +437,30 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         updateCameraPosition: () =>
         {
-            if (Player.look_direction.z > -0.97)
+            if (Player.first_person_enabled)
             {
-                let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0); //used to be * 1.75
-                offset.normalize();
-                offset.multiplyScalar(-3); //2 for fps -10 for 3rd person
-                camera.position.x = Player.threeObj.position.x + offset.x;
-                camera.position.y = Player.threeObj.position.y + offset.y;
+                if (Player.look_direction.z > -0.97)
+                {
+                    let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0); //used to be * 1.75
+                    offset.normalize();
+                    offset.multiplyScalar(1);
+                    camera.position.x = Player.threeObj.position.x + offset.x;
+                    camera.position.y = Player.threeObj.position.y + offset.y;
+                }
+                camera.position.z = Player.threeObj.position.z;
             }
-            camera.position.z = Player.threeObj.position.z + 3;
+            else
+            {
+                if (Player.look_direction.z > -0.97)
+                {
+                    let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0); //used to be * 1.75
+                    offset.normalize();
+                    offset.multiplyScalar(-3); //2 for fps -10 for 3rd person
+                    camera.position.x = Player.threeObj.position.x + offset.x;
+                    camera.position.y = Player.threeObj.position.y + offset.y;
+                }
+                camera.position.z = Player.threeObj.position.z + 3;
+            }
 
             // naive camera shake
             // if (Player.running && Player.state == States.RUN)
