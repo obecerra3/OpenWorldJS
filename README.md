@@ -6,7 +6,7 @@ _3D game engine using three.js as a graphics library and ammo.js for a physics l
 
 ## Setup
 
-- To install required **npm objects** after the **git-clone** navigate to the project directory in the sheel and run the command `npm i`:
+- To install required **npm objects** after the **git-clone** navigate to the project directory in the shell and run the command `npm i`:
 
 - Build Locally:
 
