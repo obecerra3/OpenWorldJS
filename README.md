@@ -1,10 +1,12 @@
 # Maze.io
 
-_3D game engine using three.js as a graphics library and ammo.js for a physics library. Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components._
+_3D game engine using three.js as a graphics library and ammo.js for a physics library._
+
+![Alt_Text](https://media.giphy.com/media/ZZqdfD1D1PsUIQooLc/giphy.gif)
 
 ## Setup
 
-- To install required **npm objects** after the **git-clone** navigate to the project directory in the sheel and run the command `npm i`:
+- To install required **npm objects** after the **git-clone** navigate to the project directory in the shell and run the command `npm i`:
 
 - Build Locally:
 
@@ -24,36 +26,38 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
 ## Features
 
-- ### Controls
+  ### Controls
 
-  WASD/ Arrow Keys to move
-  C to crouch
-  Shift to run
-  Space to Jump
+  - WASD/ Arrow Keys to move
+  - C to crouch
+  - Shift to run
+  - Space to Jump
 
-  0 to Enter/Exit Orbit Controls
-  -> WASD to move camera
-  -> 9 to increase orbit speed
-  -> 1 to decrease orbit speed
+  - 0 to Enter/Exit Orbit Controls
+    - WASD to move camera
+    - 9 to increase orbit speed
+    - 1 to decrease orbit speed
 
-  g to toggle Zero Gravity, Low Gravity, Normal Gravity
+  - g to toggle Zero Gravity, Low Gravity, Normal Gravity
 
   ### Debug Commands
 
   Use input in the top right corner to enter commands for debugging purposes during the game. For example
   run1 toggles faster player movement speed, run0 toggles normal player movement speed. Full uses are
   in PlayerInputHandler.js.
+  
+  ![Alt_Text](https://media.giphy.com/media/VGEuLtEW5fbwfPm5dw/giphy.gif)
 
   ### Collider.js/ Ray.js
 
   Raycasting and collider support to check for collisions with meshes or if a game entity is grounded.
-
+  
   ### Physics.js
 
   Wrapper for Ammo library functions used for initializing Ammo, creating rigidbodies, creating and
   updated dynamic rigidbodies, and creating Terrain collider meshes from height data.
 
-- ### Terrain.js
+  ### Terrain.js
 
   Uses GLSL terrain.vert and terrain.frag as well as Terrain.js and the CDLOD algorithm created by felixpalmer.
   The height_data is generated in Terrain.js and used as a sampler2D texture for the vertex shader. The current
@@ -74,7 +78,9 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   Wrapper handling animation blending and control for threejs.
 
-  Player animation FSM is still in development.
+  - Player animation FSM is still in development.
+  
+  ![Alt_Text](https://media.giphy.com/media/j1t1InUsCbxO01fHX3/giphy.gif)
 
   ### Debug.js
 
@@ -88,7 +94,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   ### Multiplayer.js
 
-  Multiplayer support in development.
+  - Multiplayer support in development.
 
 
 ## Libraries
@@ -109,9 +115,13 @@ The libraries we are using are in the **lib** directory
 
 - **'three.min.js'** is the graphics library.
 
+## Acknowledgements
 
-## Notes
+- https://threejs.org/ and https://threejs.org/examples/
 
-- On MacOS `cmd-option-j` opens the **javascript console** on Google Chrome
+- Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components.
 
-- You can enable debug drawing of the ammo physics colliders by toggling **show_ammo_drawer** in **src/js/maze/utils/Debug.js**
+- Terrain CDLOD from https://github.com/felixpalmer/lod-terrain
+
+- mixamo.com for animations and 3D Player models.
+
