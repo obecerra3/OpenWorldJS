@@ -34,7 +34,7 @@ define(["three"], (THREE) => {
 
         // new constraints
         var MAX_PI = Math.PI / 1.1;
-        var MIN_PI = 0;
+        var MIN_PI = 0.1;
 
     	var vec = new THREE.Vector3();
 

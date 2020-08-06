@@ -439,7 +439,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         {
             if (Player.first_person_enabled)
             {
-                let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0);
+                var offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0);
                 offset.normalize();
                 offset.multiplyScalar(1);
                 camera.position.x = Player.threeObj.position.x + offset.x;
@@ -448,18 +448,27 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
             }
             else
             {
-                if (Player.look_direction.z > -0.97)
+                var offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y);
+                offset.normalize();
+                offset.multiplyScalar(-2.5);
+
+                var t_xy = Math.abs(Player.look_direction.z);
+                if (Player.look_direction.z >= 0)
                 {
-                    let offset = new THREE.Vector3(Player.look_direction.x, Player.look_direction.y, 0);
-                    offset.normalize();
-                    offset.multiplyScalar(-3); //2 for fps -10 for 3rd person
-                    camera.position.x = Player.threeObj.position.x + offset.x;
-                    camera.position.y = Player.threeObj.position.y + offset.y;
+                    camera.position.x = Player.threeObj.position.x + THREE.MathUtils.lerp(offset.x, offset.x * 0.5, t_xy);
+                    camera.position.y = Player.threeObj.position.y + THREE.MathUtils.lerp(offset.y, offset.y * 0.5, t_xy)
                 }
-                camera.position.z = Player.threeObj.position.z + 3;
+                else
+                {
+                    camera.position.x = Player.threeObj.position.x + THREE.MathUtils.lerp(offset.x, offset.x * 0.05, t_xy);
+                    camera.position.y = Player.threeObj.position.y + THREE.MathUtils.lerp(offset.y, offset.y * 0.05, t_xy)
+                }
+                var t_z = (Player.look_direction.z + 1) / 2;
+                camera.position.z = Player.threeObj.position.z + THREE.MathUtils.lerp(3, 0, t_z);
             }
 
-            // naive camera shake
+            // naive camera shake, need to slow this down so that it isnt every frame/
+            // add to its own class for camera shake according to a rate, min, max
             // if (Player.running && Player.state == States.RUN)
             // {
             //     let max = 0.01;
