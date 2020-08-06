@@ -39,6 +39,8 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
     - 1 to decrease orbit speed
 
   - g to toggle Zero Gravity, Low Gravity, Normal Gravity
+  
+  -x to toggle first person or third person controls
 
   ### Debug Commands
 
