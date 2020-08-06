@@ -8,13 +8,18 @@ define(["three", "ammo"], (THREE, Ammo) =>
     var Utils =
     {
         // PLAYER CONSTANTS
-        PLAYER_SIZE : 1.5,
+        PLAYER_SIZE : 1.1,
         PLAYER_MASS : 50,
         PLAYER_WALK_SPEED : 600,
         PLAYER_RUN_SPEED : 1000,
         PLAYER_WALK_SPEED_FAST : 1500,
         PLAYER_RUN_SPEED_FAST : 4000,
         PLAYER_JUMP_FORCE : 100,
+        TIME_TO_FALL : 0.5,
+        PLAYER_CAPSULE_RADIUS : 0.3,
+        PLAYER_BOUNDING_RADIUS : 0.0,
+
+        // ORBIT CONTROLS CONSTANTS
         ORBIT_SPEED : 1,
         ORBIT_SPEED_DELTA : 0.25,
         ORBIT_SPEED_FAST : 20,

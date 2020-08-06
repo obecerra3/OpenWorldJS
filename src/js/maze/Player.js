@@ -28,10 +28,10 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         debug_count : 0,
         clock : {},
         air_time : null,
-        TIME_TO_FALL : 0.5,
         walk_speed : Utils.PLAYER_WALK_SPEED,
         run_speed : Utils.PLAYER_RUN_SPEED,
         first_person_enabled : false,
+
 
         //====================================================================
         //====================================================================
@@ -106,12 +106,16 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 },
                 action: () =>
                 {
-                    var capsule_shape = new Physics.ammo.btCapsuleShape(0.3, 1.1);
+                    var capsule_shape = new Physics.ammo.btCapsuleShape(
+                                                    Utils.PLAYER_CAPSULE_RADIUS,
+                                                    Utils.PLAYER_SIZE);
                     var rigidbody = Physics.createRigidbody(
                         Player.threeObj, capsule_shape, Utils.PLAYER_MASS,
                         Player.threeObj.position, Player.threeObj.quaternion,
                         Player.rigidbody_offset, true);
+
                     rigidbody.setAngularFactor(new Physics.ammo.btVector3(0.0, 0.0, 0.0));
+
                     Player.rigidbody = rigidbody;
                 },
                 arguments: []
@@ -139,14 +143,25 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 Player.threeObj.rotateX(Math.PI / 2);
                 Player.threeObj.position.copy(Player.init_pos);
                 Player.threeObj.userData = { "name" : "player" };
-                console.log(Player.threeObj);
+                Player.character = Player.threeObj.children[2];
+                Player.bone = Player.character.children[0];
+                Player.bodySkinnedMesh = Player.character.children[1];
+                Player.visorSkinnedMesh = Player.character.children[2];
 
-                Player.threeObj.traverse(function (object)
+                Player.threeObj.traverse(function (obj)
                 {
-                    object.castShadow = true;
-                    object.receiveShadow = true;
-                    //need to fix the bounding sphere of the model's geometry in order to enable frustum culling
-                    object.frustumCulled = false;
+                    obj.castShadow = true;
+                    obj.receiveShadow = true;
+
+                    // fixes boundingSphere for frustum culling --> thanks gogiii!
+                    if (obj.isSkinnedMesh)
+                    {
+                        obj.geometry.computeBoundingSphere();
+                        var sphere = new THREE.Sphere();
+                        sphere.copy(obj.geometry.boundingSphere);
+                        sphere.applyMatrix4(obj.skeleton.bones[0].matrix);
+                        obj.geometry.boundingSphere = sphere;
+                    }
                 });
 
                 Player.initAnimations(gltf.animations);
@@ -601,10 +616,6 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
 
         printState: () =>
         {
-            console.log("IsGrounded");
-            console.log(Player.collider.isGrounded(Player));
-            console.log("Player Collider mesh");
-            console.log(Player.collider.mesh_map);
         },
 
     }
