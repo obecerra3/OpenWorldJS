@@ -139,6 +139,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                 Player.threeObj.rotateX(Math.PI / 2);
                 Player.threeObj.position.copy(Player.init_pos);
                 Player.threeObj.userData = { "name" : "player" };
+                console.log(Player.threeObj);
 
                 Player.threeObj.traverse(function (object)
                 {
@@ -464,7 +465,12 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     camera.position.y = Player.threeObj.position.y + THREE.MathUtils.lerp(offset.y, offset.y * 0.05, t_xy)
                 }
                 var t_z = (Player.look_direction.z + 1) / 2;
-                camera.position.z = Player.threeObj.position.z + THREE.MathUtils.lerp(3, 0, t_z);
+                camera.position.z = Player.threeObj.position.z + THREE.MathUtils.lerp(4, 0, t_z);
+
+                if (t_z < 0.2)
+                {
+                    camera.position.z -= THREE.MathUtils.lerp(1.0, 0.1, t_z * 5);
+                }
             }
 
             // naive camera shake, need to slow this down so that it isnt every frame/
