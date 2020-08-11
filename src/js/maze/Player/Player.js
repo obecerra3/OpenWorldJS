@@ -30,6 +30,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
         first_person_enabled : false,
         left_strafe : false,
         right_strafe : false,
+        backward : false,
 
         //====================================================================
         //====================================================================
@@ -174,20 +175,19 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
         {
             mixer = new THREE.AnimationMixer(Player.threeObj);
 
-            let animationData = {};
+            let animation_data = {};
 
             _animations.forEach((clip) =>
             {
-                animationData[clip.name] =
+                animation_data[clip.name] =
                 {
                     'action': mixer.clipAction(clip),
                     'duration': clip.duration,
                     'weight': Utils.DEFAULT_WEIGHT
                 };
-
             });
 
-            Player.animator = Animator(mixer, animationData);
+            Player.animator = Animator(mixer, animation_data);
 
             Player.transitions = {
                 // idle
@@ -200,37 +200,13 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
                 // walk
                 'walk to idle' : () => {
-                    if (Player.left_strafe) {
-                        Player.animator.prepareCrossFade('LeftStrafe', 'Idle', 0.5);
-                        Player.left_strafe = false;
-                    } else if (Player.right_strafe) {
-                        Player.animator.prepareCrossFade('RightStrafe', 'Idle', 0.5);
-                        Player.right_strafe = false;
-                    } else {
-                        Player.animator.prepareCrossFade('Walk', 'Idle', 0.5);
-                    }
+                    Player.walkAnimTo('Idle');
                 },
                 'walk to run' : () => {
-                    if (Player.left_strafe) {
-                        Player.animator.prepareCrossFade('LeftStrafe', 'Run', 0.5);
-                        Player.left_strafe = false;
-                    } else if (Player.right_strafe) {
-                        Player.animator.prepareCrossFade('RightStrafe', 'Run', 0.5);
-                        Player.right_strafe = false;
-                    } else {
-                        Player.animator.prepareCrossFade('Walk', 'Run', 0.5);
-                    }
+                    Player.walkAnimTo('Run');
                 },
                 'walk to crouchWalk' : () => {
-                    if (Player.left_strafe) {
-                        Player.animator.prepareCrossFade('LeftStrafe', 'CrouchWalk', 0.5);
-                        Player.left_strafe = false;
-                    } else if (Player.right_strafe) {
-                        Player.animator.prepareCrossFade('RightStrafe', 'CrouchWalk', 0.5);
-                        Player.right_strafe = false;
-                    } else {
-                        Player.animator.prepareCrossFade('Walk', 'CrouchWalk', 0.5);
-                    }
+                    Player.walkAnimTo('CrouchWalk');
                 },
                 'walk to leftStrafe' : () => {
                     Player.left_strafe = true;
@@ -238,6 +214,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                         Player.right_strafe = false;
                         Player.animator.prepareCrossFade('RightStrafe', 'LeftStrafe', 0.5);
                     } else {
+                        Player.backwardAnimCheck('Walk');
                         Player.animator.prepareCrossFade('Walk', 'LeftStrafe', 0.5);
                     }
                 },
@@ -247,6 +224,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                         Player.left_strafe = false;
                         Player.animator.prepareCrossFade('LeftStrafe', 'RightStrafe', 0.5);
                     } else {
+                        Player.backwardAnimCheck('Walk');
                         Player.animator.prepareCrossFade('Walk', 'RightStrafe', 0.5);
                     }
                 },
@@ -259,35 +237,28 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                         Player.animator.prepareCrossFade('RightStrafe', 'Walk', 0.5);
                     }
                 },
+                'walk to backward' : () => {
+                    Player.backward = true;
+                    Player.animator.animation_data['Walk'].action.timeScale = -1;
+                },
 
                 // run
                 'run to idle' : () => {
-                    if (Player.left_strafe) {
-                        Player.animator.prepareCrossFade('RunLeftStrafe', 'Idle', 0.1);
-                        Player.left_strafe = false;
-                    } else if (Player.right_strafe) {
-                        Player.animator.prepareCrossFade('RunRightStrafe', 'Idle', 0.1);
-                        Player.right_strafe = false;
-                    } else {
-                        Player.animator.prepareCrossFade('Run', 'Idle', 0.1);
-                    }
+                    Player.runAnimTo('Idle', 0.1);
                 },
                 'run to walk' : () => {
-                    if (Player.left_strafe) {
-                        Player.animator.prepareCrossFade('RunLeftStrafe', 'Walk', 0.25);
-                        Player.left_strafe = false;
-                    } else if (Player.right_strafe) {
-                        Player.animator.prepareCrossFade('RunRightStrafe', 'Walk', 0.25);
-                        Player.right_strafe = false;
-                    } else {
-                        Player.animator.prepareCrossFade('Run', 'Walk', 0.25);
-                    }                },
+                    Player.runAnimTo('Walk', 0.25);
+                },
                 'run to leftStrafe' : () => {
                     Player.left_strafe = true;
                     if (Player.right_strafe) {
                         Player.right_strafe = false;
                         Player.animator.prepareCrossFade('RunRightStrafe', 'RunLeftStrafe', 0.5);
+                    } else if (Player.backward) {
+                        Player.backward = false;
+                        Player.animator.prepareCrossFade('RunBackward', 'RunLeftStrafe', 0.1);
                     } else {
+                        Player.backwardAnimCheck('Run');
                         Player.animator.prepareCrossFade('Run', 'RunLeftStrafe', 0.5);
                     }
                 },
@@ -296,6 +267,9 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                     if (Player.left_strafe) {
                         Player.left_strafe = false;
                         Player.animator.prepareCrossFade('RunLeftStrafe', 'RunRightStrafe', 0.5);
+                    } else if (Player.backward) {
+                        Player.backward = false;
+                        Player.animator.prepareCrossFade('RunBackward', 'RunRightStrafe', 0.1);
                     } else {
                         Player.animator.prepareCrossFade('Run', 'RunRightStrafe', 0.5);
                     }
@@ -308,6 +282,14 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                         Player.right_strafe = false;
                         Player.animator.prepareCrossFade('RunRightStrafe', 'Run', 0.5);
                     }
+                },
+                'run to backward' : () => {
+                    Player.backward = true;
+                    Player.animator.prepareCrossFade('Run', 'RunBackward', 0.1);
+                },
+                'backward to run' : () => {
+                    Player.backward = false;
+                    Player.animator.prepareCrossFade('RunBackward', 'Run', 0.1);
                 },
 
                 // crouchIdle
@@ -323,13 +305,20 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
                 // crouchWalk
                 'crouchWalk to crouchIdle' : () => {
+                    Player.backwardAnimCheck('CrouchWalk');
                     Player.animator.prepareCrossFade('CrouchWalk', 'CrouchIdle', 0.5);
                 },
                 'crouchWalk to walk' : () => {
+                    Player.backwardAnimCheck('CrouchWalk');
                     Player.animator.prepareCrossFade('CrouchWalk', 'Walk', 0.5);
                 },
                 'crouchWalk to idle' : () => {
+                    Player.backwardAnimCheck('CrouchWalk');
                     Player.animator.prepareCrossFade('CrouchWalk', 'Idle', 0.5);
+                },
+                'crouchWalk to backward' : () => {
+                    Player.backward = true;
+                    Player.animator.animation_data['CrouchWalk'].action.timeScale = -1;
                 },
 
                 // fallIdle
@@ -342,6 +331,45 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                 },
             }
         },
+
+        backwardAnimCheck : (anim) =>
+        {
+            if (Player.backward) {
+                Player.backward = false;
+                Player.animator.animation_data[anim].action.timeScale = 1;
+            }
+        },
+
+        walkAnimTo : (next_anim, duration = 0.5) =>
+        {
+            if (Player.left_strafe) {
+                Player.animator.prepareCrossFade('LeftStrafe', next_anim, duration);
+                Player.left_strafe = false;
+            } else if (Player.right_strafe) {
+                Player.animator.prepareCrossFade('RightStrafe', next_anim, duration);
+                Player.right_strafe = false;
+            } else {
+                Player.backwardAnimCheck('Walk');
+                Player.animator.prepareCrossFade('Walk', next_anim, duration);
+            }
+        },
+
+        runAnimTo : (next_anim, duration = 0.5) =>
+        {
+            if (Player.left_strafe) {
+                Player.animator.prepareCrossFade('RunLeftStrafe', next_anim, duration);
+                Player.left_strafe = false;
+            } else if (Player.right_strafe) {
+                Player.animator.prepareCrossFade('RunRightStrafe', next_anim, duration);
+                Player.right_strafe = false;
+            } else if (Player.backward) {
+                Player.backward = false;
+                Player.animator.prepareCrossFade('RunBackward', next_anim, duration);
+            } else {
+                Player.animator.prepareCrossFade('Run', next_anim, duration);
+            }
+        },
+
 
         //====================================================================
         //====================================================================
@@ -414,6 +442,12 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                     } else if ((Player.left_strafe || Player.right_strafe) && Player.input_handler.move_mask > 3)
                     {
                         Player.transitions['strafe to walk']();
+                    } else if (!Player.backward && Player.input_handler.move_mask >= 8)
+                    {
+                        Player.transitions['walk to backward']();
+                    } else if (Player.backward && Player.input_handler.move_mask < 8)
+                    {
+                        Player.backwardAnimCheck('Walk');
                     }
 
                     break;
@@ -435,6 +469,12 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                     } else if ((Player.left_strafe || Player.right_strafe) && Player.input_handler.move_mask > 3)
                     {
                         Player.transitions['strafe to run']();
+                    } else if (!Player.backward && Player.input_handler.move_mask >= 8)
+                    {
+                        Player.transitions['run to backward']();
+                    } else if (Player.backward && Player.input_handler.move_mask < 8)
+                    {
+                        Player.transitions['backward to run']();
                     }
 
                     break;
@@ -466,6 +506,12 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                         {
                             Player.state = States.CROUCH_IDLE;
                             Player.transitions['crouchWalk to crouchIdle']();
+                        } else if (!Player.backward && Player.input_handler.move_mask >= 8)
+                        {
+                            Player.transitions['crouchWalk to backward']();
+                        }  else if (Player.backward && Player.input_handler.move_mask < 8)
+                        {
+                            Player.backwardAnimCheck('CrouchWalk');
                         }
                     } else
                     {

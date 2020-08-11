@@ -22,7 +22,7 @@ define(["three"], (THREE) =>
                 Animator.mixer.update(Animator.clock.getDelta());
             },
 
-            prepareCrossFade: (_start_key, _end_key, _duration, _sync_time = 0) =>
+            prepareCrossFade: (_start_key, _end_key, _duration = 0.5, _sync_time = 0) =>
             {
                 Animator.togglePause(false);
 
