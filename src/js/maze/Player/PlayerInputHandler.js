@@ -4,6 +4,13 @@
 define(["pointerLockControls", "camera", "container", "scene", "three", "utils", "debug"],
 (PointerLockControls, camera, container, scene, THREE, Utils, Debug) =>
 {
+    // move mask:
+    // none : 0
+    // left : 1
+    // right : 2
+    // up : 4
+    // down : 8
+
     var PlayerInput =
     {
         controls: new PointerLockControls(camera, container),
@@ -13,6 +20,7 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
         move_backward: false,
         move_left: false,
         move_right: false,
+        move_mask: 0,
         speed: Utils.ORBIT_SPEED,
         speed_delta: Utils.ORBIT_SPEED_DELTA,
         is_crouched: false,
@@ -166,21 +174,25 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                             case 16: //shift
                                 PlayerInput.toggleRun(true);
                                 break;
-                            case 38: // up
-                            case 87: // w
-                                PlayerInput.move_forward = true;
-                                break;
                             case 37: // left
                             case 65: // a
+                                if (!PlayerInput.move_left) PlayerInput.move_mask += 1;
                                 PlayerInput.move_left = true;
-                                break;
-                            case 40: // down
-                            case 83: // s
-                                PlayerInput.move_backward = true;
                                 break;
                             case 39: // right
                             case 68: // d
+                                if (!PlayerInput.move_right) PlayerInput.move_mask += 2;
                                 PlayerInput.move_right = true;
+                                break;
+                            case 38: // up
+                            case 87: // w
+                                if (!PlayerInput.move_forward) PlayerInput.move_mask += 4;
+                                PlayerInput.move_forward = true;
+                                break;
+                            case 40: // down
+                            case 83: // s
+                                if (!PlayerInput.move_backward) PlayerInput.move_mask += 8;
+                                PlayerInput.move_backward = true;
                                 break;
                             case 32: // space
                                 if (!PlayerInput.space_pressed)
@@ -218,21 +230,25 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                         case 67: //c
                             PlayerInput.is_crouched = false;
                             break;
-                        case 38: // up
-                        case 87: // w
-                            PlayerInput.move_forward = false;
-                            break;
                         case 37: // left
                         case 65: // a
+                            PlayerInput.move_mask -= 1;
                             PlayerInput.move_left = false;
-                            break;
-                        case 40: // down
-                        case 83: // s
-                            PlayerInput.move_backward = false;
                             break;
                         case 39: // right
                         case 68: // d
+                            PlayerInput.move_mask -= 2;
                             PlayerInput.move_right = false;
+                            break;
+                        case 38: // up
+                        case 87: // w
+                            PlayerInput.move_mask -= 4;
+                            PlayerInput.move_forward = false;
+                            break;
+                        case 40: // down
+                        case 83: // s
+                            PlayerInput.move_mask -= 8;
+                            PlayerInput.move_backward = false;
                             break;
                         case 32: // space
                             PlayerInput.space_pressed = false;
