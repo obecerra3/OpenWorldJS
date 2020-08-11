@@ -82,11 +82,12 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
         {
             // Collider
             // --------
+            var size_mult = 2.5;
             var rays = [
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils.X.multiplyScalar(0.5), 0xff00ff),
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils._X.multiplyScalar(0.5), 0xff00ff),
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils.Y.multiplyScalar(0.5), 0xff00ff),
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * 1.7, true, Utils._Y.multiplyScalar(0.5), 0xff00ff)
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils.X.multiplyScalar(0.5), 0xff00ff),
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils._X.multiplyScalar(0.5), 0xff00ff),
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils.Y.multiplyScalar(0.5), 0xff00ff),
+                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils._Y.multiplyScalar(0.5), 0xff00ff)
             ];
 
             Player.collider = Collider(rays, 4);
@@ -213,7 +214,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     Player.animator.prepareCrossFade('Run', 'Slide', 0.5);
                 },
                 "crouchIdle to idle" : () => {
-                    Player.animator.prepareCrossFade('CrouchIdle', 'Idle', 0.25, 0.25);
+                    Player.animator.prepareCrossFade('CrouchIdle', 'Idle', 0.25);
                 },
                 "crouchIdle to crouchWalk" : () => {
                     Player.animator.prepareCrossFade('CrouchIdle', 'CrouchWalk', 0.5);
@@ -231,9 +232,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray", "ph
                     Player.animator.prepareCrossFade('CrouchIdle', 'Walk', 0.5);
                 },
                 "fallIdle to idle" : () => {
-                    Player.animator.prepareCrossFade('FallIdle', 'Idle', 0.25);
-                    // Player.animator.prepareCrossFade('FallIdle', 'FallToLand', 0.25);
-                    // Player.animator.prepareCrossFade('FallToLand', 'Idle', 0.25);
+                    Player.animator.prepareCrossFade('FallIdle', 'FallToLand', 0.75);
+                    Player.animator.prepareCrossFade('FallToLand', 'Idle', 1.0);
                 },
                 "any to fallIdle" : () => {
                     Player.animator.prepareCrossFade(Player.state, 'FallIdle', 0.25);
