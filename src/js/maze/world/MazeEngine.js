@@ -4,7 +4,7 @@ define(["three", "physics", "scene", "utils"],
     var MazeEngine =
     {
         wall_material: new THREE.MeshLambertMaterial(),
-        wall_color: new THREE.Color(0xdfdfdf),
+        wall_color: new THREE.Color(0x727272),
         walls: [],
 
         init : () =>
