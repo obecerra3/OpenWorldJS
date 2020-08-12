@@ -2,7 +2,7 @@
 
 _3D game engine using three.js as a graphics library and ammo.js for a physics library._
 
-![Alt_Text](https://media.giphy.com/media/ZZqdfD1D1PsUIQooLc/giphy.gif)
+![Alt_Text](https://media.giphy.com/media/j25Cd6TirdYcmfZkX9/giphy.gif)
 
 ## Setup
 
@@ -48,7 +48,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   run1 toggles faster player movement speed, run0 toggles normal player movement speed. Full uses are
   in PlayerInputHandler.js.
   
-  ![Alt_Text](https://media.giphy.com/media/VGEuLtEW5fbwfPm5dw/giphy.gif)
+  ![Alt_Text](https://media.giphy.com/media/H1qGAF9wEtzx4jRWMW/giphy.gif)
 
   ### Collider.js/ Ray.js
 
@@ -87,7 +87,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   - Jump Animation/ Fall Idle animation/ Land Animation
   - Crouch Idle, Forward/Backward Crouch Walking
   
-  ![Alt_Text](https://media.giphy.com/media/j1t1InUsCbxO01fHX3/giphy.gif)
+  ![Alt_Text](https://media.giphy.com/media/igJyN1fDCncHgXyA2m/giphy.gif)
 
   ### Debug.js
 
