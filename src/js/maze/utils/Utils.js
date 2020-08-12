@@ -58,6 +58,15 @@ define(["three", "ammo"], (THREE, Ammo) =>
         X_Z : new THREE.Vector3(1, 0, -1),
         _X_Z : new THREE.Vector3(-1, 0, -1),
 
+        // MATH
+        PI : 3.14,
+        PI2 : 1.57,
+        PI3 : 1.05,
+        PI4 : 0.79,
+        PI8 : 0.39,
+        PI12 : 0.26,
+        PI16 : 0.20,
+
         // PROCEDURAL CONTENT GENERATION
         // -----------------------------
 
