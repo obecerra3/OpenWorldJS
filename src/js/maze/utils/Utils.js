@@ -14,7 +14,7 @@ define(["three", "ammo"], (THREE, Ammo) =>
         PLAYER_RUN_SPEED : 1000,
         PLAYER_WALK_SPEED_FAST : 1500,
         PLAYER_RUN_SPEED_FAST : 4000,
-        PLAYER_JUMP_FORCE : 100,
+        PLAYER_JUMP_FORCE : 150,
         TIME_TO_FALL : 0.5,
         PLAYER_CAPSULE_RADIUS : 0.3,
         PLAYER_BOUNDING_RADIUS : 0.0,
@@ -57,6 +57,15 @@ define(["three", "ammo"], (THREE, Ammo) =>
         _XZ : new THREE.Vector3(-1, 0, 1),
         X_Z : new THREE.Vector3(1, 0, -1),
         _X_Z : new THREE.Vector3(-1, 0, -1),
+
+        // MATH
+        PI : 3.14,
+        PI2 : 1.57,
+        PI3 : 1.05,
+        PI4 : 0.79,
+        PI8 : 0.39,
+        PI12 : 0.26,
+        PI16 : 0.20,
 
         // PROCEDURAL CONTENT GENERATION
         // -----------------------------

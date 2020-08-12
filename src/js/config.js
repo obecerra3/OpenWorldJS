@@ -41,6 +41,8 @@ var require =
         multiplayer : "./multiplayer/Multiplayer",
         onlinePlayer : "./multiplayer/OnlinePlayer",
         physics : "./physics/Physics",
+        player : "./Player/Player",
+        playerInputHandler : "./Player/playerInputHandler",
         ray : "./physics/Ray",
         states : "./utils/States",
         terrain : "./world/Terrain",

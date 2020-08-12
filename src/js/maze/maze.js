@@ -1,5 +1,5 @@
-define( ["three", "renderer", "camera", "container", "scene", "physics", "world", "player", "debug", "multiplayer"],
-(THREE, renderer, camera, container, scene, Physics, World, Player, Debug, Multiplayer) =>
+define( ["three", "renderer", "camera", "container", "scene", "light", "physics", "world", "player", "debug", "multiplayer"],
+(THREE, renderer, camera, container, scene, Light, Physics, World, Player, Debug, Multiplayer) =>
 {
     var maze =
     {
@@ -10,12 +10,7 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
         {
             THREE.Cache.enabled = true;
 
-            // var axesHelper = new THREE.AxesHelper(10);
-            // scene.add(axesHelper);
-
-            var light = new THREE.AmbientLight(0x404040);
-            scene.add(light);
-
+            Light.init();
             // Multiplayer.init();
             Physics.init();
             Debug.init();

@@ -200,6 +200,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "v2", value : Terrain.alpha },
+                    uWorldWidth   :  { type : "f", value : Terrain.WORLD_WIDTH },
                 },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
@@ -341,11 +342,11 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     xi = Math.abs(x % Terrain.WORLD_WIDTH);
                     yi = Math.abs(y % Terrain.WORLD_WIDTH);
 
-                    if (xi == 0 && Math.abs(x) >= 1024)
+                    if (xi == 0 && Math.abs(x) >= Terrain.WORLD_WIDTH)
                     {
                         xi = 1;
                     }
-                    if (yi == 0 && Math.abs(y) >= 1024)
+                    if (yi == 0 && Math.abs(y) >= Terrain.WORLD_WIDTH)
                     {
                         yi = 1;
                     }
