@@ -80,7 +80,12 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   Wrapper handling animation blending and control for threejs.
 
-  - Player animation FSM is still in development.
+  - Player animation FSM states are in Utils/States.js
+  - Includes support for Idle, Idle Left/Right Turning
+  - Foward/Backward Walking, Left/Right Walk Strafing 
+  - Forward/Backward Running, Left/Right Run Strafing
+  - Jump Animation/ Fall Idle animation/ Land Animation
+  - Crouch Idle, Forward/Backward Crouch Walking
   
   ![Alt_Text](https://media.giphy.com/media/j1t1InUsCbxO01fHX3/giphy.gif)
 
