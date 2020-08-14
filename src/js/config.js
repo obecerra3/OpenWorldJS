@@ -35,6 +35,7 @@ var require =
         collider : "./physics/Collider",
         colors : "./Utils/Colors",
         debug : "./utils/Debug",
+        eventQ : "./utils/EventQ",
         game : "./multiplayer/Game",
         infoManager : "./multiplayer/InfoManager",
         light : "./world/Light",

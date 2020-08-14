@@ -1,7 +1,15 @@
-define( ["three", "scene", "colors"], ( THREE, scene, Colors ) =>
+define(["three", "scene", "colors"], (THREE, scene, Colors) =>
 {
     var Light =
     {
+        MAX_T : 1,
+        MAX_X : 100,
+        MAX_Y : 100,
+        MAX_Z : 100,
+
+        clock : {},
+        player : {},
+
         // Ambient Light
         ambient : {},
         ambient_intensity : 0.2,
@@ -19,21 +27,26 @@ define( ["three", "scene", "colors"], ( THREE, scene, Colors ) =>
         sunlight_color : Colors.white,
         sunlight_pos : new THREE.Vector3(),
 
-        init : () =>
+        init : (clock, player) =>
         {
-            Light.ambient = new THREE.AmbientLight( Light.ambient_color, Light.ambient_intensity );
+            Light.clock = clock;
+            Light.player = player;
 
-            Light.hemisphere = new THREE.HemisphereLight( Light.hemisphere_sky_color, Light.hemisphere_ground_color, Light.hemisphere_intensity );
+            Light.ambient = new THREE.AmbientLight(Light.ambient_color, Light.ambient_intensity);
 
-            Light.sunlight = new THREE.DirectionalLight( Light.sunlight_color, Light.sunlight_intensity );
-            Light.sunlight.position.set( 0, 100, 25 ) ;
+            Light.hemisphere = new THREE.HemisphereLight(Light.hemisphere_sky_color, Light.hemisphere_ground_color, Light.hemisphere_intensity);
+
+            Light.sunlight = new THREE.DirectionalLight(Light.sunlight_color, Light.sunlight_intensity);
+            Light.sunlight.position.set(Light.MAX_X, Light.MAX_Y, Light.MAX_Z);
             Light.sunlight.castShadow = true;
+
+            // Light.sunlight.target = Light.player.threeObj;
 
             const dirLightHelper = new THREE.DirectionalLightHelper(Light.sunlight, 5);
             scene.add(dirLightHelper);
 
-            Light.sunlight.shadow.mapSize.width = 8192;
-            Light.sunlight.shadow.mapSize.height = 8192;
+            Light.sunlight.shadow.mapSize.width = 12000;
+            Light.sunlight.shadow.mapSize.height = 12000;
 
             var scale = 32;
             Light.sunlight.shadow.camera = new THREE.OrthographicCamera(
@@ -43,16 +56,15 @@ define( ["three", "scene", "colors"], ( THREE, scene, Colors ) =>
 
         render : () =>
         {
-            scene.add( Light.ambient );
-            scene.add( Light.hemisphere );
-            scene.add( Light.sunlight );
+            scene.add(Light.ambient);
+            scene.add(Light.hemisphere);
+            scene.add(Light.sunlight);
         },
 
-        update : ( delta ) =>
+        update : (delta) =>
         {
-
         },
     };
 
     return Light;
-} ) ;
+}) ;

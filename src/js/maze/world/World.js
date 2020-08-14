@@ -3,9 +3,9 @@ define(["three", "mazeEngine", "utils", "terrain", "light"],
 {
     var World = {
 
-        init: () =>
+        init: (clock, player) =>
         {
-            Light.init();
+            Light.init(clock, player);
             // MazeEngine.init();
             Terrain.init();
 
@@ -19,9 +19,9 @@ define(["three", "mazeEngine", "utils", "terrain", "light"],
             Terrain.render();
         },
 
-        update: (_delta, _player) =>
+        update: (_delta) =>
         {
-            Light.init();
+            Light.update();
             Terrain.update();
         },
 

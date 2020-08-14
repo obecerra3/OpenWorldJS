@@ -1,10 +1,9 @@
-define( ["three", "renderer", "camera", "container", "scene", "physics", "world", "player", "debug", "multiplayer"],
-(THREE, renderer, camera, container, scene, Physics, World, Player, Debug, Multiplayer) =>
+define( ["three", "renderer", "camera", "container", "scene", "physics", "world", "player", "debug", "multiplayer", "eventQ"],
+(THREE, renderer, camera, container, scene, Physics, World, Player, Debug, Multiplayer, EventQ) =>
 {
     var maze =
     {
         clock: new THREE.Clock(),
-        event_queue: [],
 
         init: () =>
         {
@@ -14,7 +13,7 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
             Physics.init();
             Debug.init();
             Player.init(maze.clock);
-            World.init();
+            World.init(maze.clock, Player);
         },
 
         update: () =>
@@ -26,22 +25,13 @@ define( ["three", "renderer", "camera", "container", "scene", "physics", "world"
             var time = performance.now();
             var delta = maze.clock.getDelta();
 
+            EventQ.update();
             Physics.update(delta);
             Player.update(delta);
             // Multiplayer.update(time);
             World.update(delta, Player);
 
             renderer.render(scene, camera);
-
-            if (maze.event_queue.length > 0)
-            {
-                var event_obj = maze.event_queue[0];
-                if (event_obj.verify())
-                {
-                    event_obj.action.apply(this, event_obj.arguments);
-                    maze.event_queue.shift();
-                }
-            }
 
             Debug.updateEnd();
         },
