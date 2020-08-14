@@ -1,22 +1,27 @@
-define(["three", "mazeEngine", "utils", "terrain"],
-(THREE, MazeEngine, Utils, Terrain) =>
+define(["three", "mazeEngine", "utils", "terrain", "light"],
+(THREE, MazeEngine, Utils, Terrain, Light) =>
 {
     var World = {
 
         init: () =>
         {
-            MazeEngine.init();
+            Light.init();
+            // MazeEngine.init();
             Terrain.init();
+
+            // call render
             World.render();
         },
 
         render: () =>
         {
+            Light.render();
             Terrain.render();
         },
 
         update: (_delta, _player) =>
         {
+            Light.init();
             Terrain.update();
         },
 

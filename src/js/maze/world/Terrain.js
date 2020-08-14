@@ -104,7 +104,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             var z = Utils.terrainRandom() * 100;
             var max = Number.NEGATIVE_INFINITY;
             var min = Number.POSITIVE_INFINITY;
-            var frequency = 0.1;
+            var frequency = 0.0;
             var iterations = 3;
 
             for (var j = 0; j < iterations; j++)

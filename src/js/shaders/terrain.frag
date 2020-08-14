@@ -17,7 +17,6 @@ void main()
     vec4 sand = vec4(0.8, 0.76, 0.68, uAlpha.x);
     vec4 water = vec4(0.52, 0.76, 0.87, uAlpha.x);
 
-
     if (height >= MAX_HEIGHT * 0.99)
     {
         gl_FragColor = white;

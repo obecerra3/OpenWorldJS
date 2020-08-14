@@ -41,6 +41,23 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
         init: (_clock, _username = 'empty_username', _position = new THREE.Vector3()) =>
         {
+            var sphereGeometry = new THREE.SphereBufferGeometry( 5, 32, 32 );
+            var sphereMaterial = new THREE.MeshStandardMaterial( { color: 0xff0000 } );
+            var sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+            sphere.position.set(2, 0, 10);
+            sphere.castShadow = true; //default is false
+            sphere.receiveShadow = true; //default is false
+            scene.add( sphere );
+
+            //Create a plane that receives shadows (but does not cast them)
+            var planeGeometry = new THREE.PlaneBufferGeometry( 100, 100, 32, 32 );
+            var planeMaterial = new THREE.MeshStandardMaterial( { color: 0x00ff00 } )
+            var plane = new THREE.Mesh( planeGeometry, planeMaterial );
+            plane.position.set(0, 0, 0.1);
+            plane.receiveShadow = true;
+            plane.castShadow = true;
+            scene.add( plane );
+
             Player.clock = _clock;
             Player.initInput(_clock);
             Player.initGraphics();
@@ -150,12 +167,11 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
                 Player.threeObj.traverse((obj) =>
                 {
-                    obj.castShadow = true;
-                    obj.receiveShadow = true;
-
                     // fixes boundingSphere for frustum culling thanks @github.com/gogiii
                     if (obj.isSkinnedMesh)
                     {
+                        obj.castShadow = true;
+                        obj.receiveShadow = true;
                         obj.geometry.computeBoundingSphere();
                         var sphere = new THREE.Sphere();
                         sphere.copy(obj.geometry.boundingSphere);
@@ -166,6 +182,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
                 Player.initAnimations(gltf.animations);
                 scene.add(Player.threeObj);
+
             }, undefined, (error) =>
             {
                 console.error('Player.js: gltf loader error: ', error);
