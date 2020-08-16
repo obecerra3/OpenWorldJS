@@ -1,8 +1,9 @@
 define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         'physics', 'scene', 'camera', 'utils', 'states', 'playerInputHandler',
-        'container', 'eventQ'],
+        'container', 'eventQ', 'time'],
         (THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics,
-        scene, camera, Utils, States, PlayerInputHandler, container, EventQ) => {
+        scene, camera, Utils, States, PlayerInputHandler, container, EventQ,
+        Time) => {
 
     var Player =
     {
@@ -25,7 +26,6 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         init_pos: new THREE.Vector3(0, 0, 10),
         gravity_index: 0,
         debug_count : 0,
-        clock : {},
         air_time : null,
         walk_speed : Utils.PLAYER_WALK_SPEED,
         run_speed : Utils.PLAYER_RUN_SPEED,
@@ -41,7 +41,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         //====================================================================
         //====================================================================
 
-        init: (_clock, _username = 'empty_username', _position = new THREE.Vector3()) =>
+        init: () =>
         {
             var sphereGeometry = new THREE.SphereBufferGeometry( 5, 16, 16 );
             var sphereMaterial = new THREE.MeshStandardMaterial( { color: 0xff0000 } );
@@ -60,7 +60,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
             scene.add( sphere2 );
 
             //Create a plane that receives shadows (but does not cast them)
-            var planeGeometry = new THREE.PlaneBufferGeometry( 200, 200, 32, 32 );
+            var planeGeometry = new THREE.PlaneBufferGeometry( 500, 500, 32, 32 );
             var planeMaterial = new THREE.MeshStandardMaterial( { color: 0x00ff00 } )
             var plane = new THREE.Mesh( planeGeometry, planeMaterial );
             plane.position.set(0, 0, 0.1);
@@ -68,8 +68,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
             plane.castShadow = true;
             scene.add( plane );
 
-            Player.clock = _clock;
-            Player.initInput(_clock);
+            Player.initInput();
             Player.initGraphics();
             Player.initPhysics();
 
@@ -91,9 +90,9 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
             });
         },
 
-        initInput: (_clock) =>
+        initInput: () =>
         {
-            Player.input_handler.init(_clock);
+            Player.input_handler.init();
             Player.input_handler.toggleJump = Player.toggleJump.bind(Player);
             Player.input_handler.toggleCrouch = Player.toggleCrouch.bind(Player);
             Player.input_handler.toggleFlashlight = Player.toggleFlashlight.bind(Player);
@@ -677,10 +676,10 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                 {
                     if (Player.air_time == null)
                     {
-                        Player.air_time = Player.clock.elapsedTime;
+                        Player.air_time = Time.clock.elapsedTime;
                     }
 
-                    if (Player.clock.elapsedTime - Player.air_time >= Utils.TIME_TO_FALL)
+                    if (Time.clock.elapsedTime - Player.air_time >= Utils.TIME_TO_FALL)
                     {
                         Player.anim_transitions['any to fallIdle']();
                         Player.state = States.FALL_IDLE;

@@ -5,9 +5,18 @@ define([], () =>
         // General
         // -------------------------------
         white : 0xffffff,
+        black : 0x000000,
+        red : 0xff0000,
+        green : 0x00ff00,
+        blue : 0x0000ff,
+        yellow : 0xffff00,
+        magenta : 0xff00ff,
+        cyan : 0x00ffff,
 
         // Light
         // -------------------------------
+        grass_green : 0x189d4f,
+
         // sunset palette https://www.color-hex.com/color-palette/92430
         light_yellow : 0xfdf49d,
         dark_yellow : 0xffe36f,
