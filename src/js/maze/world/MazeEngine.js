@@ -131,6 +131,7 @@ define(["three", "physics", "scene", "utils"],
                 }
             }
             walls_mesh.frustumCulled = false;
+
             scene.add(walls_mesh);
         }
     };

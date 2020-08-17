@@ -3,6 +3,7 @@ define([], () =>
 {
     var States =
     {
+        // Player States
         IDLE: "Idle",
         DEAD: "Dead",
         WALK: "Walk",

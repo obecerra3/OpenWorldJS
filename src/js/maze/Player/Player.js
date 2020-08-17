@@ -1,5 +1,9 @@
-define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'physics', 'scene', 'camera', 'utils', 'states', 'playerInputHandler', 'container'],
-(THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics, scene, camera, Utils, States, PlayerInputHandler, container) => {
+define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
+        'physics', 'scene', 'camera', 'utils', 'states', 'playerInputHandler',
+        'container', 'eventQ', 'time'],
+        (THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics,
+        scene, camera, Utils, States, PlayerInputHandler, container, EventQ,
+        Time) => {
 
     var Player =
     {
@@ -18,12 +22,10 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
         move_direction: new THREE.Vector3(),
         rigidbody_offset: new THREE.Vector3(0, 0, 0.83),
         rigidbody: {},
-        event_queue: [],
         initialized: false,
-        init_pos: new THREE.Vector3(0, 0, 10),
+        init_pos: new THREE.Vector3(0, 0, 30),
         gravity_index: 0,
         debug_count : 0,
-        clock : {},
         air_time : null,
         walk_speed : Utils.PLAYER_WALK_SPEED,
         run_speed : Utils.PLAYER_RUN_SPEED,
@@ -39,14 +41,13 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
         //====================================================================
         //====================================================================
 
-        init: (_clock, _username = 'empty_username', _position = new THREE.Vector3()) =>
+        init: () =>
         {
-            Player.clock = _clock;
-            Player.initInput(_clock);
+            Player.initInput();
             Player.initGraphics();
             Player.initPhysics();
 
-            Player.event_queue.push(
+            EventQ.push(
             {
                 verify: () =>
                 {
@@ -64,9 +65,9 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
             });
         },
 
-        initInput: (_clock) =>
+        initInput: () =>
         {
-            Player.input_handler.init(_clock);
+            Player.input_handler.init();
             Player.input_handler.toggleJump = Player.toggleJump.bind(Player);
             Player.input_handler.toggleCrouch = Player.toggleCrouch.bind(Player);
             Player.input_handler.toggleFlashlight = Player.toggleFlashlight.bind(Player);
@@ -99,7 +100,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
             // Rigidbody
             // ---------
-            Player.event_queue.push(
+            EventQ.push(
             {
                 verify: () =>
                 {
@@ -150,12 +151,11 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
                 Player.threeObj.traverse((obj) =>
                 {
-                    obj.castShadow = true;
-                    obj.receiveShadow = true;
-
                     // fixes boundingSphere for frustum culling thanks @github.com/gogiii
                     if (obj.isSkinnedMesh)
                     {
+                        obj.castShadow = true;
+                        obj.receiveShadow = true;
                         obj.geometry.computeBoundingSphere();
                         var sphere = new THREE.Sphere();
                         sphere.copy(obj.geometry.boundingSphere);
@@ -166,6 +166,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
 
                 Player.initAnimations(gltf.animations);
                 scene.add(Player.threeObj);
+
             }, undefined, (error) =>
             {
                 console.error('Player.js: gltf loader error: ', error);
@@ -473,8 +474,6 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                 Player.updateVelocity(delta);
                 Player.updateFlashlight();
             };
-
-            Player.eventQueueUpdate();
         },
 
         // This is going to change to use a PlayerState Class which will contain different
@@ -652,10 +651,10 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
                 {
                     if (Player.air_time == null)
                     {
-                        Player.air_time = Player.clock.elapsedTime;
+                        Player.air_time = Time.clock.elapsedTime;
                     }
 
-                    if (Player.clock.elapsedTime - Player.air_time >= Utils.TIME_TO_FALL)
+                    if (Time.clock.elapsedTime - Player.air_time >= Utils.TIME_TO_FALL)
                     {
                         Player.anim_transitions['any to fallIdle']();
                         Player.state = States.FALL_IDLE;
@@ -837,19 +836,6 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray', 'ph
         //  Util Methods
         //====================================================================
         //====================================================================
-
-        eventQueueUpdate: () =>
-        {
-            if (Player.event_queue.length > 0)
-            {
-                var event_obj = Player.event_queue[0];
-                if (event_obj.verify())
-                {
-                    event_obj.action.apply(this, event_obj.arguments);
-                    Player.event_queue.shift();
-                }
-            }
-        },
 
         printState: () =>
         {

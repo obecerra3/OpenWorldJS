@@ -2,8 +2,8 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer"],
-(THREE, Utils, scene, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer) =>
+define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer", "eventQ"],
+(THREE, Utils, scene, Light, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer, EventQ) =>
 {
     var Edge =
     {
@@ -39,9 +39,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
         last_player_pos : new THREE.Vector3(0, 0, 0),
         UPDATE_DISTANCE : 40.0,
 
-        // Event Queue
-        event_queue : [],
-
         init : () =>
         {
             // WebGL2 check for using textureLod vs textured2DLod
@@ -51,7 +48,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             }
 
             // Event for passing data to player
-            Terrain.event_queue.push(
+            EventQ.push(
             {
                 verify : () =>
                 {
@@ -201,6 +198,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "v2", value : Terrain.alpha },
                     uWorldWidth   :  { type : "f", value : Terrain.WORLD_WIDTH },
+                    uSunlightPos  :  { type : "v3", value : Light.sunlight_pos },
                 },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
@@ -237,8 +235,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             {
                 Terrain.updateCollider();
             }
-
-            Terrain.checkEventQueue();
         },
 
         // --------------
@@ -250,7 +246,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             var geometry = new THREE.PlaneBufferGeometry(
                 Terrain.RESOLUTION * 2, Terrain.RESOLUTION * 2,
                 Terrain.RESOLUTION * 2, Terrain.RESOLUTION * 2);
-            var material = new THREE.MeshBasicMaterial({ visible : false });
+            var material = new THREE.MeshStandardMaterial({ visible : false });
             var mesh = new THREE.Mesh(geometry, material);
             mesh.frustumCulled = false;
             scene.add(mesh);
@@ -397,21 +393,6 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
         // --------------
         //    HELPERS
         // --------------
-
-        checkEventQueue : () =>
-        {
-            if (Terrain.event_queue.length > 0)
-            {
-                Terrain.event_queue.forEach((event_obj) =>
-                {
-                    if (event_obj.verify())
-                    {
-                        event_obj.action.apply(this, event_obj.arguments);
-                        Terrain.event_queue.shift();
-                    }
-                });
-            }
-        },
 
     };
 

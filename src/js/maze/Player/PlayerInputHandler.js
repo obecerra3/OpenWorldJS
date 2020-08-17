@@ -14,7 +14,6 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
     var PlayerInput =
     {
         controls: new PointerLockControls(camera, container),
-        clock: {},
         orbit_enabled: false,
         move_forward: false,
         move_backward: false,
@@ -40,10 +39,8 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
         toggleAlpha : null,
         toggleShowRays : null,
 
-        init: (_clock) =>
+        init: () =>
         {
-            PlayerInput.clock = _clock;
-
             document.getElementById("command_console").addEventListener('change', (event) =>
             {
                 switch (event.target.value)
