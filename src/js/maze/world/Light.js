@@ -34,15 +34,15 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
             Light.hemisphere = new THREE.HemisphereLight(Light.hemisphere_sky_color, Light.hemisphere_ground_color, Light.hemisphere_intensity);
 
             Light.sunlight = new THREE.DirectionalLight(Light.sunlight_color, Light.sunlight_intensity);
-            Light.sunlight.castShadow = true;
+            // Light.sunlight.castShadow = true;
 
             // this removes artefacts from shadows
-            Light.sunlight.shadow.bias = -0.0001;
-
-            // these determine shadow quality and fps (must be a power of 2)
-            // have to account for renderer.capabilities.maxTextureSize
-            Light.sunlight.shadow.mapSize.width = 5000;
-            Light.sunlight.shadow.mapSize.height = 5000;
+            // Light.sunlight.shadow.bias = -0.0001;
+            //
+            // // these determine shadow quality and fps (must be a power of 2)
+            // // have to account for renderer.capabilities.maxTextureSize
+            // Light.sunlight.shadow.mapSize.width = 5000;
+            // Light.sunlight.shadow.mapSize.height = 5000;
 
             EventQ.push(
             {
@@ -57,13 +57,13 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
                 arguments : [],
             });
 
-            var scale = 64;
-            Light.sunlight.shadow.camera = new THREE.OrthographicCamera(
-                window.innerWidth / -scale, window.innerWidth / scale,
-                window.innerHeight / scale, window.innerHeight / -scale, 0.1, 1000);
-
-            const dirLightHelper = new THREE.DirectionalLightHelper(Light.sunlight, 5);
-            scene.add(dirLightHelper);
+            // var scale = 64;
+            // Light.sunlight.shadow.camera = new THREE.OrthographicCamera(
+            //     window.innerWidth / -scale, window.innerWidth / scale,
+            //     window.innerHeight / scale, window.innerHeight / -scale, 0.1, 1000);
+            //
+            // const dirLightHelper = new THREE.DirectionalLightHelper(Light.sunlight, 5);
+            // scene.add(dirLightHelper);
         },
 
         render : () =>
