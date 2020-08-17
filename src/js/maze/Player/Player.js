@@ -23,7 +23,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         rigidbody_offset: new THREE.Vector3(0, 0, 0.83),
         rigidbody: {},
         initialized: false,
-        init_pos: new THREE.Vector3(0, 0, 10),
+        init_pos: new THREE.Vector3(0, 0, 30),
         gravity_index: 0,
         debug_count : 0,
         air_time : null,
@@ -43,31 +43,6 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
 
         init: () =>
         {
-            var sphereGeometry = new THREE.SphereBufferGeometry( 5, 16, 16 );
-            var sphereMaterial = new THREE.MeshStandardMaterial( { color: 0xff0000 } );
-            var sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
-            sphere.position.set(2, 0, 10);
-            sphere.castShadow = true; //default is false
-            sphere.receiveShadow = true; //default is false
-            scene.add( sphere );
-
-            sphereGeometry = new THREE.SphereBufferGeometry( 2, 16, 16 );
-            sphereMaterial = new THREE.MeshStandardMaterial( { color: 0x00ffff } );
-            var sphere2 = new THREE.Mesh( sphereGeometry, sphereMaterial );
-            sphere2.position.set(-2, 10, 5);
-            sphere2.castShadow = true; //default is false
-            sphere2.receiveShadow = true; //default is false
-            scene.add( sphere2 );
-
-            //Create a plane that receives shadows (but does not cast them)
-            var planeGeometry = new THREE.PlaneBufferGeometry( 500, 500, 32, 32 );
-            var planeMaterial = new THREE.MeshStandardMaterial( { color: 0x00ff00 } )
-            var plane = new THREE.Mesh( planeGeometry, planeMaterial );
-            plane.position.set(0, 0, 0.1);
-            plane.receiveShadow = true;
-            plane.castShadow = true;
-            scene.add( plane );
-
             Player.initInput();
             Player.initGraphics();
             Player.initPhysics();

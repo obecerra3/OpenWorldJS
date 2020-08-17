@@ -40,8 +40,9 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
             Light.sunlight.shadow.bias = -0.0001;
 
             // these determine shadow quality and fps (must be a power of 2)
-            Light.sunlight.shadow.mapSize.width = 10000;
-            Light.sunlight.shadow.mapSize.height = 10000;
+            // have to account for renderer.capabilities.maxTextureSize
+            Light.sunlight.shadow.mapSize.width = 5000;
+            Light.sunlight.shadow.mapSize.height = 5000;
 
             EventQ.push(
             {
@@ -56,7 +57,7 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
                 arguments : [],
             });
 
-            var scale = 32;
+            var scale = 64;
             Light.sunlight.shadow.camera = new THREE.OrthographicCamera(
                 window.innerWidth / -scale, window.innerWidth / scale,
                 window.innerHeight / scale, window.innerHeight / -scale, 0.1, 1000);
@@ -82,11 +83,11 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
 
                 if (Time.elapsed_day_time < Time.DAY_LENGTH * 0.5)
                 {
-                    Light.sunlight_pos.z = THREE.MathUtils.lerp(-Light.MAX_Z * 0.05, Light.MAX_Z, Time.elapsed_day_time / (Time.DAY_LENGTH * 0.5));
+                    Light.sunlight_pos.z = THREE.MathUtils.lerp(-Light.MAX_Z * 0.1, Light.MAX_Z, Time.elapsed_day_time / (Time.DAY_LENGTH * 0.5));
                 }
                 else
                 {
-                    Light.sunlight_pos.z = THREE.MathUtils.lerp(Light.MAX_Z, -Light.MAX_Z * 0.05, (Time.elapsed_day_time - Time.DAY_LENGTH * 0.5) / (Time.DAY_LENGTH * 0.5));
+                    Light.sunlight_pos.z = THREE.MathUtils.lerp(Light.MAX_Z, -Light.MAX_Z * 0.1, (Time.elapsed_day_time - Time.DAY_LENGTH * 0.5) / (Time.DAY_LENGTH * 0.5));
                 }
 
                 if (Light.player.initialized) Light.sunlight.position.copy(new THREE.Vector3().addVectors(Light.sunlight_pos, Light.player.threeObj.position));

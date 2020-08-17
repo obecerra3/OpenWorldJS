@@ -7,7 +7,7 @@ define(["three", "container"],
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.gammaOutput = true;
+    renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.gammaFactor = 2.2;
     container.appendChild(renderer.domElement);
 

@@ -2,8 +2,8 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer", "eventQ"],
-(THREE, Utils, scene, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer, EventQ) =>
+define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer", "eventQ"],
+(THREE, Utils, scene, Light, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer, EventQ) =>
 {
     var Edge =
     {
@@ -101,7 +101,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             var z = Utils.terrainRandom() * 100;
             var max = Number.NEGATIVE_INFINITY;
             var min = Number.POSITIVE_INFINITY;
-            var frequency = 0.0;
+            var frequency = 0.1;
             var iterations = 3;
 
             for (var j = 0; j < iterations; j++)
@@ -198,6 +198,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "v2", value : Terrain.alpha },
                     uWorldWidth   :  { type : "f", value : Terrain.WORLD_WIDTH },
+                    uSunlightPos  :  { type : "v3", value : Light.sunlight_pos },
                 },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
@@ -245,7 +246,7 @@ define(["three", "utils", "scene", "ImprovedNoise", "camera", "physics", "player
             var geometry = new THREE.PlaneBufferGeometry(
                 Terrain.RESOLUTION * 2, Terrain.RESOLUTION * 2,
                 Terrain.RESOLUTION * 2, Terrain.RESOLUTION * 2);
-            var material = new THREE.MeshBasicMaterial({ visible : false });
+            var material = new THREE.MeshStandardMaterial({ visible : false });
             var mesh = new THREE.Mesh(geometry, material);
             mesh.frustumCulled = false;
             scene.add(mesh);

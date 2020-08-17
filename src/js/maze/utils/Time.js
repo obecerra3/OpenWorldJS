@@ -3,7 +3,7 @@ define(["three"], (THREE) =>
     var Time =
     {
         DAY_LENGTH : 30,
-        NIGHT_LENGTH : 30,
+        NIGHT_LENGTH : 0,
 
         clock: new THREE.Clock(),
         day_start_time : 0,
