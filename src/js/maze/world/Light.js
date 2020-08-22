@@ -10,20 +10,24 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
 
         // Ambient Light
         ambient : {},
-        ambient_intensity : 0.5,
+        ambient_intensity : 0.75,
         ambient_color : Colors.white,
 
         // Hemisphere Light
         hemisphere : {},
-        hemisphere_intensity : 0.25,
+        hemisphere_intensity : 0.5,
         hemisphere_sky_color : Colors.light_sky_blue1,
         hemisphere_ground_color : Colors.grass_green,
 
         // Directional Lights
         sunlight : {},
-        sunlight_intensity : 5,
+        sunlight_intensity : 1,
         sunlight_color : Colors.white,
         sunlight_pos : new THREE.Vector3(),
+        sunlight_ambient : new THREE.Vector3(0.05, 0.05, 0.05),
+        sunlight_diffuse : new THREE.Vector3(0.4, 0.4, 0.4),
+        sunlight_specular : new THREE.Vector3(0.5, 0.5, 0.5),
+        sunlight_direction : new THREE.Vector3(),
 
         init : (player) =>
         {
@@ -62,8 +66,8 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
             //     window.innerWidth / -scale, window.innerWidth / scale,
             //     window.innerHeight / scale, window.innerHeight / -scale, 0.1, 1000);
             //
-            // const dirLightHelper = new THREE.DirectionalLightHelper(Light.sunlight, 5);
-            // scene.add(dirLightHelper);
+            const dirLightHelper = new THREE.DirectionalLightHelper(Light.sunlight, 20);
+            scene.add(dirLightHelper);
         },
 
         render : () =>
@@ -90,12 +94,14 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
                     Light.sunlight_pos.z = THREE.MathUtils.lerp(Light.MAX_Z, -Light.MAX_Z * 0.1, (Time.elapsed_day_time - Time.DAY_LENGTH * 0.5) / (Time.DAY_LENGTH * 0.5));
                 }
 
-                if (Light.player.initialized) Light.sunlight.position.copy(new THREE.Vector3().addVectors(Light.sunlight_pos, Light.player.threeObj.position));
+                if (Light.player.initialized) Light.sunlight.position.addVectors(Light.sunlight_pos, Light.player.threeObj.position);
 
                 if (Time.elapsed_day_time > Time.DAY_LENGTH)
                 {
                     Light.sunlight.visible = false;
                 }
+
+                Light.sunlight_direction.subVectors(Light.sunlight.target.position, Light.sunlight.position);
             } else
             {
                 if (Time.elapsed_day_time < Time.DAY_LENGTH)

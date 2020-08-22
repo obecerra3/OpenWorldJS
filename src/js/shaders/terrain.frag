@@ -1,62 +1,86 @@
 // ----------------------
 // Terrain Frag Shader
 // ----------------------
-uniform vec2 uAlpha;
-uniform vec3 uSunlightPos;
+struct DirLight {
+    vec3 direction;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+#define MAX_HEIGHT 50.0
 
 varying vec3 vPosition;
 varying vec3 vNormal;
 
-#define MAX_HEIGHT 50.0
+uniform vec3 uLookDir;
+uniform vec2 uAlpha;
+uniform DirLight uSunlight;
+
+vec3 white = vec3(1.0, 1.0, 1.0);
+vec3 rock = vec3(0.25, 0.25, 0.28);
+vec3 grass = vec3(0.4, 0.58, 0.14);
+vec3 sand = vec3(0.8, 0.76, 0.68);
+vec3 water = vec3(0.52, 0.76, 0.87);
+
+// function prototypes
+vec3 calcHeightColor();
+vec3 calcDirectLight(vec3 color);
 
 void main()
 {
     // Base color
     vec3 color = vec3(0.0, 0.0, 0.0);
-    float height = vPosition.z;
 
-    vec3 white = vec3(1.0, 1.0, 1.0);
-    vec3 rock = vec3(0.25, 0.25, 0.28);
-    vec3 grass = vec3(0.4, 0.58, 0.14);
-    vec3 sand = vec3(0.8, 0.76, 0.68);
-    vec3 water = vec3(0.52, 0.76, 0.87);
+    color += calcHeightColor();
+    color += calcDirectLight(color);
+
+    gl_FragColor = vec4(color, uAlpha.x);
+}
+
+vec3 calcHeightColor()
+{
+    float height = vPosition.z;
 
     if (height >= MAX_HEIGHT * 0.99)
     {
-        color = white;
+        return white;
     }
     else if (height >= MAX_HEIGHT * 0.6)
     {
-        color = rock;
+        return rock;
     }
     else if (height >= MAX_HEIGHT * 0.1)
     {
-        color = grass;
+        return grass;
     }
     else if (height >= MAX_HEIGHT * 0.05)
     {
-        color = sand;
+        return sand;
     }
     else
     {
-        color = water;
+        return water;
     }
+}
 
-    // Incident light
-    float incidence = dot(normalize(uSunlightPos - vPosition), vNormal);
-    incidence = clamp(incidence, 0.01, 1.0);
-    incidence = pow(incidence, 0.05);
-    color = mix(vec3(0, 0, 0), color, incidence);
+vec3 calcDirectLight(vec3 color)
+{
+    vec3 light_dir = normalize(-uSunlight.direction);
 
-    // Mix in specular light
-    vec3 half_vector = normalize(normalize(cameraPosition - vPosition) + normalize(uSunlightPos - vPosition));
-    float specular = dot(vNormal, half_vector);
-    specular = max(0.0, specular);
-    specular = pow(specular, 25.0);
-    color = mix(color, vec3(1.0, 1.0, 1.0), 0.5 * specular);
+    //ambient
+    vec3 ambient = uSunlight.ambient * color;
 
-    // gamma color correction
-    // color = pow(color, vec3(1.0/2.2));
+    // diffuse shading
+    float diff = max(dot(vNormal, light_dir), 0.0);
+    vec3 diffuse = uSunlight.diffuse * diff * color;
 
-    gl_FragColor = vec4(color, uAlpha.x);
+    // specular light
+    vec3 half_vector = normalize(normalize(cameraPosition - vPosition) + light_dir);
+    float spec = dot(vNormal, half_vector);
+    spec = max(0.0, spec);
+    spec = pow(spec, 25.0);
+    vec3 specular = uSunlight.specular * spec * color;
+
+    return (ambient + diffuse + specular);
 }

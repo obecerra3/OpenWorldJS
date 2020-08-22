@@ -198,7 +198,16 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "v2", value : Terrain.alpha },
                     uWorldWidth   :  { type : "f", value : Terrain.WORLD_WIDTH },
-                    uSunlightPos  :  { type : "v3", value : Light.sunlight_pos },
+                    uLookDir      :  { type : "v3", value : Player.look_direction },
+                    uSunlight     :  {
+                                        value :
+                                            {
+                                             direction : Light.sunlight_direction,
+                                             ambient   : Light.sunlight_ambient,
+                                             diffuse   : Light.sunlight_diffuse,
+                                             specular  : Light.sunlight_specular
+                                            }
+                                     },
                 },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
