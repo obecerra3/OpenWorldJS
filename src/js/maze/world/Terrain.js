@@ -203,6 +203,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                                         value :
                                             {
                                              direction : Light.sunlight_direction,
+                                             position  : Light.sunlight.position,
                                              ambient   : Light.sunlight_ambient,
                                              diffuse   : Light.sunlight_diffuse,
                                              specular  : Light.sunlight_specular

@@ -200,11 +200,11 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                 // ======================
                 'idle to walk' : () =>
                 {
-                    Player.animator.prepareCrossFade('Idle', 'Walk', 0.5);
+                    Player.idleTurnCheck('Walk', 0.5);
                 },
                 'idle to crouchIdle' : () =>
                 {
-                    Player.animator.prepareCrossFade('Idle', 'CrouchIdle', 0.25);
+                    Player.idleTurnCheck('CrouchIdle', 0.25);
                 },
                 'idle to leftTurn' : () =>
                 {
@@ -407,20 +407,36 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                 },
                 'any to fallIdle' : () =>
                 {
-                    if (Player.state == States.RUN)
+                    switch (Player.state)
                     {
-                        Player.runAnimTo('FallIdle', 0.25);
-                    }
-                    else if (Player.state == States.WALK)
-                    {
-                        Player.walkAnimTo('FallIdle', 0.25);
-                    }
-                    else
-                    {
-                        Player.animator.prepareCrossFade(Player.state, 'FallIdle', 0.25);
+                        case States.IDLE:
+                            Player.idleTurnCheck('FallIdle', 0.25);
+                            break;
+                        case States.WALK:
+                            Player.walkAnimTo('FallIdle', 0.25);
+                            break;
+                        case States.RUN:
+                            Player.runAnimTo('FallIdle', 0.25);
+                            break;
+                        default:
+                            Player.animator.prepareCrossFade(Player.state, 'FallIdle', 0.25);
+                            break;
                     }
                 },
             }
+        },
+
+        idleTurnCheck : (anim, duration = 0.5) =>
+        {
+            if (Player.animator.animation_data['LeftTurn'].action.enabled)
+            {
+                Player.animator.prepareCrossFade('LeftTurn', 'Idle', 1.0);
+            }
+            else if (Player.animator.animation_data['RightTurn'].action.enabled)
+            {
+                Player.animator.prepareCrossFade('RightTurn', 'Idle', 1.0);
+            }
+            Player.animator.prepareCrossFade('Idle', anim, duration);
         },
 
         backwardAnimCheck : (anim) =>
