@@ -6,8 +6,7 @@ uniform vec3 uGlobalOffset;
 uniform sampler2D uHeightData;
 uniform vec2 uTileOffset;
 uniform float uScale;
-uniform float uResolution;
-uniform float uWorldWidth;
+uniform vec2 uCenter;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -17,7 +16,7 @@ const float lod = 0.0;
 
 float getHeight(vec3 pos)
 {
-    vec2 st = pos.xy / uWorldWidth;
+    vec2 st = (pos.xy - uCenter.xy + float(WORLD_WIDTH * 2)) / float(WORLD_WIDTH * 4);
 
     #ifdef WEBGL2
         float height = 250.0 * textureLod(uHeightData, st, lod).a;
@@ -31,7 +30,7 @@ float getHeight(vec3 pos)
 vec3 getNormal()
 {
     // Get 2 vectors perpendicular to the unperturbed normal, and create at point at each (relative to position)
-    float delta = (vMorphFactor + 1.0) * uScale / uResolution;
+    float delta = (vMorphFactor + 1.0) * uScale / float(RESOLUTION);
     vec3 dA = delta * normalize(cross(normal.yzx, normal));
     vec3 dB = delta * normalize(cross(dA, normal));
     vec3 p = vPosition;
@@ -63,7 +62,7 @@ void main()
     vPosition = uScale * position + vec3(uTileOffset, 0.0) + uGlobalOffset;
 
     // Snap to grid
-    float grid = uScale / uResolution;
+    float grid = uScale / float(RESOLUTION);
     vPosition = floor(vPosition / grid) * grid;
 
     // Morph between zoom layers

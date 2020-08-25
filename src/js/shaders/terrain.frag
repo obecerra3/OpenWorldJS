@@ -15,7 +15,7 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 
 uniform vec3 uLookDir;
-uniform vec2 uAlpha;
+uniform float uAlpha;
 uniform DirLight uSunlight;
 
 vec3 white = vec3(1.0, 1.0, 1.0);
@@ -36,7 +36,7 @@ void main()
     color += calcHeightColor();
     color += calcDirectLight(color);
 
-    gl_FragColor = vec4(color, uAlpha.x);
+    gl_FragColor = vec4(color, uAlpha);
 }
 
 vec3 calcHeightColor()
@@ -86,7 +86,6 @@ vec3 calcDirectLight(vec3 color)
         spec = pow(spec, 25.0);
         specular = uSunlight.specular * spec * color;
     }
-
 
     return (ambient + diffuse + specular);
 }

@@ -17,35 +17,36 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
     var Terrain =
     {
         // rendering
-        WORLD_WIDTH : 1024,
+        WORLD_WIDTH : 256.0,
         LEVELS : 4,
         RESOLUTION : 64.0,
         TILE_WIDTH : 1,
+
         obj : new THREE.Object3D(),
         geometry : new THREE.PlaneBufferGeometry(),
         height_data_texture : new THREE.DataTexture(),
         height_data : [],
         frag_shader : terrain_frag_shader,
-        init_scale : 64.0,
+        init_scale : 32.0,
         global_offset : new THREE.Vector3(0, 0, 0),
-        alpha : new THREE.Vector2(1.0, 0.0),
+        alpha : 1.0,
         isWebGL2 : renderer.capabilities.isWebGL2,
+        height_data_center : new THREE.Vector2(0, 0),
+        perlin : new ImprovedNoise(),
+        rand_z : Utils.terrainRandom() * 100,
+        negative_bound : Math.pow(2, 32),
 
         // physics
         collider_meshes : [],
         collider_mesh : {},
         init_chunk_pos : new THREE.Vector2(0, 0),
         collider : {},
-        last_player_pos : new THREE.Vector3(0, 0, 0),
-        UPDATE_DISTANCE : 40.0,
+        last_collider_pos : new THREE.Vector3(0, 0, 0),
 
         init : () =>
         {
-            // WebGL2 check for using textureLod vs textured2DLod
-            if (Terrain.isWebGL2)
-            {
-                terrain_vert_shader.define("WEBGL2", 1.0);
-            }
+            // webgl2.0 : textureLod vs webgl1.0 : texture2DLod in terrain.vert
+            if (Terrain.isWebGL2) terrain_vert_shader.define("WEBGL2", 1.0);
 
             // Event for passing data to player
             EventQ.push(
@@ -58,84 +59,107 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 {
                     Player.collider.addMesh("Terrain_Ground", Terrain.collider_mesh);
                     Player.input_handler.toggleAlpha = Terrain.toggleAlpha.bind(Terrain);
+
+                    // initialize the ammo collider
+                    Terrain.updateCollider();
                 },
                 arguments : [],
             });
 
-            // create height_data
-            Terrain.createHeightData();
+            // // create height_data using Promise
+            Terrain.updateHeightData().then((uid) =>
+            {
+                // only do this if updateHeightData is done
+                // init Collider mesh and data
+                Terrain.createColliderMesh();
 
-            // init Collider mesh and data
-            Terrain.createColliderMesh();
+                // set the frag shader
+                Terrain.frag_shader = terrain_frag_shader;
 
-            // set the frag shader
-            Terrain.frag_shader = terrain_frag_shader;
+                // create material
+                Terrain.material = Terrain.createMaterial();
 
-            // create material
-            Terrain.material = Terrain.createMaterial();
+                // init the geometry
+                Terrain.geometry = new THREE.PlaneBufferGeometry(
+                    Terrain.TILE_WIDTH, Terrain.TILE_WIDTH,
+                    Terrain.RESOLUTION, Terrain.RESOLUTION);
 
-            // init the geometry
-            Terrain.geometry = new THREE.PlaneBufferGeometry(
-                Terrain.TILE_WIDTH, Terrain.TILE_WIDTH,
-                Terrain.RESOLUTION, Terrain.RESOLUTION);
+                var translation_matrix = new THREE.Matrix4();
+                translation_matrix.makeTranslation(0.5, 0.5, 0.0);
+                Terrain.geometry.applyMatrix4(translation_matrix);
 
-            var translation_matrix = new THREE.Matrix4();
-            translation_matrix.makeTranslation(0.5, 0.5, 0.0);
-            Terrain.geometry.applyMatrix4(translation_matrix);
-
-            // init tiles
-            Terrain.initTiles();
+                // init tiles
+                Terrain.initTiles();
+            });
         },
 
         // --------------
         //   RENDERING
         // --------------
 
-        createHeightData : () =>
+        updateHeightData : (new_center_pos = null) =>
         {
-            var width = Terrain.WORLD_WIDTH;
-            var size = width * width;
-            var data = new Uint8Array(size);
-            var perlin = new ImprovedNoise();
-            var quality = 1;
-            var z = Utils.terrainRandom() * 100;
-            var max = Number.NEGATIVE_INFINITY;
-            var min = Number.POSITIVE_INFINITY;
-            var frequency = 0.1;
-            var iterations = 3;
-
-            for (var j = 0; j < iterations; j++)
+            return new Promise((resolve, reject) =>
             {
-                for (var i = 0; i < size; i++)
+                if (new_center_pos)
                 {
-                    var x = i % width;
-                    var y = Math.floor(i / width);
-
-                    data[i] += Math.abs(perlin.noise((x / quality) * frequency, (y / quality) * frequency, z  * frequency) * quality);
-
-                    if (j == iterations - 1)
-                    {
-                        //last iteration so time to check the heights for the stats
-                        if (data[i] > max) max = data[i];
-
-                        if (data[i] < min) min = data[i];
-                    }
+                    Terrain.height_data_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
                 }
-                quality *= 5;
-            }
 
-            // console.log("Data Stats : max : " +  max + ", min : " +  min);
-            // console.log("Data : ");
-            // console.log(data);
+                var width = Terrain.WORLD_WIDTH * 4;
+                var width2 = Terrain.WORLD_WIDTH * 2;
+                var size = width * width;
+                var data = new Uint8Array(size);
+                var quality = 1;
+                var max = Number.NEGATIVE_INFINITY;
+                var min = Number.POSITIVE_INFINITY;
+                var frequency = 0.1;
+                var iterations = 3;
 
-            Terrain.height_data = data;
-            Terrain.height_data_texture = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
-            Terrain.height_data_texture.wrapS = THREE.MirroredRepeatWrapping;
-            Terrain.height_data_texture.wrapT = THREE.MirroredRepeatWrapping;
-            Terrain.height_data_texture.magFilter = THREE.LinearFilter;
-            Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
-            Terrain.height_data_texture.generateMipmaps = true;
-            Terrain.height_data_texture.needsUpdate = true;
+                for (var j = 0; j < iterations; j++)
+                {
+                    for (var yi = 0; yi < width; yi++)
+                    {
+                        for (var xi = 0; xi < width; xi++)
+                        {
+                            var x = (xi - width2 + Terrain.height_data_center.x) + Terrain.negative_bound;
+                            var y = (yi - width2 + Terrain.height_data_center.y) + Terrain.negative_bound;
+                            var height = Math.abs(Terrain.perlin.noise((x / quality) * frequency, (y / quality) * frequency, Terrain.rand_z * frequency) * quality);
+                            data[xi + yi * width] += height;
+
+                            // if (j == iterations - 1)
+                            // {
+                            //     //last iteration so time to check the heights for the stats
+                            //     if (data[xi + yi * width] > max) max = data[xi + yi * width];
+                            //
+                            //     if (data[xi + yi * width] < min) min = data[xi + yi * width];
+                            // }
+                        }
+                    }
+                    quality *= 5;
+                }
+                // console.log("Data Stats : max : " +  max + ", min : " +  min);
+                // console.log("Data : ");
+                // console.log(data);
+
+                Terrain.height_data = data;
+                Terrain.height_data_texture = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
+                // Terrain.height_data_texture.wrapS = THREE.MirroredRepeatWrapping;
+                // Terrain.height_data_texture.wrapT = THREE.MirroredRepeatWrapping;
+                Terrain.height_data_texture.magFilter = THREE.LinearFilter;
+                Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                Terrain.height_data_texture.generateMipmaps = true;
+                Terrain.height_data_texture.needsUpdate = true;
+
+                for (var c in Terrain.obj.children)
+                {
+                    var tile = Terrain.obj.children[c];
+                    tile.material.uniforms.uCenter = { type : "v2", value : Terrain.height_data_center };
+                    tile.material.uniforms.uHeightData = { type : "t", value : Terrain.height_data_texture };
+                }
+
+                return resolve("height map generated");
+            });
         },
 
         initTiles : () =>
@@ -188,17 +212,16 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         {
             return new THREE.ShaderMaterial(
             {
-                uniforms  :
+                uniforms :
                 {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : Terrain.global_offset },
                     uHeightData   :  { type : "t", value : Terrain.height_data_texture },
-                    uResolution   :  { type : "f", value : Terrain.RESOLUTION },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
-                    uAlpha        :  { type : "v2", value : Terrain.alpha },
-                    uWorldWidth   :  { type : "f", value : Terrain.WORLD_WIDTH },
+                    uAlpha        :  { type : "f", value : Terrain.alpha },
                     uLookDir      :  { type : "v3", value : Player.look_direction },
+                    uCenter       :  { type : "v2", value : Terrain.height_data_center },
                     uSunlight     :  {
                                         value :
                                             {
@@ -210,6 +233,11 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                                             }
                                      },
                 },
+                defines :
+                {
+                    RESOLUTION  : Terrain.RESOLUTION,
+                    WORLD_WIDTH : Terrain.WORLD_WIDTH,
+                },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
                 transparent : true,
@@ -218,7 +246,12 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
         toggleAlpha : (a) =>
         {
-            Terrain.alpha.x = a;
+            Terrain.alpha = a;
+            for (var c in Terrain.obj.children)
+            {
+                var tile = Terrain.obj.children[c];
+                tile.material.uniforms.uAlpha = { type : "f", value : Terrain.alpha };
+            }
         },
 
         render : () =>
@@ -237,13 +270,18 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             Terrain.global_offset.x = camera.position.x;
             Terrain.global_offset.y = camera.position.y;
 
-            // if the player exists in the scene and (the player has moved
-            // UPDATE_DISTANCE or the collider is empty) --> updateCurrentChunkCollider
-            if (Object.keys(Player.threeObj).length != 0
-                && (Utils.distance2D(Player.threeObj.position, Terrain.last_player_pos) > Terrain.UPDATE_DISTANCE
-                || Object.keys(Terrain.collider).length === 0))
+            if (Player.initialized)
             {
-                Terrain.updateCollider();
+
+                if (Utils.distance2D(Player.threeObj.position, Terrain.last_collider_pos) >= Terrain.RESOLUTION * 0.75)
+                {
+                    Terrain.updateCollider();
+                }
+
+                if (Utils.distance2D(Player.threeObj.position, Terrain.height_data_center) >= Terrain.WORLD_WIDTH)
+                {
+                    Terrain.updateHeightData(Player.threeObj.position);
+                }
             }
         },
 
@@ -298,8 +336,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             // get chunk data
             var cd = Terrain.getChunkData();
 
-            // update last_player_pos
-            Terrain.last_player_pos.copy(Player.threeObj.position);
+            // update last_collider_pos
+            Terrain.last_collider_pos.copy(Player.threeObj.position);
 
             // create collider if one doesn't exist, else update existing collider
             if (Object.keys(Terrain.collider).length == 0)
@@ -317,62 +355,32 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             var new_height_data = [];
             var min_height = Number.POSITIVE_INFINITY;
             var max_height = Number.NEGATIVE_INFINITY;
-            var width = Terrain.RESOLUTION;
-            var xw = 0, yw = 0, flipX = false, flipY = false, xi = 0, yi = 0;
+            var res = Terrain.RESOLUTION;
+            var width = Terrain.WORLD_WIDTH * 4;
+            var width2 = Terrain.WORLD_WIDTH * 2;
+            var xi = 0, yi = 0;
             var vertices = [];
 
             Terrain.init_chunk_pos.x = Math.round(Terrain.global_offset.x);
             Terrain.init_chunk_pos.y = Math.round(Terrain.global_offset.y);
 
-            var i = 0;
+            var x_count = 0;
+            var y_count = 0;
+            var h_count = 0;
+            var h = 0;
+            var start_counting = false;
 
-            for (var y = Terrain.init_chunk_pos.y - width; y < Terrain.init_chunk_pos.y + width; y++)
+            for (var y = Terrain.init_chunk_pos.y - res; y < Terrain.init_chunk_pos.y + res; y++)
             {
-                for (var x = Terrain.init_chunk_pos.x - width; x < Terrain.init_chunk_pos.x + width; x++)
+                for (var x = Terrain.init_chunk_pos.x - res; x < Terrain.init_chunk_pos.x + res; x++)
                 {
-                    // flip check
-                    xw = Math.floor(Math.abs(x) / Terrain.WORLD_WIDTH);
-                    yw = Math.floor(Math.abs(y) / Terrain.WORLD_WIDTH);
-
-                    if (xw >= 1 && xw % 2 == 1)
-                    {
-                        flipX = true;
-                    }
-
-                    if (yw >= 1 && yw % 2 == 1)
-                    {
-                        flipY = true;
-                    }
-
-                    // mod and absolute x, y
-                    xi = Math.abs(x % Terrain.WORLD_WIDTH);
-                    yi = Math.abs(y % Terrain.WORLD_WIDTH);
-
-                    if (xi == 0 && Math.abs(x) >= Terrain.WORLD_WIDTH)
-                    {
-                        xi = 1;
-                    }
-                    if (yi == 0 && Math.abs(y) >= Terrain.WORLD_WIDTH)
-                    {
-                        yi = 1;
-                    }
-
-                    // flip
-                    if (flipX)
-                    {
-                        flipX = false;
-                        xi = Terrain.WORLD_WIDTH - xi;
-                    }
-
-                    if (flipY)
-                    {
-                        flipY = false;
-                        yi = Terrain.WORLD_WIDTH - yi;
-                    }
+                    xi = (x + width2 - Terrain.height_data_center.x) % width;
+                    yi = (y + width2 - Terrain.height_data_center.y) % width;
 
                     // assign height and find min/ max
-                    var h = Terrain.height_data[xi + yi * 1024];
+                    h = Terrain.height_data[xi + yi * width];
                     new_height_data.push(h);
+
                     if (h > max_height) max_height = h;
                     if (h < min_height) min_height = h;
 
@@ -380,19 +388,18 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     vertices.push(x - Terrain.init_chunk_pos.x, y - Terrain.init_chunk_pos.y, h);
                 }
             }
-
             // assign indices and vertices to mesh
             Terrain.collider_mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
             Terrain.collider_mesh.position.copy(new THREE.Vector3(Terrain.init_chunk_pos.x, Terrain.init_chunk_pos.y, 0.0));
 
             // cd stands for Chunk Data
             var cd = {};
-            cd.width = width * 2;
-            cd.depth = width * 2;
+            cd.width = res * 2;
+            cd.depth = res * 2;
             cd.min_height = min_height;
             cd.max_height = max_height;
-            cd.width_extents = width * 2;
-            cd.depth_extents = width * 2;
+            cd.width_extents = res * 2;
+            cd.depth_extents = res * 2;
             cd.height_data = new_height_data;
             cd.center_pos = new THREE.Vector3(Terrain.init_chunk_pos.x,
                                               Terrain.init_chunk_pos.y,

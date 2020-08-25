@@ -1,7 +1,7 @@
 
 define(["three", "container"], (THREE, container) =>
 {
-    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
 
     window.addEventListener('resize', () =>
     {
