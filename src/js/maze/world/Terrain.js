@@ -2,8 +2,8 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer", "eventQ"],
-(THREE, Utils, scene, Light, ImprovedNoise, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer, EventQ) =>
+define(["three", "utils", "scene", "light", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer", "eventQ"],
+(THREE, Utils, scene, Light, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer, EventQ) =>
 {
     var Edge =
     {
@@ -17,7 +17,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
     var Terrain =
     {
         // rendering
-        WORLD_WIDTH : 256.0,
+        WORLD_WIDTH : 8192.0,
+        DATA_WIDTH : Math.pow(2, 14),
         LEVELS : 4,
         RESOLUTION : 64.0,
         TILE_WIDTH : 1,
@@ -31,10 +32,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         global_offset : new THREE.Vector3(0, 0, 0),
         alpha : 1.0,
         isWebGL2 : renderer.capabilities.isWebGL2,
-        height_data_center : new THREE.Vector2(0, 0),
-        perlin : new ImprovedNoise(),
-        rand_z : Utils.terrainRandom() * 100,
-        negative_bound : Math.pow(2, 32),
 
         // physics
         collider_meshes : [],
@@ -66,8 +63,10 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 arguments : [],
             });
 
-            // // create height_data using Promise
-            Terrain.updateHeightData().then((uid) =>
+            console.log(renderer.capabilities.maxTextureSize);
+
+            // Terrain.updateHeightData()
+            Terrain.readHeightData().then((uid) =>
             {
                 // only do this if updateHeightData is done
                 // init Collider mesh and data
@@ -97,7 +96,30 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         //   RENDERING
         // --------------
 
-        updateHeightData : (new_center_pos = null) =>
+        readHeightData : () =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                const loader = new THREE.FileLoader();
+
+                loader.setResponseType("arraybuffer");
+
+                loader.load("js/data/HeightData", (buffer) =>
+                {
+                    const data = new Uint8Array(buffer);
+                    Terrain.height_data = data;
+                    Terrain.height_data_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                    Terrain.height_data_texture.magFilter = THREE.LinearFilter;
+                    Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                    Terrain.height_data_texture.generateMipmaps = true;
+                    Terrain.height_data_texture.needsUpdate = true;
+
+                    return resolve("height data read from file");
+                });
+            });
+        },
+
+        /*updateHeightData : (new_center_pos = null) =>
         {
             return new Promise((resolve, reject) =>
             {
@@ -114,7 +136,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 var max = Number.NEGATIVE_INFINITY;
                 var min = Number.POSITIVE_INFINITY;
                 var frequency = 0.1;
-                var iterations = 3;
+                var iterations = 4;
 
                 for (var j = 0; j < iterations; j++)
                 {
@@ -160,7 +182,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
                 return resolve("height map generated");
             });
-        },
+        },*/
 
         initTiles : () =>
         {
@@ -221,7 +243,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "f", value : Terrain.alpha },
                     uLookDir      :  { type : "v3", value : Player.look_direction },
-                    uCenter       :  { type : "v2", value : Terrain.height_data_center },
                     uSunlight     :  {
                                         value :
                                             {
@@ -235,8 +256,9 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 },
                 defines :
                 {
-                    RESOLUTION  : Terrain.RESOLUTION,
-                    WORLD_WIDTH : Terrain.WORLD_WIDTH,
+                    RESOLUTION   : Terrain.RESOLUTION,
+                    DATA_WIDTH   : Terrain.DATA_WIDTH,
+                    DATA_WIDTH_2 : Terrain.DATA_WIDTH / 2,
                 },
                 vertexShader  : terrain_vert_shader.value,
                 fragmentShader  : Terrain.frag_shader.value,
@@ -270,18 +292,9 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             Terrain.global_offset.x = camera.position.x;
             Terrain.global_offset.y = camera.position.y;
 
-            if (Player.initialized)
+            if (Player.initialized && (Utils.distance2D(Player.threeObj.position, Terrain.last_collider_pos) >= Terrain.RESOLUTION * 0.75))
             {
-
-                if (Utils.distance2D(Player.threeObj.position, Terrain.last_collider_pos) >= Terrain.RESOLUTION * 0.75)
-                {
-                    Terrain.updateCollider();
-                }
-
-                if (Utils.distance2D(Player.threeObj.position, Terrain.height_data_center) >= Terrain.WORLD_WIDTH)
-                {
-                    Terrain.updateHeightData(Player.threeObj.position);
-                }
+                Terrain.updateCollider();
             }
         },
 
@@ -356,26 +369,20 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             var min_height = Number.POSITIVE_INFINITY;
             var max_height = Number.NEGATIVE_INFINITY;
             var res = Terrain.RESOLUTION;
-            var width = Terrain.WORLD_WIDTH * 4;
-            var width2 = Terrain.WORLD_WIDTH * 2;
+            var width = Terrain.DATA_WIDTH;
+            var width2 = Terrain.DATA_WIDTH / 2;
             var xi = 0, yi = 0;
             var vertices = [];
 
             Terrain.init_chunk_pos.x = Math.round(Terrain.global_offset.x);
             Terrain.init_chunk_pos.y = Math.round(Terrain.global_offset.y);
 
-            var x_count = 0;
-            var y_count = 0;
-            var h_count = 0;
-            var h = 0;
-            var start_counting = false;
-
             for (var y = Terrain.init_chunk_pos.y - res; y < Terrain.init_chunk_pos.y + res; y++)
             {
                 for (var x = Terrain.init_chunk_pos.x - res; x < Terrain.init_chunk_pos.x + res; x++)
                 {
-                    xi = (x + width2 - Terrain.height_data_center.x) % width;
-                    yi = (y + width2 - Terrain.height_data_center.y) % width;
+                    xi = (x + width2) % width;
+                    yi = (y + width2) % width;
 
                     // assign height and find min/ max
                     h = Terrain.height_data[xi + yi * width];

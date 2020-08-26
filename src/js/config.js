@@ -9,7 +9,6 @@ var require =
         "detector" : { exports : "Detector" },
         "stats" : { exports : "Stats" },
         "ImprovedNoise": { exports: "ImprovedNoise" },
-
     },
     paths :
     {

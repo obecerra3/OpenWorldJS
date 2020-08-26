@@ -6,7 +6,6 @@ uniform vec3 uGlobalOffset;
 uniform sampler2D uHeightData;
 uniform vec2 uTileOffset;
 uniform float uScale;
-uniform vec2 uCenter;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -16,7 +15,7 @@ const float lod = 0.0;
 
 float getHeight(vec3 pos)
 {
-    vec2 st = (pos.xy - uCenter.xy + float(WORLD_WIDTH * 2)) / float(WORLD_WIDTH * 4);
+    vec2 st = (pos.xy + float(DATA_WIDTH_2)) / float(DATA_WIDTH);
 
     #ifdef WEBGL2
         float height = 250.0 * textureLod(uHeightData, st, lod).a;

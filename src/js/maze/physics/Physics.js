@@ -26,7 +26,8 @@ define(["three", "ammo", "utils"],
             var solver                 = new Physics.ammo.btSequentialImpulseConstraintSolver();
 
             Physics.physicsWorld = new Physics.ammo.btDiscreteDynamicsWorld(Physics.dispatcher, overlappingPairCache, solver, collisionConfiguration);
-            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, Utils.GRAVITY_NORMAL));
+            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, 0));
+
             Physics.tempBtTransform = new Physics.ammo.btTransform();
         },
 

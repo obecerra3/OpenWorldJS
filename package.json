@@ -22,7 +22,5 @@
         "watchify": "^3.11.1"
     },
     "dependencies": {
-        "seedrandom": "^3.0.5",
-        "three": "^0.112.1"
     }
 }
