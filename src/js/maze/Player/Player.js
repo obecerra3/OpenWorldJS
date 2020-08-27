@@ -875,6 +875,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
 
         printState: () =>
         {
+            console.log(Player.threeObj.position);
         },
 
     }

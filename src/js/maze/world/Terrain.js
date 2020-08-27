@@ -17,7 +17,7 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
     var Terrain =
     {
         // rendering
-        WORLD_WIDTH : 8192.0,
+        WORLD_WIDTH : Math.pow(2, 13),
         DATA_WIDTH : Math.pow(2, 14),
         LEVELS : 4,
         RESOLUTION : 64.0,
