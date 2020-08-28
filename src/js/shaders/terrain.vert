@@ -2,10 +2,18 @@
 // ----------------------
 // Terrain Vertex Shader
 // ----------------------
+struct HeightData
+{
+    sampler2D top_left;
+    sampler2D top_right;
+    sampler2D bot_left;
+    sampler2D bot_right;
+}
+
 uniform vec3 uGlobalOffset;
-uniform sampler2D uHeightData;
 uniform vec2 uTileOffset;
 uniform float uScale;
+uniform HeightData uHeightData;
 
 varying vec3 vNormal;
 varying vec3 vPosition;

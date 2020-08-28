@@ -25,7 +25,10 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
 
         obj : new THREE.Object3D(),
         geometry : new THREE.PlaneBufferGeometry(),
-        height_data_texture : new THREE.DataTexture(),
+        top_left_texture : new THREE.DataTexture(),
+        top_right_texture : new THREE.DataTexture(),
+        bot_left_texture : new THREE.DataTexture(),
+        bot_right_texture : new THREE.DataTexture(),
         height_data : [],
         frag_shader : terrain_frag_shader,
         init_scale : 32.0,
@@ -104,18 +107,67 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
 
                 loader.setResponseType("arraybuffer");
 
-                loader.load("js/data/HeightData", (buffer) =>
+                loader.load("js/data/top_left", (buffer) =>
                 {
+                    console.log("loaded top_left");
                     const data = new Uint8Array(buffer);
                     Terrain.height_data = data;
-                    Terrain.height_data_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                    Terrain.height_data_texture.magFilter = THREE.LinearFilter;
-                    Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                    Terrain.height_data_texture.generateMipmaps = true;
-                    Terrain.height_data_texture.needsUpdate = true;
-
-                    return resolve("height data read from file");
+                    Terrain.top_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                    Terrain.top_left_texture.magFilter = THREE.LinearFilter;
+                    Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                    Terrain.top_left_texture.generateMipmaps = true;
+                    Terrain.top_left_texture.needsUpdate = true;
+                    loadTopRight();
                 });
+
+                var loadTopRight = () =>
+                {
+                    loader.load("js/data/top_right", (buffer) =>
+                    {
+                        console.log("loaded top_right");
+                        const data = new Uint8Array(buffer);
+                        // Terrain.height_data = data;
+                        Terrain.top_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                        Terrain.top_right_texture.magFilter = THREE.LinearFilter;
+                        Terrain.top_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                        Terrain.top_right_texture.generateMipmaps = true;
+                        Terrain.top_right_texture.needsUpdate = true;
+                        loadBotLeft();
+                    });
+                }
+
+                var loadBotLeft = () =>
+                {
+                    loader.load("js/data/bot_left", (buffer) =>
+                    {
+                        console.log("loaded bot_left");
+                        const data = new Uint8Array(buffer);
+                        // Terrain.height_data = data;
+                        Terrain.bot_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                        Terrain.bot_left_texture.magFilter = THREE.LinearFilter;
+                        Terrain.bot_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                        Terrain.bot_left_texture.generateMipmaps = true;
+                        Terrain.bot_left_texture.needsUpdate = true;
+                        loadBotLeft();
+                    });
+                }
+
+                var loadBotRight = () =>
+                {
+                    loader.load("js/data/bot_right", (buffer) =>
+                    {
+                        const data = new Uint8Array(buffer);
+                        // Terrain.height_data = data;
+                        Terrain.bot_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                        Terrain.bot_right_texture.magFilter = THREE.LinearFilter;
+                        Terrain.bot_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                        Terrain.bot_right_texture.generateMipmaps = true;
+                        Terrain.bot_right_texture.needsUpdate = true;
+
+                        console.log("ALL TEXTURES LOADED");
+                        return resole("all textures loaded");
+                    });
+                }
             });
         },
 
@@ -238,7 +290,6 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                 {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : Terrain.global_offset },
-                    uHeightData   :  { type : "t", value : Terrain.height_data_texture },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "f", value : Terrain.alpha },
@@ -251,6 +302,15 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                                              ambient   : Light.sunlight_ambient,
                                              diffuse   : Light.sunlight_diffuse,
                                              specular  : Light.sunlight_specular
+                                            }
+                                     },
+                    uHeightData   :  {
+                                        value :
+                                            {
+                                                top_left : Terrain.top_left_texture,
+                                                top_right : Terrain.top_right_texture,
+                                                bot_left : Terrain.bot_left_texture,
+                                                bot_right : Terrain.bot_right_texture,
                                             }
                                      },
                 },

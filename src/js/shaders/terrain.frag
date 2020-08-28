@@ -1,7 +1,8 @@
 // ----------------------
 // Terrain Frag Shader
 // ----------------------
-struct DirLight {
+struct DirLight
+{
     vec3 direction;
     vec3 position;
     vec3 ambient;
