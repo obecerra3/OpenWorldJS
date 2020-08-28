@@ -18,7 +18,7 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
     {
         // rendering
         WORLD_WIDTH : Math.pow(2, 13),
-        DATA_WIDTH : Math.pow(2, 14),
+        DATA_WIDTH : Math.pow(2, 12),
         LEVELS : 4,
         RESOLUTION : 64.0,
         TILE_WIDTH : 1,
@@ -107,9 +107,10 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
 
                 loader.setResponseType("arraybuffer");
 
+                var count = 0;
+
                 loader.load("js/data/top_left", (buffer) =>
                 {
-                    console.log("loaded top_left");
                     const data = new Uint8Array(buffer);
                     Terrain.height_data = data;
                     Terrain.top_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
@@ -117,56 +118,56 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                     Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
                     Terrain.top_left_texture.generateMipmaps = true;
                     Terrain.top_left_texture.needsUpdate = true;
-                    loadTopRight();
+                    console.log("loaded top_left");
+                    finished();
                 });
 
-                var loadTopRight = () =>
+                loader.load("js/data/top_right", (buffer) =>
                 {
-                    loader.load("js/data/top_right", (buffer) =>
-                    {
-                        console.log("loaded top_right");
-                        const data = new Uint8Array(buffer);
-                        // Terrain.height_data = data;
-                        Terrain.top_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                        Terrain.top_right_texture.magFilter = THREE.LinearFilter;
-                        Terrain.top_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                        Terrain.top_right_texture.generateMipmaps = true;
-                        Terrain.top_right_texture.needsUpdate = true;
-                        loadBotLeft();
-                    });
-                }
+                    const data = new Uint8Array(buffer);
+                    // Terrain.height_data = data;
+                    Terrain.top_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                    Terrain.top_right_texture.magFilter = THREE.LinearFilter;
+                    Terrain.top_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                    Terrain.top_right_texture.generateMipmaps = true;
+                    Terrain.top_right_texture.needsUpdate = true;
+                    console.log("loaded top_right");
+                    finished();
+                });
 
-                var loadBotLeft = () =>
+                loader.load("js/data/bot_left", (buffer) =>
                 {
-                    loader.load("js/data/bot_left", (buffer) =>
-                    {
-                        console.log("loaded bot_left");
-                        const data = new Uint8Array(buffer);
-                        // Terrain.height_data = data;
-                        Terrain.bot_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                        Terrain.bot_left_texture.magFilter = THREE.LinearFilter;
-                        Terrain.bot_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                        Terrain.bot_left_texture.generateMipmaps = true;
-                        Terrain.bot_left_texture.needsUpdate = true;
-                        loadBotLeft();
-                    });
-                }
+                    const data = new Uint8Array(buffer);
+                    // Terrain.height_data = data;
+                    Terrain.bot_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                    Terrain.bot_left_texture.magFilter = THREE.LinearFilter;
+                    Terrain.bot_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                    Terrain.bot_left_texture.generateMipmaps = true;
+                    Terrain.bot_left_texture.needsUpdate = true;
+                    console.log("loaded bot_left");
+                    finished();
+                });
 
-                var loadBotRight = () =>
+                loader.load("js/data/bot_right", (buffer) =>
                 {
-                    loader.load("js/data/bot_right", (buffer) =>
-                    {
-                        const data = new Uint8Array(buffer);
-                        // Terrain.height_data = data;
-                        Terrain.bot_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                        Terrain.bot_right_texture.magFilter = THREE.LinearFilter;
-                        Terrain.bot_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                        Terrain.bot_right_texture.generateMipmaps = true;
-                        Terrain.bot_right_texture.needsUpdate = true;
+                    const data = new Uint8Array(buffer);
+                    // Terrain.height_data = data;
+                    Terrain.bot_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                    Terrain.bot_right_texture.magFilter = THREE.LinearFilter;
+                    Terrain.bot_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                    Terrain.bot_right_texture.generateMipmaps = true;
+                    Terrain.bot_right_texture.needsUpdate = true;
+                    console.log("loaded bot_right");
+                    finished();
+                });
 
+                var finished = () =>
+                {
+                    if (++count == 4)
+                    {
                         console.log("ALL TEXTURES LOADED");
-                        return resole("all textures loaded");
-                    });
+                        return resolve("all textures loaded");
+                    }
                 }
             });
         },

@@ -4,8 +4,8 @@ const ImprovedNoise = require('../../lib/ImprovedNoise.js');
 
 // data
 var world_width = Math.pow(2, 28);
-var chunk_width = Math.pow(2, 14);
-var chunk_width2 = Math.pow(2, 13);
+var chunk_width = Math.pow(2, 12);
+var chunk_width2 = Math.pow(2, 11);
 var quality = 1;
 var frequency = 0.1;
 var iterations = 4;
@@ -22,10 +22,9 @@ var buildChunk = (chunk_name, x_bound, y_bound) =>
     var max = Number.NEGATIVE_INFINITY;
     var min = Number.POSITIVE_INFINITY;
     var data = new Uint8Array(chunk_width * chunk_width);
-    for (var yi = y_bound[0]; yi < y_bound[1]; yi++)
+    for (var yi = y_bound[0] - 1; yi < y_bound[1] - 1; yi++)
     {
-        // var data = new Uint8Array(width);
-        for (var xi = x_bound[0]; xi < x_bound[1]; xi++)
+        for (var xi = x_bound[0] - 1; xi < x_bound[1] - 1; xi++)
         {
             quality = 1;
             for (var j = 0; j < iterations; j++)
@@ -66,8 +65,8 @@ var buildChunk = (chunk_name, x_bound, y_bound) =>
 
 buildChunk("top_left", [-chunk_width, 0], [0, chunk_width]);
 buildChunk("top_right", [0, chunk_width], [0, chunk_width]);
-buildChunk("bottom_left", [-chunk_width, 0], [-chunk_width, 0]);
-buildChunk("bottom_right", [0, chunk_width], [-chunk_width, 0]);
+buildChunk("bot_left", [-chunk_width, 0], [-chunk_width, 0]);
+buildChunk("bot_right", [0, chunk_width], [-chunk_width, 0]);
 
 var hrend = process.hrtime(hrstart);
 console.info('Heightmap generation time (hr): %ds %dms', hrend[0], hrend[1] / 1000000);

@@ -59,6 +59,14 @@ define(["pointerLockControls", "camera", "container", "scene", "three", "utils",
                         PlayerInput.speed = Utils.ORBIT_SPEED_FAST;
                         PlayerInput.speed_delta = Utils.ORBIT_SPEED_DELTA_FAST;
                         break;
+                    case ('orb2'):
+                        PlayerInput.speed = Utils.ORBIT_SPEED_FAST * 10;
+                        PlayerInput.speed_delta = Utils.ORBIT_SPEED_DELTA_FAST1 * 10;
+                        break;
+                    case ('0'):
+                        PlayerInput.toggleGravity(0);
+                        PlayerInput.toggleZeroVelocity();
+                        break;
                     case ('v0'):
                         PlayerInput.toggleZeroVelocity();
                         break;

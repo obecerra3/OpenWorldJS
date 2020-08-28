@@ -8,7 +8,7 @@ struct HeightData
     sampler2D top_right;
     sampler2D bot_left;
     sampler2D bot_right;
-}
+};
 
 uniform vec3 uGlobalOffset;
 uniform vec2 uTileOffset;
@@ -23,13 +23,43 @@ const float lod = 0.0;
 
 float getHeight(vec3 pos)
 {
+    // change this to just have a single sampler2D uHeightData and on the CPU decide which
+    // set of meshes get which single sampler2D
     vec2 st = (pos.xy + float(DATA_WIDTH_2)) / float(DATA_WIDTH);
 
-    #ifdef WEBGL2
-        float height = 250.0 * textureLod(uHeightData, st, lod).a;
-    #else
-        float height = 250.0 * texture2DLod(uHeightData, st, lod).a;
-    #endif
+    float height = 0.0;
+    if (pos.x >= 0.0 && pos.y >= 0.0)
+    {
+        #ifdef WEBGL2
+            height = 250.0 * textureLod(uHeightData.top_right, st, lod).a;
+        #else
+            height = 250.0 * texture2DLod(uHeightData.top_right, st, lod).a;
+        #endif
+    }
+    else if (pos.x < 0.0 && pos.y < 0.0)
+    {
+        #ifdef WEBGL2
+            height = 250.0 * textureLod(uHeightData.bot_left, st, lod).a;
+        #else
+            height = 250.0 * texture2DLod(uHeightData.bot_left, st, lod).a;
+        #endif
+    }
+    else if (pos.x < 0.0 && pos.y >= 0.0)
+    {
+        #ifdef WEBGL2
+            height = 250.0 * textureLod(uHeightData.top_left, st, lod).a;
+        #else
+            height = 250.0 * texture2DLod(uHeightData.top_left, st, lod).a;
+        #endif
+    }
+    else
+    {
+        #ifdef WEBGL2
+            height = 250.0 * textureLod(uHeightData.bot_right, st, lod).a;
+        #else
+            height = 250.0 * texture2DLod(uHeightData.bot_right, st, lod).a;
+        #endif
+    }
 
     return height;
 }
