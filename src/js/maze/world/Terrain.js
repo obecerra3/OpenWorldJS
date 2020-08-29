@@ -33,7 +33,6 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
         top_right_texture : new THREE.DataTexture(),
         bot_left_texture : new THREE.DataTexture(),
         bot_right_texture : new THREE.DataTexture(),
-        height_data : [],
         frag_shader : terrain_frag_shader,
         init_scale : 32.0,
         global_offset : new THREE.Vector3(0, 0, 0),
@@ -82,9 +81,6 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                 // set the frag shader
                 Terrain.frag_shader = terrain_frag_shader;
 
-                // create material
-                Terrain.material = Terrain.createMaterial();
-
                 // init the geometry
                 Terrain.geometry = new THREE.PlaneBufferGeometry(
                     Terrain.TILE_WIDTH, Terrain.TILE_WIDTH,
@@ -103,6 +99,36 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
         //   RENDERING
         // --------------
 
+        loadTexture : (data, data_name) =>
+        {
+            data = new Uint8Array(data);
+            data_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+            data_texture.magFilter = THREE.LinearFilter;
+            data_texture.minFilter = THREE.LinearMipMapLinearFilter;
+            data_texture.generateMipmaps = true;
+            data_texture.needsUpdate = true;
+
+            switch (data_name)
+            {
+                case ("top_left"):
+                    Terrain.top_left_data = data;
+                    Terrain.top_left_texture = data_texture;
+                    break;
+                case ("top_right"):
+                    Terrain.top_right_data = data;
+                    Terrain.top_right_texture = data_texture;
+                    break;
+                case("bot_left"):
+                    Terrain.bot_left_data = data;
+                    Terrain.bot_left_texture = data_texture;
+                    break;
+                case ("bot_right"):
+                    Terrain.bot_right_data = data;
+                    Terrain.bot_right_texture = data_texture;
+                    break;
+            }
+        },
+
         readHeightData : () =>
         {
             return new Promise(async (resolve, reject) =>
@@ -110,13 +136,23 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                 const cache = await caches.open('game-cache');
                 const cache_names = await cache.keys();
 
+                var count = 0;
+
+                var finished = () =>
+                {
+                    if (++count == 4)
+                    {
+                        console.log("Finished Loading Terrain!");
+                        return resolve();
+                    }
+                }
                 if (Object.keys(cache_names).length == 0)
                 {
+                    console.log("Reading from file");
+
                     const loader = new THREE.FileLoader();
 
                     loader.setResponseType("blob");
-
-                    var count = 0;
 
                     loader.load("js/data/HeightData", (blob) =>
                     {
@@ -124,13 +160,7 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                         blob.slice(0, Math.pow(Terrain.DATA_WIDTH, 2), 'uint8').arrayBuffer().then((data) =>
                         {
                             cache.put('top_left', new Response(data));
-                            Terrain.height_data = new Uint8Array(data);
-                            Terrain.top_left_data = new Uint8Array(data);
-                            Terrain.top_left_texture = new THREE.DataTexture(Terrain.top_left_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                            Terrain.top_left_texture.magFilter = THREE.LinearFilter;
-                            Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                            Terrain.top_left_texture.generateMipmaps = true;
-                            Terrain.top_left_texture.needsUpdate = true;
+                            Terrain.loadTexture(data, "top_left");
                             finished();
                         });
 
@@ -138,12 +168,7 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                         blob.slice(Math.pow(Terrain.DATA_WIDTH, 2), Math.pow(Terrain.DATA_WIDTH, 2) * 2, 'uint8').arrayBuffer().then((data) =>
                         {
                             cache.put('top_right', new Response(data));
-                            Terrain.top_right_data = new Uint8Array(data);
-                            Terrain.top_right_texture = new THREE.DataTexture(Terrain.top_right_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                            Terrain.top_right_texture.magFilter = THREE.LinearFilter;
-                            Terrain.top_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                            Terrain.top_right_texture.generateMipmaps = true;
-                            Terrain.top_right_texture.needsUpdate = true;
+                            Terrain.loadTexture(data, "top_right");
                             finished();
                         });
 
@@ -151,12 +176,7 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                         blob.slice(Math.pow(Terrain.DATA_WIDTH, 2) * 2, Math.pow(Terrain.DATA_WIDTH, 2) * 3, 'uint8').arrayBuffer().then((data) =>
                         {
                             cache.put('bot_left', new Response(data));
-                            Terrain.bot_left_data = new Uint8Array(data);
-                            Terrain.bot_left_texture = new THREE.DataTexture(Terrain.bot_left_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                            Terrain.bot_left_texture.magFilter = THREE.LinearFilter;
-                            Terrain.bot_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                            Terrain.bot_left_texture.generateMipmaps = true;
-                            Terrain.bot_left_texture.needsUpdate = true;
+                            Terrain.loadTexture(data, "bot_left");
                             finished();
                         });
 
@@ -164,41 +184,45 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                         blob.slice(Math.pow(Terrain.DATA_WIDTH, 2) * 3, Math.pow(Terrain.DATA_WIDTH, 2) * 4, 'uint8').arrayBuffer().then((data) =>
                         {
                             cache.put('bot_right', new Response(data));
-                            Terrain.bot_right_data = new Uint8Array(data);
-                            Terrain.bot_right_texture = new THREE.DataTexture(Terrain.bot_right_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                            Terrain.bot_right_texture.magFilter = THREE.LinearFilter;
-                            Terrain.bot_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                            Terrain.bot_right_texture.generateMipmaps = true;
-                            Terrain.bot_right_texture.needsUpdate = true;
+                            Terrain.loadTexture(data, "bot_right");
                             finished();
                         });
-
-                        var finished = () =>
-                        {
-                            if (++count == 4)
-                            {
-                                console.log("Loaded from file!");
-                                return resolve();
-                            }
-                        }
                     });
                 }
                 else
                 {
-                    // Terrain.top_left_data = await new Uint8Array(cache.match('top_left').arrayBuffer());
+                    console.log("Read from cache");
+
                     cache.match('top_left').then(async (response) =>
                     {
                         response.arrayBuffer().then((data) =>
                         {
-                            Terrain.height_data = new Uint8Array(data);
-                            Terrain.top_left_data = new Uint8Array(data);
-                            Terrain.top_left_texture = new THREE.DataTexture(Terrain.top_left_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                            Terrain.top_left_texture.magFilter = THREE.LinearFilter;
-                            Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                            Terrain.top_left_texture.generateMipmaps = true;
-                            Terrain.top_left_texture.needsUpdate = true;
-                            console.log("Loaded from cache!");
-                            return resolve();
+                            Terrain.loadTexture(data, "top_left");
+                            finished();
+                        });
+                    });
+                    cache.match('top_right').then(async (response) =>
+                    {
+                        response.arrayBuffer().then((data) =>
+                        {
+                            Terrain.loadTexture(data, "top_right");
+                            finished();
+                        });
+                    });
+                    cache.match('bot_left').then(async (response) =>
+                    {
+                        response.arrayBuffer().then((data) =>
+                        {
+                            Terrain.loadTexture(data, "bot_left");
+                            finished();
+                        });
+                    });
+                    cache.match('bot_right').then(async (response) =>
+                    {
+                        response.arrayBuffer().then((data) =>
+                        {
+                            Terrain.loadTexture(data, "bot_right");
+                            finished();
                         });
                     });
                 }
@@ -400,7 +424,7 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
             var res = Terrain.RESOLUTION;
             var width = Terrain.DATA_WIDTH;
             var width2 = Terrain.DATA_WIDTH / 2;
-            var xi = 0, yi = 0;
+            var xi = 0, yi = 0, h = 0;
             var vertices = [];
 
             Terrain.init_chunk_pos.x = Math.round(Terrain.global_offset.x);
@@ -414,7 +438,26 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                     yi = (y + width2) % width;
 
                     // assign height and find min/ max
-                    h = Terrain.height_data[xi + yi * width];
+                    // deals with creases
+                    var x2 = x + 1;
+                    var y2 = y + 1;
+                    if (x2 >= 0 && y2 >= 0)
+                    {
+                        h = Terrain.top_right_data[xi + yi * width];
+                    }
+                    else if (x2 < 0 && y2 < 0)
+                    {
+                        h = Terrain.bot_left_data[xi + yi * width];
+                    }
+                    else if (x2 < 0 && y2 >= 0)
+                    {
+                        h = Terrain.top_left_data[xi + yi * width];
+                    }
+                    else
+                    {
+                        h = Terrain.bot_right_data[xi + yi * width];
+                    }
+
                     new_height_data.push(h);
 
                     if (h > max_height) max_height = h;

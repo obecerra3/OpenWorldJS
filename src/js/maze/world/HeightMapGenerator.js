@@ -3,7 +3,6 @@ const fs = require('fs');
 const ImprovedNoise = require('../../lib/ImprovedNoise.js');
 
 // data
-var world_width = Math.pow(2, 28);
 var chunk_width = Math.pow(2, 14);
 var chunk_width2 = Math.pow(2, 13);
 var quality = 1;
