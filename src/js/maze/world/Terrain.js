@@ -17,14 +17,18 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
     var Terrain =
     {
         // rendering
-        WORLD_WIDTH : Math.pow(2, 13),
-        DATA_WIDTH : Math.pow(2, 12),
+        WORLD_WIDTH : Math.pow(2, 12),
+        DATA_WIDTH : Math.pow(2, 14),
         LEVELS : 4,
         RESOLUTION : 64.0,
         TILE_WIDTH : 1,
 
         obj : new THREE.Object3D(),
         geometry : new THREE.PlaneBufferGeometry(),
+        top_left_data : new Uint8Array(),
+        top_right_data : new Uint8Array(),
+        bot_left_data : new Uint8Array(),
+        bot_right_data : new Uint8Array(),
         top_left_texture : new THREE.DataTexture(),
         top_right_texture : new THREE.DataTexture(),
         bot_left_texture : new THREE.DataTexture(),
@@ -101,141 +105,105 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
 
         readHeightData : () =>
         {
-            return new Promise((resolve, reject) =>
+            return new Promise(async (resolve, reject) =>
             {
-                const loader = new THREE.FileLoader();
+                const cache = await caches.open('game-cache');
+                const cache_names = await cache.keys();
 
-                loader.setResponseType("arraybuffer");
-
-                var count = 0;
-
-                loader.load("js/data/top_left", (buffer) =>
+                if (Object.keys(cache_names).length == 0)
                 {
-                    const data = new Uint8Array(buffer);
-                    Terrain.height_data = data;
-                    Terrain.top_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                    Terrain.top_left_texture.magFilter = THREE.LinearFilter;
-                    Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                    Terrain.top_left_texture.generateMipmaps = true;
-                    Terrain.top_left_texture.needsUpdate = true;
-                    console.log("loaded top_left");
-                    finished();
-                });
+                    const loader = new THREE.FileLoader();
 
-                loader.load("js/data/top_right", (buffer) =>
-                {
-                    const data = new Uint8Array(buffer);
-                    // Terrain.height_data = data;
-                    Terrain.top_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                    Terrain.top_right_texture.magFilter = THREE.LinearFilter;
-                    Terrain.top_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                    Terrain.top_right_texture.generateMipmaps = true;
-                    Terrain.top_right_texture.needsUpdate = true;
-                    console.log("loaded top_right");
-                    finished();
-                });
+                    loader.setResponseType("blob");
 
-                loader.load("js/data/bot_left", (buffer) =>
-                {
-                    const data = new Uint8Array(buffer);
-                    // Terrain.height_data = data;
-                    Terrain.bot_left_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                    Terrain.bot_left_texture.magFilter = THREE.LinearFilter;
-                    Terrain.bot_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                    Terrain.bot_left_texture.generateMipmaps = true;
-                    Terrain.bot_left_texture.needsUpdate = true;
-                    console.log("loaded bot_left");
-                    finished();
-                });
+                    var count = 0;
 
-                loader.load("js/data/bot_right", (buffer) =>
-                {
-                    const data = new Uint8Array(buffer);
-                    // Terrain.height_data = data;
-                    Terrain.bot_right_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-                    Terrain.bot_right_texture.magFilter = THREE.LinearFilter;
-                    Terrain.bot_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                    Terrain.bot_right_texture.generateMipmaps = true;
-                    Terrain.bot_right_texture.needsUpdate = true;
-                    console.log("loaded bot_right");
-                    finished();
-                });
-
-                var finished = () =>
-                {
-                    if (++count == 4)
+                    loader.load("js/data/HeightData", (blob) =>
                     {
-                        console.log("ALL TEXTURES LOADED");
-                        return resolve("all textures loaded");
-                    }
+                        // top_left
+                        blob.slice(0, Math.pow(Terrain.DATA_WIDTH, 2), 'uint8').arrayBuffer().then((data) =>
+                        {
+                            cache.put('top_left', new Response(data));
+                            Terrain.height_data = new Uint8Array(data);
+                            Terrain.top_left_data = new Uint8Array(data);
+                            Terrain.top_left_texture = new THREE.DataTexture(Terrain.top_left_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                            Terrain.top_left_texture.magFilter = THREE.LinearFilter;
+                            Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                            Terrain.top_left_texture.generateMipmaps = true;
+                            Terrain.top_left_texture.needsUpdate = true;
+                            finished();
+                        });
+
+                        // top_right
+                        blob.slice(Math.pow(Terrain.DATA_WIDTH, 2), Math.pow(Terrain.DATA_WIDTH, 2) * 2, 'uint8').arrayBuffer().then((data) =>
+                        {
+                            cache.put('top_right', new Response(data));
+                            Terrain.top_right_data = new Uint8Array(data);
+                            Terrain.top_right_texture = new THREE.DataTexture(Terrain.top_right_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                            Terrain.top_right_texture.magFilter = THREE.LinearFilter;
+                            Terrain.top_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                            Terrain.top_right_texture.generateMipmaps = true;
+                            Terrain.top_right_texture.needsUpdate = true;
+                            finished();
+                        });
+
+                        // bot_left
+                        blob.slice(Math.pow(Terrain.DATA_WIDTH, 2) * 2, Math.pow(Terrain.DATA_WIDTH, 2) * 3, 'uint8').arrayBuffer().then((data) =>
+                        {
+                            cache.put('bot_left', new Response(data));
+                            Terrain.bot_left_data = new Uint8Array(data);
+                            Terrain.bot_left_texture = new THREE.DataTexture(Terrain.bot_left_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                            Terrain.bot_left_texture.magFilter = THREE.LinearFilter;
+                            Terrain.bot_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                            Terrain.bot_left_texture.generateMipmaps = true;
+                            Terrain.bot_left_texture.needsUpdate = true;
+                            finished();
+                        });
+
+                        // bot_right
+                        blob.slice(Math.pow(Terrain.DATA_WIDTH, 2) * 3, Math.pow(Terrain.DATA_WIDTH, 2) * 4, 'uint8').arrayBuffer().then((data) =>
+                        {
+                            cache.put('bot_right', new Response(data));
+                            Terrain.bot_right_data = new Uint8Array(data);
+                            Terrain.bot_right_texture = new THREE.DataTexture(Terrain.bot_right_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                            Terrain.bot_right_texture.magFilter = THREE.LinearFilter;
+                            Terrain.bot_right_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                            Terrain.bot_right_texture.generateMipmaps = true;
+                            Terrain.bot_right_texture.needsUpdate = true;
+                            finished();
+                        });
+
+                        var finished = () =>
+                        {
+                            if (++count == 4)
+                            {
+                                console.log("Loaded from file!");
+                                return resolve();
+                            }
+                        }
+                    });
+                }
+                else
+                {
+                    // Terrain.top_left_data = await new Uint8Array(cache.match('top_left').arrayBuffer());
+                    cache.match('top_left').then(async (response) =>
+                    {
+                        response.arrayBuffer().then((data) =>
+                        {
+                            Terrain.height_data = new Uint8Array(data);
+                            Terrain.top_left_data = new Uint8Array(data);
+                            Terrain.top_left_texture = new THREE.DataTexture(Terrain.top_left_data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                            Terrain.top_left_texture.magFilter = THREE.LinearFilter;
+                            Terrain.top_left_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                            Terrain.top_left_texture.generateMipmaps = true;
+                            Terrain.top_left_texture.needsUpdate = true;
+                            console.log("Loaded from cache!");
+                            return resolve();
+                        });
+                    });
                 }
             });
         },
-
-        /*updateHeightData : (new_center_pos = null) =>
-        {
-            return new Promise((resolve, reject) =>
-            {
-                if (new_center_pos)
-                {
-                    Terrain.height_data_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
-                }
-
-                var width = Terrain.WORLD_WIDTH * 4;
-                var width2 = Terrain.WORLD_WIDTH * 2;
-                var size = width * width;
-                var data = new Uint8Array(size);
-                var quality = 1;
-                var max = Number.NEGATIVE_INFINITY;
-                var min = Number.POSITIVE_INFINITY;
-                var frequency = 0.1;
-                var iterations = 4;
-
-                for (var j = 0; j < iterations; j++)
-                {
-                    for (var yi = 0; yi < width; yi++)
-                    {
-                        for (var xi = 0; xi < width; xi++)
-                        {
-                            var x = (xi - width2 + Terrain.height_data_center.x) + Terrain.negative_bound;
-                            var y = (yi - width2 + Terrain.height_data_center.y) + Terrain.negative_bound;
-                            var height = Math.abs(Terrain.perlin.noise((x / quality) * frequency, (y / quality) * frequency, Terrain.rand_z * frequency) * quality);
-                            data[xi + yi * width] += height;
-
-                            // if (j == iterations - 1)
-                            // {
-                            //     //last iteration so time to check the heights for the stats
-                            //     if (data[xi + yi * width] > max) max = data[xi + yi * width];
-                            //
-                            //     if (data[xi + yi * width] < min) min = data[xi + yi * width];
-                            // }
-                        }
-                    }
-                    quality *= 5;
-                }
-                // console.log("Data Stats : max : " +  max + ", min : " +  min);
-                // console.log("Data : ");
-                // console.log(data);
-
-                Terrain.height_data = data;
-                Terrain.height_data_texture = new THREE.DataTexture(data, width, width, THREE.AlphaFormat);
-                // Terrain.height_data_texture.wrapS = THREE.MirroredRepeatWrapping;
-                // Terrain.height_data_texture.wrapT = THREE.MirroredRepeatWrapping;
-                Terrain.height_data_texture.magFilter = THREE.LinearFilter;
-                Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
-                Terrain.height_data_texture.generateMipmaps = true;
-                Terrain.height_data_texture.needsUpdate = true;
-
-                for (var c in Terrain.obj.children)
-                {
-                    var tile = Terrain.obj.children[c];
-                    tile.material.uniforms.uCenter = { type : "v2", value : Terrain.height_data_center };
-                    tile.material.uniforms.uHeightData = { type : "t", value : Terrain.height_data_texture };
-                }
-
-                return resolve("height map generated");
-            });
-        },*/
 
         initTiles : () =>
         {

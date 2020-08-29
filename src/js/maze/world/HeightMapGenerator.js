@@ -4,8 +4,8 @@ const ImprovedNoise = require('../../lib/ImprovedNoise.js');
 
 // data
 var world_width = Math.pow(2, 28);
-var chunk_width = Math.pow(2, 12);
-var chunk_width2 = Math.pow(2, 11);
+var chunk_width = Math.pow(2, 14);
+var chunk_width2 = Math.pow(2, 13);
 var quality = 1;
 var frequency = 0.1;
 var iterations = 4;
@@ -16,6 +16,15 @@ var perlin = new ImprovedNoise();
 
 // stats
 var hrstart = process.hrtime();
+
+try
+{
+    fs.unlinkSync("./src/js/data/HeightData");
+}
+catch(err)
+{
+    console.error(err)
+}
 
 var buildChunk = (chunk_name, x_bound, y_bound) =>
 {
@@ -50,7 +59,7 @@ var buildChunk = (chunk_name, x_bound, y_bound) =>
     }
 
     // save to file
-    fs.writeFile("./src/js/data/" + chunk_name, Buffer.from(data), (error) =>
+    fs.appendFile("./src/js/data/HeightData", Buffer.from(data), (error) =>
     {
         console.log(chunk_name + "stats: ");
         console.log("max: " + max);
