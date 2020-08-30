@@ -11,6 +11,8 @@ _3D game engine using three.js as a graphics library and ammo.js for a physics l
 - Build Locally:
 
   - Navigate to the directory named _Maze_ in shell
+  
+  - run node ./src/js/maze/world/HeightMapGenerator.js and wait for completion
 
   - Enter the command `./local.sh`
 
