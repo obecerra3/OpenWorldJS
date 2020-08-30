@@ -34,6 +34,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         right_strafe : false,
         backward : false,
         previous_y_rotation : 0,
+        MAX_Z_VELOCITY : 250,
 
         //====================================================================
         //====================================================================
@@ -711,8 +712,14 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         {
             var z_velocity = Player.rigidbody.getLinearVelocity().z();
 
+            if (Math.abs(z_velocity) >= Player.MAX_Z_VELOCITY)
+            {
+                z_velocity *= 0.75;
+            }
+
             if (Player.running)
             {
+                var new_velocity =
                 Player.rigidbody.setLinearVelocity(
                     new Physics.ammo.btVector3(
                         Player.move_direction.x * Player.run_speed * delta,

@@ -28,40 +28,41 @@ float getHeight(vec3 pos)
     vec2 st = (pos.xy + float(DATA_WIDTH_2)) / float(DATA_WIDTH);
 
     float height = 0.0;
+
     if (pos.x >= 0.0 && pos.y >= 0.0)
     {
         #ifdef WEBGL2
-            height = 250.0 * textureLod(uHeightData.top_right, st, lod).a;
+            height = textureLod(uHeightData.top_right, st, lod).a;
         #else
-            height = 250.0 * texture2DLod(uHeightData.top_right, st, lod).a;
+            height = texture2DLod(uHeightData.top_right, st, lod).a;
         #endif
     }
     else if (pos.x < 0.0 && pos.y < 0.0)
     {
         #ifdef WEBGL2
-            height = 250.0 * textureLod(uHeightData.bot_left, st, lod).a;
+            height = textureLod(uHeightData.bot_left, st, lod).a;
         #else
-            height = 250.0 * texture2DLod(uHeightData.bot_left, st, lod).a;
+            height = texture2DLod(uHeightData.bot_left, st, lod).a;
         #endif
     }
     else if (pos.x < 0.0 && pos.y >= 0.0)
     {
         #ifdef WEBGL2
-            height = 250.0 * textureLod(uHeightData.top_left, st, lod).a;
+            height = textureLod(uHeightData.top_left, st, lod).a;
         #else
-            height = 250.0 * texture2DLod(uHeightData.top_left, st, lod).a;
+            height = texture2DLod(uHeightData.top_left, st, lod).a;
         #endif
     }
     else
     {
         #ifdef WEBGL2
-            height = 250.0 * textureLod(uHeightData.bot_right, st, lod).a;
+            height = textureLod(uHeightData.bot_right, st, lod).a;
         #else
-            height = 250.0 * texture2DLod(uHeightData.bot_right, st, lod).a;
+            height = texture2DLod(uHeightData.bot_right, st, lod).a;
         #endif
     }
 
-    return height;
+    return height * 255.0;
 }
 
 vec3 getNormal()
@@ -115,7 +116,7 @@ void main()
 
     // Get height and calculate normal
     vNormal = getNormal();
-    vPosition = vPosition + vNormal * getHeight(vPosition);
+    vPosition = vPosition + vec3(0.0, 0.0, 1.0) * getHeight(vPosition);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
 }
