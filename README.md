@@ -2,7 +2,7 @@
 
 _3D game engine using three.js as a graphics library and ammo.js for a physics library._
 
-![Alt_Text](https://media.giphy.com/media/j25Cd6TirdYcmfZkX9/giphy.gif)
+![Alt_Text](https://media.giphy.com/media/LMEA6Szfgcwc8fp6QA/giphy.gif)
 
 ## Setup
 
