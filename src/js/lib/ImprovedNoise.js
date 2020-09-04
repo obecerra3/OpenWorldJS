@@ -75,5 +75,5 @@ try
 }
 catch(e)
 {
-    console.log("ImprovedNoise : " + e);
+    
 }

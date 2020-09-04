@@ -2,18 +2,11 @@
 // ----------------------
 // Terrain Vertex Shader
 // ----------------------
-struct HeightData
-{
-    sampler2D top_left;
-    sampler2D top_right;
-    sampler2D bot_left;
-    sampler2D bot_right;
-};
-
 uniform vec3 uGlobalOffset;
 uniform vec2 uTileOffset;
 uniform float uScale;
-uniform HeightData uHeightData;
+uniform sampler2D uHeightData;
+uniform vec2 uCenter;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -21,71 +14,9 @@ varying float vMorphFactor;
 
 const float lod = 0.0;
 
-float getHeight(vec3 pos)
-{
-    // change this to just have a single sampler2D uHeightData and on the CPU decide which
-    // set of meshes get which single sampler2D
-    vec2 st = (pos.xy + float(DATA_WIDTH_2)) / float(DATA_WIDTH);
-
-    float height = 0.0;
-
-    if (pos.x >= 0.0 && pos.y >= 0.0)
-    {
-        #ifdef WEBGL2
-            height = textureLod(uHeightData.top_right, st, lod).a;
-        #else
-            height = texture2DLod(uHeightData.top_right, st, lod).a;
-        #endif
-    }
-    else if (pos.x < 0.0 && pos.y < 0.0)
-    {
-        #ifdef WEBGL2
-            height = textureLod(uHeightData.bot_left, st, lod).a;
-        #else
-            height = texture2DLod(uHeightData.bot_left, st, lod).a;
-        #endif
-    }
-    else if (pos.x < 0.0 && pos.y >= 0.0)
-    {
-        #ifdef WEBGL2
-            height = textureLod(uHeightData.top_left, st, lod).a;
-        #else
-            height = texture2DLod(uHeightData.top_left, st, lod).a;
-        #endif
-    }
-    else
-    {
-        #ifdef WEBGL2
-            height = textureLod(uHeightData.bot_right, st, lod).a;
-        #else
-            height = texture2DLod(uHeightData.bot_right, st, lod).a;
-        #endif
-    }
-
-    return height * 255.0;
-}
-
-vec3 getNormal()
-{
-    // Get 2 vectors perpendicular to the unperturbed normal, and create at point at each (relative to position)
-    float delta = (vMorphFactor + 1.0) * uScale / float(RESOLUTION);
-    vec3 dA = delta * normalize(cross(normal.yzx, normal));
-    vec3 dB = delta * normalize(cross(dA, normal));
-    vec3 p = vPosition;
-    vec3 pA = vPosition + dA;
-    vec3 pB = vPosition + dB;
-
-    // Now get the height at those points
-    float h = getHeight(vPosition);
-    float hA = getHeight(pA);
-    float hB = getHeight(pB);
-
-    // Update the points with their correct heights and calculate true normal
-    p += normal * h;
-    pA += normal * hA;
-    pB += normal * hB;
-    return normalize(cross(pB - p, pA - p));
-}
+// function prototypes
+float getHeight(vec3 pos);
+vec3 getNormal();
 
 #include edgemorph.glsl
 
@@ -119,4 +50,41 @@ void main()
     vPosition = vPosition + vec3(0.0, 0.0, 1.0) * getHeight(vPosition);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
+}
+
+float getHeight(vec3 pos)
+{
+    vec2 uv = (pos.xy + - uCenter.xy + float(DATA_WIDTH_2)) / float(DATA_WIDTH);
+
+    float height = 0.0;
+
+    #ifdef WEBGL2
+        height = textureLod(uHeightData, uv, lod).a;
+    #else
+        height = texture2DLod(uHeightData, uv, lod).a;
+    #endif
+
+    return height * 255.0;
+}
+
+vec3 getNormal()
+{
+    // Get 2 vectors perpendicular to the unperturbed normal, and create at point at each (relative to position)
+    float delta = (vMorphFactor + 1.0) * uScale / float(RESOLUTION);
+    vec3 dA = delta * normalize(cross(normal.yzx, normal));
+    vec3 dB = delta * normalize(cross(dA, normal));
+    vec3 p = vPosition;
+    vec3 pA = vPosition + dA;
+    vec3 pB = vPosition + dB;
+
+    // Now get the height at those points
+    float h = getHeight(vPosition);
+    float hA = getHeight(pA);
+    float hB = getHeight(pB);
+
+    // Update the points with their correct heights and calculate true normal
+    p += normal * h;
+    pA += normal * hA;
+    pB += normal * hB;
+    return normalize(cross(pB - p, pA - p));
 }

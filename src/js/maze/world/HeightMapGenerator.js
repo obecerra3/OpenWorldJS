@@ -6,11 +6,12 @@ const ImprovedNoise = require('../../lib/ImprovedNoise.js');
 var chunk_width = Math.pow(2, 14);
 var chunk_width2 = Math.pow(2, 13);
 var quality = 1;
-var frequency = 0.1;
-var iterations = 4;
-var negative_bound = Math.pow(2, 32);
+var frequency = 0.25;
+var perlin_iterations = 4;
+var smoothing_iterations = 5;
+var negative_bound = Math.pow(2, 14);
 var rand_z = 42;
-var x = 0, y = 0, height = 0;
+var x = 0, y = 0, height = 0, i = 0, j = 0;
 var perlin = new ImprovedNoise();
 
 // stats
@@ -27,31 +28,20 @@ catch(err)
 
 var buildChunk = (chunk_name, x_bound, y_bound) =>
 {
-    var max = Number.NEGATIVE_INFINITY;
-    var min = Number.POSITIVE_INFINITY;
+    // generate data
     var data = new Uint8Array(chunk_width * chunk_width);
-    for (var yi = y_bound[0] - 1; yi < y_bound[1] - 1; yi++)
+
+    for (var yi = y_bound[0] + chunk_width2 - 1; yi < y_bound[1] + chunk_width2 - 1; yi++)
     {
-        for (var xi = x_bound[0] - 1; xi < x_bound[1] - 1; xi++)
+        for (var xi = x_bound[0] + chunk_width2 - 1; xi < x_bound[1] + chunk_width2 - 1; xi++)
         {
             quality = 1;
-            for (var j = 0; j < iterations; j++)
+            x = xi + negative_bound;
+            y = yi + negative_bound;
+            for (var k = 0; k < perlin_iterations; k++)
             {
-                x = xi + negative_bound;
-                y = yi + negative_bound;
-                height = Math.abs(perlin.noise((x / quality) * frequency, (y / quality) * frequency, rand_z * frequency) * quality);
-                var i = xi + chunk_width2;
-                var ij = yi + chunk_width2;
-                data[i + ij * chunk_width] += height;
-
-                // stats
-                if (j == iterations - 1)
-                {
-                    //last iteration so time to check the heights for the stats
-                    if (data[i + ij * chunk_width] > max) max = data[i + ij * chunk_width];
-
-                    if (data[i + ij * chunk_width] < min) min = data[i + ij * chunk_width];
-                }
+                height = Math.abs(perlin.noise((x / quality) * frequency, (y / quality) * frequency, (rand_z / quality) * frequency) * quality);
+                data[xi + yi * chunk_width] += height;
                 quality *= 5;
             }
         }
@@ -60,10 +50,6 @@ var buildChunk = (chunk_name, x_bound, y_bound) =>
     // save to file
     fs.appendFile("./src/js/data/HeightData", Buffer.from(data), (error) =>
     {
-        console.log(chunk_name + "stats: ");
-        console.log("max: " + max);
-        console.log("min: " + min);
-
         if (error)
         {
             console.log("File Error: " + error);

@@ -18,6 +18,7 @@ var require =
         detector : "../lib/Detector",
         dracoLoader : "../lib/draco/DRACOLoader",
         gltfLoader : "../lib/GLTFLoader",
+        GPUComputationRenderer : "../lib/GPUComputationRenderer",
         ImprovedNoise : "../lib/ImprovedNoise",
         pointerLockControls : "../lib/PointerLockControls",
         stats : "../lib/stats.min",

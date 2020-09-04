@@ -2,8 +2,12 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 
-define(["three", "utils", "scene", "light", "camera", "physics", "player", "shader!terrain.vert", "shader!terrain.frag", "renderer", "eventQ"],
-(THREE, Utils, scene, Light, camera, Physics, Player, terrain_vert_shader, terrain_frag_shader, renderer, EventQ) =>
+define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics",
+        "player", "shader!terrain.vert", "shader!terrain.frag", "renderer",
+        "eventQ", "GPUComputationRenderer", "shader!Heightmap.frag"],
+        (THREE, Utils, scene, Light, ImprovedNoise, camera, Physics, Player,
+        TerrainVert, TerrainFrag, renderer, EventQ, GPUComputationRenderer,
+        HeightmapFrag) =>
 {
     var Edge =
     {
@@ -17,27 +21,25 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
     var Terrain =
     {
         // rendering
-        WORLD_WIDTH : Math.pow(2, 12),
-        DATA_WIDTH : Math.pow(2, 14),
+        WORLD_WIDTH : Math.pow(2,10),
+        DATA_WIDTH : Math.pow(2, 12),
         LEVELS : 4,
         RESOLUTION : 64.0,
         TILE_WIDTH : 1,
 
         obj : new THREE.Object3D(),
         geometry : new THREE.PlaneBufferGeometry(),
-        top_left_data : new Uint8Array(),
-        top_right_data : new Uint8Array(),
-        bot_left_data : new Uint8Array(),
-        bot_right_data : new Uint8Array(),
-        top_left_texture : new THREE.DataTexture(),
-        top_right_texture : new THREE.DataTexture(),
-        bot_left_texture : new THREE.DataTexture(),
-        bot_right_texture : new THREE.DataTexture(),
-        frag_shader : terrain_frag_shader,
+        height_data_texture : new THREE.DataTexture(),
+        height_data : [],
+        frag_shader : TerrainFrag,
         init_scale : 32.0,
         global_offset : new THREE.Vector3(0, 0, 0),
         alpha : 1.0,
         isWebGL2 : renderer.capabilities.isWebGL2,
+        height_data_center : new THREE.Vector2(0, 0),
+        perlin : new ImprovedNoise(),
+        rand_z : Utils.terrainRandom() * 100,
+        negative_bound : Math.pow(2, 16),
 
         // physics
         collider_meshes : [],
@@ -48,8 +50,11 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
 
         init : () =>
         {
-            // webgl2.0 : textureLod vs webgl1.0 : texture2DLod in terrain.vert
-            if (Terrain.isWebGL2) terrain_vert_shader.define("WEBGL2", 1.0);
+            // webgl2.0 : textureLod vs webgl1.0 : texture2DLod in shaders
+            if (Terrain.isWebGL2)
+            {
+                TerrainVert.define("WEBGL2", 1.0);
+            }
 
             // Event for passing data to player
             EventQ.push(
@@ -69,17 +74,18 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                 arguments : [],
             });
 
-            console.log(renderer.capabilities.maxTextureSize);
-
-            // Terrain.updateHeightData()
-            Terrain.readHeightData().then((uid) =>
+            // // create height_data using Promise
+            Terrain.updateHeightData().then((uid) =>
             {
                 // only do this if updateHeightData is done
                 // init Collider mesh and data
                 Terrain.createColliderMesh();
 
                 // set the frag shader
-                Terrain.frag_shader = terrain_frag_shader;
+                Terrain.frag_shader = TerrainFrag;
+
+                // create material
+                Terrain.material = Terrain.createMaterial();
 
                 // init the geometry
                 Terrain.geometry = new THREE.PlaneBufferGeometry(
@@ -99,133 +105,108 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
         //   RENDERING
         // --------------
 
-        loadTexture : (data, data_name) =>
+        updateHeightData : (new_center_pos = null) =>
         {
-            data = new Uint8Array(data);
-            data_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
-            data_texture.magFilter = THREE.LinearFilter;
-            data_texture.minFilter = THREE.LinearMipMapLinearFilter;
-            data_texture.generateMipmaps = true;
-            data_texture.needsUpdate = true;
-
-            switch (data_name)
+            return new Promise((resolve, reject) =>
             {
-                case ("top_left"):
-                    Terrain.top_left_data = data;
-                    Terrain.top_left_texture = data_texture;
-                    break;
-                case ("top_right"):
-                    Terrain.top_right_data = data;
-                    Terrain.top_right_texture = data_texture;
-                    break;
-                case("bot_left"):
-                    Terrain.bot_left_data = data;
-                    Terrain.bot_left_texture = data_texture;
-                    break;
-                case ("bot_right"):
-                    Terrain.bot_right_data = data;
-                    Terrain.bot_right_texture = data_texture;
-                    break;
-            }
-        },
+                var start_time = new Date();
 
-        readHeightData : () =>
-        {
-            return new Promise(async (resolve, reject) =>
-            {
-                const cache = await caches.open('game-cache');
-                const cache_names = await cache.keys();
-
-                var count = 0;
-
-                var finished = () =>
+                if (new_center_pos)
                 {
-                    if (++count == 4)
+                    Terrain.height_data_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
+                }
+
+                var gpuCompute = new GPUComputationRenderer(Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, renderer);
+
+                var height_texture = gpuCompute.createTexture();
+
+                var init_data = height_texture.image.data;
+
+                var index = 0;
+                var width2 = Terrain.DATA_WIDTH / 2;
+
+                for (var yi = 0; yi < Terrain.DATA_WIDTH; yi++)
+                {
+                    for (var xi = 0; xi < Terrain.DATA_WIDTH; xi++)
                     {
-                        console.log("Finished Loading Terrain!");
-                        return resolve();
+                        var x = (xi - width2 + Terrain.height_data_center.x) + Terrain.negative_bound;
+                        var y = (yi - width2 + Terrain.height_data_center.y) + Terrain.negative_bound;
+
+                        init_data[index] = x;
+                        init_data[index + 1] = y;
+                        init_data[index + 2] = Terrain.rand_z;
+                        init_data[index + 3] = 0;
+
+                        index += 4;
                     }
                 }
-                if (Object.keys(cache_names).length == 0)
+
+                var height_variable = gpuCompute.addVariable("heightmap", HeightmapFrag.value, height_texture);
+
+                gpuCompute.setVariableDependencies(height_variable, [height_variable]);
+
+                var height_uniforms = height_variable.material.uniforms;
+                height_uniforms["uQuality"] = { value : 1 };
+                height_uniforms["uQualityDelta"] = { value : 5 };
+                height_uniforms["uFrequency"] = { value : 0.1 };
+                height_uniforms["uIterations"] = { value : 4 };
+
+                var error = gpuCompute.init();
+
+                if ( error !== null )
                 {
-                    console.log("Reading from file");
-
-                    const loader = new THREE.FileLoader();
-
-                    loader.setResponseType("blob");
-
-                    loader.load("js/data/HeightData", (blob) =>
-                    {
-                        // top_left
-                        blob.slice(0, Math.pow(Terrain.DATA_WIDTH, 2), 'uint8').arrayBuffer().then((data) =>
-                        {
-                            cache.put('top_left', new Response(data));
-                            Terrain.loadTexture(data, "top_left");
-                            finished();
-                        });
-
-                        // top_right
-                        blob.slice(Math.pow(Terrain.DATA_WIDTH, 2), Math.pow(Terrain.DATA_WIDTH, 2) * 2, 'uint8').arrayBuffer().then((data) =>
-                        {
-                            cache.put('top_right', new Response(data));
-                            Terrain.loadTexture(data, "top_right");
-                            finished();
-                        });
-
-                        // bot_left
-                        blob.slice(Math.pow(Terrain.DATA_WIDTH, 2) * 2, Math.pow(Terrain.DATA_WIDTH, 2) * 3, 'uint8').arrayBuffer().then((data) =>
-                        {
-                            cache.put('bot_left', new Response(data));
-                            Terrain.loadTexture(data, "bot_left");
-                            finished();
-                        });
-
-                        // bot_right
-                        blob.slice(Math.pow(Terrain.DATA_WIDTH, 2) * 3, Math.pow(Terrain.DATA_WIDTH, 2) * 4, 'uint8').arrayBuffer().then((data) =>
-                        {
-                            cache.put('bot_right', new Response(data));
-                            Terrain.loadTexture(data, "bot_right");
-                            finished();
-                        });
-                    });
+                    console.error("GPU Compute Completeness: " + error);
                 }
-                else
+
+                gpuCompute.compute();
+
+                var readHeightRenderTarget = new THREE.WebGLRenderTarget(
+                    Terrain.DATA_WIDTH,
+                    Terrain.DATA_WIDTH,
+                    {
+                         wrapS: THREE.ClampToEdgeWrapping,
+                         wrapT: THREE.ClampToEdgeWrapping,
+                         minFilter: THREE.NearestFilter,
+                         magFilter: THREE.NearestFilter,
+                         format: THREE.RGBAFormat,
+                         type: THREE.UnsignedByteType,
+                         depthBuffer: false
+                    }
+                );
+
+                console.log(height_variable);
+
+                var raw_data = new Uint8Array(4 * Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
+
+                gpuCompute.doRenderTarget(height_variable.material, readHeightRenderTarget);
+                renderer.readRenderTargetPixels(readHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, raw_data);
+
+                console.log(raw_data);
+                var data = new Uint8Array(Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
+
+                for (var i = 0, j = 3; j < raw_data.length; j += 4, i++)
                 {
-                    console.log("Read from cache");
-
-                    cache.match('top_left').then(async (response) =>
-                    {
-                        response.arrayBuffer().then((data) =>
-                        {
-                            Terrain.loadTexture(data, "top_left");
-                            finished();
-                        });
-                    });
-                    cache.match('top_right').then(async (response) =>
-                    {
-                        response.arrayBuffer().then((data) =>
-                        {
-                            Terrain.loadTexture(data, "top_right");
-                            finished();
-                        });
-                    });
-                    cache.match('bot_left').then(async (response) =>
-                    {
-                        response.arrayBuffer().then((data) =>
-                        {
-                            Terrain.loadTexture(data, "bot_left");
-                            finished();
-                        });
-                    });
-                    cache.match('bot_right').then(async (response) =>
-                    {
-                        response.arrayBuffer().then((data) =>
-                        {
-                            Terrain.loadTexture(data, "bot_right");
-                            finished();
-                        });
-                    });
+                    data[i] = raw_data[j];
                 }
+
+                Terrain.height_data = data;
+                Terrain.height_data_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
+                Terrain.height_data_texture.magFilter = THREE.LinearFilter;
+                Terrain.height_data_texture.minFilter = THREE.LinearMipMapLinearFilter;
+                Terrain.height_data_texture.generateMipmaps = true;
+                Terrain.height_data_texture.needsUpdate = true;
+
+                for (var c in Terrain.obj.children)
+                {
+                    var tile = Terrain.obj.children[c];
+                    tile.material.uniforms.uCenter = { type : "v2", value : Terrain.height_data_center };
+                    tile.material.uniforms.uHeightData = { type : "t", value : Terrain.height_data_texture };
+                }
+
+                var end_time = (new Date() - start_time) / 1000;
+                console.log("end: " + end_time);
+
+                return resolve("height map generated");
             });
         },
 
@@ -283,10 +264,12 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                 {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : Terrain.global_offset },
+                    uHeightData   :  { type : "t", value : Terrain.height_data_texture },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "f", value : Terrain.alpha },
                     uLookDir      :  { type : "v3", value : Player.look_direction },
+                    uCenter       :  { type : "v2", value : Terrain.height_data_center },
                     uSunlight     :  {
                                         value :
                                             {
@@ -297,23 +280,14 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
                                              specular  : Light.sunlight_specular
                                             }
                                      },
-                    uHeightData   :  {
-                                        value :
-                                            {
-                                                top_left : Terrain.top_left_texture,
-                                                top_right : Terrain.top_right_texture,
-                                                bot_left : Terrain.bot_left_texture,
-                                                bot_right : Terrain.bot_right_texture,
-                                            }
-                                     },
                 },
                 defines :
                 {
-                    RESOLUTION   : Terrain.RESOLUTION,
-                    DATA_WIDTH   : Terrain.DATA_WIDTH,
+                    RESOLUTION  : Terrain.RESOLUTION,
+                    DATA_WIDTH : Terrain.DATA_WIDTH,
                     DATA_WIDTH_2 : Terrain.DATA_WIDTH / 2,
                 },
-                vertexShader  : terrain_vert_shader.value,
+                vertexShader  : TerrainVert.value,
                 fragmentShader  : Terrain.frag_shader.value,
                 transparent : true,
             });
@@ -345,9 +319,18 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
             Terrain.global_offset.x = camera.position.x;
             Terrain.global_offset.y = camera.position.y;
 
-            if (Player.initialized && (Utils.distance2D(Player.threeObj.position, Terrain.last_collider_pos) >= Terrain.RESOLUTION * 0.75))
+            if (Player.initialized)
             {
-                Terrain.updateCollider();
+
+                if (Utils.distance2D(Player.threeObj.position, Terrain.last_collider_pos) >= Terrain.RESOLUTION * 0.75)
+                {
+                    Terrain.updateCollider();
+                }
+
+                if (Utils.distance2D(Player.threeObj.position, Terrain.height_data_center) >= Terrain.WORLD_WIDTH)
+                {
+                    Terrain.updateHeightData(Player.threeObj.position);
+                }
             }
         },
 
@@ -424,40 +407,27 @@ define(["three", "utils", "scene", "light", "camera", "physics", "player", "shad
             var res = Terrain.RESOLUTION;
             var width = Terrain.DATA_WIDTH;
             var width2 = Terrain.DATA_WIDTH / 2;
-            var xi = 0, yi = 0, h = 0;
+            var xi = 0, yi = 0;
             var vertices = [];
 
             Terrain.init_chunk_pos.x = Math.round(Terrain.global_offset.x);
             Terrain.init_chunk_pos.y = Math.round(Terrain.global_offset.y);
 
+            var x_count = 0;
+            var y_count = 0;
+            var h_count = 0;
+            var h = 0;
+            var start_counting = false;
+
             for (var y = Terrain.init_chunk_pos.y - res; y < Terrain.init_chunk_pos.y + res; y++)
             {
                 for (var x = Terrain.init_chunk_pos.x - res; x < Terrain.init_chunk_pos.x + res; x++)
                 {
-                    xi = (x + width2) % width;
-                    yi = (y + width2) % width;
+                    xi = (x + width2 - Terrain.height_data_center.x) % width;
+                    yi = (y + width2 - Terrain.height_data_center.y) % width;
 
                     // assign height and find min/ max
-                    // deals with creases
-                    var x2 = x + 1;
-                    var y2 = y + 1;
-                    if (x2 >= 0 && y2 >= 0)
-                    {
-                        h = Terrain.top_right_data[xi + yi * width];
-                    }
-                    else if (x2 < 0 && y2 < 0)
-                    {
-                        h = Terrain.bot_left_data[xi + yi * width];
-                    }
-                    else if (x2 < 0 && y2 >= 0)
-                    {
-                        h = Terrain.top_left_data[xi + yi * width];
-                    }
-                    else
-                    {
-                        h = Terrain.bot_right_data[xi + yi * width];
-                    }
-
+                    h = Terrain.height_data[xi + yi * width];
                     new_height_data.push(h);
 
                     if (h > max_height) max_height = h;

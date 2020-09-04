@@ -34,7 +34,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         right_strafe : false,
         backward : false,
         previous_y_rotation : 0,
-        MAX_Z_VELOCITY : 250,
+        MAX_Z_VELOCITY : 200,
 
         //====================================================================
         //====================================================================

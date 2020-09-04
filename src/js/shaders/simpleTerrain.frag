@@ -10,7 +10,7 @@ struct DirLight
     vec3 specular;
 };
 
-#define MAX_HEIGHT 85.0
+#define MAX_HEIGHT 90.0
 
 varying vec3 vPosition;
 varying vec3 vNormal;
@@ -19,51 +19,34 @@ uniform vec3 uLookDir;
 uniform float uAlpha;
 uniform DirLight uSunlight;
 
-const float lod = 0.0;
-const vec3 snow = vec3(0.94, 0.91, 1.0);
-const vec3 rock = vec3(0.25, 0.25, 0.28);
-const vec3 grass = vec3(0.4, 0.58, 0.14);
-const vec3 sand = vec3(0.8, 0.76, 0.68);
-const vec3 water = vec3(0.52, 0.76, 0.87);
+vec3 white = vec3(1.0, 1.0, 1.0);
+vec3 rock = vec3(0.25, 0.25, 0.28);
+vec3 grass = vec3(0.4, 0.58, 0.14);
+vec3 sand = vec3(0.8, 0.76, 0.68);
+vec3 water = vec3(0.52, 0.76, 0.87);
 
 // function prototypes
-vec3 surfaceColor();
-vec3 directLightColor(vec3 color);
+vec3 calcHeightColor();
+vec3 calcDirectLight(vec3 color);
 
 void main()
 {
     // Base color
     vec3 color = vec3(0.0, 0.0, 0.0);
 
-    color += surfaceColor();
-    color += directLightColor(color);
+    color += calcHeightColor();
+    color += calcDirectLight(color);
 
     gl_FragColor = vec4(color, uAlpha);
 }
 
-vec3 surfaceColor()
+vec3 calcHeightColor()
 {
-    /*
-    // float flatness = dot(vec3(0.0, 0.0, 1.0), vNormal);
-    // // flatness = pow(flatness, 3.0);
-    // // flatness = step(0.2, flatness);
-    //
-    // float height = vPosition.z;
-    //
-    // if (height >= MAX_HEIGHT * 0.75)
-    // {
-    //     return mix(rock, snow, flatness);
-    // }
-    // else
-    // {
-    //     return mix (rock, grass, flatness);
-    // }
-    */
     float height = vPosition.z;
 
     if (height >= MAX_HEIGHT * 0.99)
     {
-        return snow;
+        return white;
     }
     else if (height >= MAX_HEIGHT * 0.6)
     {
@@ -83,7 +66,7 @@ vec3 surfaceColor()
     }
 }
 
-vec3 directLightColor(vec3 color)
+vec3 calcDirectLight(vec3 color)
 {
     vec3 light_dir = normalize(-uSunlight.direction);
 
