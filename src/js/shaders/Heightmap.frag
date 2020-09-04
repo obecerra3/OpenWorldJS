@@ -2,48 +2,22 @@
 
 uniform float uQuality;
 uniform float uQualityDelta;
-uniform float uFrequency;
-uniform int uIterations;
-
-// implicitly references sampler2D heightmap
+uniform vec2 uCenter;
 
 #include noise.glsl
 
 void main()
 {
-    vec2 cellSize = 1.0 / resolution.xy;
-    vec2 uv = gl_FragCoord.xy * cellSize;
+    vec3 pos = vec3(gl_FragCoord.xy - DATA_WIDTH_2 + uCenter, RAND_Z);
 
-    vec4 pos = texture2D(heightmap, uv);
-
-    float height = 0.0;
     float q = uQuality;
+    float height = 0.0;
 
-    for (int i = 0; i < uIterations; i++)
+    for (int i = 0; i < OCTAVES; i++)
     {
-        height += abs(snoise((pos.xyz / q) * uFrequency)) * q;
+        height += abs(snoise((pos / q) * FREQUENCY) * q);
         q *= uQualityDelta;
     }
 
     gl_FragColor = vec4(0.0, 0.0, 0.0, height / 255.0);
 }
-
-/*
-// for (var yi = 0; yi < width; yi++)
-// {
-//     for (var xi = 0; xi < width; xi++)
-//     {
-//         quality = 1;
-//         var x = (xi - width2 + Terrain.height_data_center.x) + Terrain.negative_bound;
-//         var y = (yi - width2 + Terrain.height_data_center.y) + Terrain.negative_bound;
-//
-//         for (var j = 0; j < iterations; j++)
-//         {
-//             var height = Math.abs(Terrain.perlin.noise((x / quality) * frequency, (y / quality) * frequency, Terrain.rand_z * frequency) * quality);
-//             data[xi + yi * width] += height;
-//
-//             quality *= quality_delta;
-//         }
-//     }
-// }
-*/

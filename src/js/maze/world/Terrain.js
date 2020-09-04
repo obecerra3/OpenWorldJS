@@ -39,7 +39,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         height_data_center : new THREE.Vector2(0, 0),
         perlin : new ImprovedNoise(),
         rand_z : Utils.terrainRandom() * 100,
-        negative_bound : Math.pow(2, 16),
 
         // physics
         collider_meshes : [],
@@ -74,6 +73,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 arguments : [],
             });
 
+            Terrain.initGPUCompute();
+
             // // create height_data using Promise
             Terrain.updateHeightData().then((uid) =>
             {
@@ -105,6 +106,47 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         //   RENDERING
         // --------------
 
+        initGPUCompute : () =>
+        {
+
+            HeightmapFrag.define("DATA_WIDTH_2", (Terrain.DATA_WIDTH / 2).toFixed(2));
+            HeightmapFrag.define("RAND_Z", Terrain.rand_z);
+            HeightmapFrag.define("FREQUENCY", 0.1);
+            HeightmapFrag.define("OCTAVES", 4);
+
+            Terrain.gpuCompute = new GPUComputationRenderer(Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, renderer);
+
+            Terrain.height_texture = Terrain.gpuCompute.createTexture();
+
+            Terrain.height_variable = Terrain.gpuCompute.addVariable("heightmap", HeightmapFrag.value, Terrain.height_texture);
+
+            var height_uniforms = Terrain.height_variable.material.uniforms;
+            height_uniforms["uQuality"] = { value : 1 };
+            height_uniforms["uQualityDelta"] = { value : 5 };
+            height_uniforms["uCenter"] = { value : new THREE.Vector2() };
+
+            var error = Terrain.gpuCompute.init();
+
+            if (error !== null)
+            {
+                console.error("GPU Compute Completeness: " + error);
+            }
+
+            Terrain.readHeightRenderTarget = new THREE.WebGLRenderTarget(
+                Terrain.DATA_WIDTH,
+                Terrain.DATA_WIDTH,
+                {
+                     wrapS: THREE.ClampToEdgeWrapping,
+                     wrapT: THREE.ClampToEdgeWrapping,
+                     minFilter: THREE.NearestFilter,
+                     magFilter: THREE.NearestFilter,
+                     format: THREE.RGBAFormat,
+                     type: THREE.UnsignedByteType,
+                     depthBuffer: false
+                }
+            );
+        },
+
         updateHeightData : (new_center_pos = null) =>
         {
             return new Promise((resolve, reject) =>
@@ -116,72 +158,15 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     Terrain.height_data_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
                 }
 
-                var gpuCompute = new GPUComputationRenderer(Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, renderer);
+                Terrain.height_variable.material.uniforms.uCenter.value = Terrain.height_data_center;
 
-                var height_texture = gpuCompute.createTexture();
-
-                var init_data = height_texture.image.data;
-
-                var index = 0;
-                var width2 = Terrain.DATA_WIDTH / 2;
-
-                for (var yi = 0; yi < Terrain.DATA_WIDTH; yi++)
-                {
-                    for (var xi = 0; xi < Terrain.DATA_WIDTH; xi++)
-                    {
-                        var x = (xi - width2 + Terrain.height_data_center.x) + Terrain.negative_bound;
-                        var y = (yi - width2 + Terrain.height_data_center.y) + Terrain.negative_bound;
-
-                        init_data[index] = x;
-                        init_data[index + 1] = y;
-                        init_data[index + 2] = Terrain.rand_z;
-                        init_data[index + 3] = 0;
-
-                        index += 4;
-                    }
-                }
-
-                var height_variable = gpuCompute.addVariable("heightmap", HeightmapFrag.value, height_texture);
-
-                gpuCompute.setVariableDependencies(height_variable, [height_variable]);
-
-                var height_uniforms = height_variable.material.uniforms;
-                height_uniforms["uQuality"] = { value : 1 };
-                height_uniforms["uQualityDelta"] = { value : 5 };
-                height_uniforms["uFrequency"] = { value : 0.1 };
-                height_uniforms["uIterations"] = { value : 4 };
-
-                var error = gpuCompute.init();
-
-                if ( error !== null )
-                {
-                    console.error("GPU Compute Completeness: " + error);
-                }
-
-                gpuCompute.compute();
-
-                var readHeightRenderTarget = new THREE.WebGLRenderTarget(
-                    Terrain.DATA_WIDTH,
-                    Terrain.DATA_WIDTH,
-                    {
-                         wrapS: THREE.ClampToEdgeWrapping,
-                         wrapT: THREE.ClampToEdgeWrapping,
-                         minFilter: THREE.NearestFilter,
-                         magFilter: THREE.NearestFilter,
-                         format: THREE.RGBAFormat,
-                         type: THREE.UnsignedByteType,
-                         depthBuffer: false
-                    }
-                );
-
-                console.log(height_variable);
+                Terrain.gpuCompute.compute();
 
                 var raw_data = new Uint8Array(4 * Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
 
-                gpuCompute.doRenderTarget(height_variable.material, readHeightRenderTarget);
-                renderer.readRenderTargetPixels(readHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, raw_data);
+                Terrain.gpuCompute.doRenderTarget(Terrain.height_variable.material, Terrain.readHeightRenderTarget);
+                renderer.readRenderTargetPixels(Terrain.readHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, raw_data);
 
-                console.log(raw_data);
                 var data = new Uint8Array(Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
 
                 for (var i = 0, j = 3; j < raw_data.length; j += 4, i++)
