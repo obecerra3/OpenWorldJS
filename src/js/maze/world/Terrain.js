@@ -21,10 +21,10 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
     var Terrain =
     {
         // rendering
-        WORLD_WIDTH : Math.pow(2,10),
-        DATA_WIDTH : Math.pow(2, 12),
+        WORLD_WIDTH : Math.pow(2, 12),
+        DATA_WIDTH : Math.pow(2, 13),
         LEVELS : 4,
-        RESOLUTION : 64.0,
+        RESOLUTION : 32.0,
         TILE_WIDTH : 1,
 
         obj : new THREE.Object3D(),
@@ -111,8 +111,10 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
             HeightmapFrag.define("DATA_WIDTH_2", (Terrain.DATA_WIDTH / 2).toFixed(2));
             HeightmapFrag.define("RAND_Z", Terrain.rand_z);
-            HeightmapFrag.define("FREQUENCY", 0.1);
-            HeightmapFrag.define("OCTAVES", 4);
+            // HeightmapFrag.define("FREQUENCY", 0.05);
+            // HeightmapFrag.define("OCTAVES", 2);
+            // HeightmapFrag.define("QUALITY", (20).toFixed(2));
+            // HeightmapFrag.define("QUALITY_DELTA", (1.5).toFixed(2));
 
             Terrain.gpuCompute = new GPUComputationRenderer(Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, renderer);
 
@@ -120,9 +122,9 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
             Terrain.height_variable = Terrain.gpuCompute.addVariable("heightmap", HeightmapFrag.value, Terrain.height_texture);
 
+            Terrain.gpuCompute.setVariableDependencies(Terrain.height_variable, [Terrain.height_variable]);
+
             var height_uniforms = Terrain.height_variable.material.uniforms;
-            height_uniforms["uQuality"] = { value : 1 };
-            height_uniforms["uQualityDelta"] = { value : 5 };
             height_uniforms["uCenter"] = { value : new THREE.Vector2() };
 
             var error = Terrain.gpuCompute.init();
@@ -153,6 +155,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             {
                 var start_time = new Date();
 
+                // update center pos
                 if (new_center_pos)
                 {
                     Terrain.height_data_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
@@ -160,8 +163,9 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
                 Terrain.height_variable.material.uniforms.uCenter.value = Terrain.height_data_center;
 
-                Terrain.gpuCompute.compute();
+                 Terrain.gpuCompute.compute();
 
+                // read from framebuffer
                 var raw_data = new Uint8Array(4 * Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
 
                 Terrain.gpuCompute.doRenderTarget(Terrain.height_variable.material, Terrain.readHeightRenderTarget);
@@ -174,6 +178,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     data[i] = raw_data[j];
                 }
 
+                // set new Terrain height_data and height_data_texture
                 Terrain.height_data = data;
                 Terrain.height_data_texture = new THREE.DataTexture(data, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, THREE.AlphaFormat);
                 Terrain.height_data_texture.magFilter = THREE.LinearFilter;
@@ -181,6 +186,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.height_data_texture.generateMipmaps = true;
                 Terrain.height_data_texture.needsUpdate = true;
 
+                // update uniforms of shaders
                 for (var c in Terrain.obj.children)
                 {
                     var tile = Terrain.obj.children[c];
