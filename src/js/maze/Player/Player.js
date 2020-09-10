@@ -883,6 +883,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         printState: () =>
         {
             console.log(Player.threeObj.position);
+            console.log(Player.collider.isGrounded(Player));
         },
 
     }

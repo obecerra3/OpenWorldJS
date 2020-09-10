@@ -10,7 +10,7 @@ struct DirLight
     vec3 specular;
 };
 
-#define MAX_HEIGHT 90.0
+#define MAX_HEIGHT 150.0
 
 varying vec3 vPosition;
 varying vec3 vNormal;
