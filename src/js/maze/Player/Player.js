@@ -9,7 +9,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
     {
         username: '',
         input_handler: PlayerInputHandler,
-        collider: {},
+        // collider: {},
         state: States.IDLE,
         running: false,
         crouching: false,
@@ -55,8 +55,8 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                     return Object.keys(Player.threeObj).length > 0
                            && Object.keys(Player.animator).length > 0
                            && Object.keys(Player.rigidbody).length > 0
-                           && Object.keys(Player.input_handler).length > 0
-                           && Object.keys(Player.collider).length > 0;
+                           && Object.keys(Player.input_handler).length > 0;
+                           // && Object.keys(Player.collider).length > 0;
                 },
                 action: () =>
                 {
@@ -87,17 +87,17 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         {
             // Collider
             // --------
-            var size_mult = 2.5;
-            var rays = [
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils.X.multiplyScalar(0.5), 0xff00ff),
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils._X.multiplyScalar(0.5), 0xff00ff),
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils.Y.multiplyScalar(0.5), 0xff00ff),
-                Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils._Y.multiplyScalar(0.5), 0xff00ff)
-            ];
-
-            Player.collider = Collider(rays, 4);
-
-            Player.input_handler.toggleShowRays = Player.collider.toggleShowRays.bind(Player.collider);
+            // var size_mult = 2.5;
+            // var rays = [
+            //     Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils.X.multiplyScalar(0.5), 0xff00ff),
+            //     Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils._X.multiplyScalar(0.5), 0xff00ff),
+            //     Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils.Y.multiplyScalar(0.5), 0xff00ff),
+            //     Ray(scene, Utils._Z, Utils.PLAYER_SIZE * size_mult, true, Utils._Y.multiplyScalar(0.5), 0xff00ff)
+            // ];
+            //
+            // Player.collider = Collider(rays, 4);
+            //
+            // Player.input_handler.toggleShowRays = Player.collider.toggleShowRays.bind(Player.collider);
 
             // Rigidbody
             // ---------
@@ -155,13 +155,15 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                     // fixes boundingSphere for frustum culling thanks @github.com/gogiii
                     if (obj.isSkinnedMesh)
                     {
-                        obj.castShadow = true;
-                        obj.receiveShadow = true;
-                        obj.geometry.computeBoundingSphere();
-                        var sphere = new THREE.Sphere();
-                        sphere.copy(obj.geometry.boundingSphere);
-                        sphere.applyMatrix4(obj.skeleton.bones[0].matrix);
-                        obj.geometry.boundingSphere = sphere;
+                        // obj.castShadow = true;
+                        // obj.receiveShadow = true;
+                        // obj.geometry.computeBoundingSphere();
+                        // var sphere = new THREE.Sphere();
+                        // sphere.copy(obj.geometry.boundingSphere);
+                        // sphere.applyMatrix4(obj.skeleton.bones[0].matrix);
+                        // obj.geometry.boundingSphere = sphere;
+
+                        obj.frustumCulled = false;
                     }
                 });
 
@@ -505,7 +507,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                     if (!Player.input_handler.orbit_enabled) Player.updateCameraPosition();
                 }
 
-                Player.collider.update(Player);
+                // Player.collider.update(Player);
 
                 Player.updateMoveDirection();
                 Player.updateVelocity(delta);
@@ -674,7 +676,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                     }
                     break;
                 case States.FALL_IDLE:
-                    if (Player.collider.isGrounded(Player))
+                    if (Player.isGrounded(Player))
                     {
                         Player.air_time = null;
                         Player.previous_y_rotation = Player.threeObj.rotation.y + Utils.PI;
@@ -684,7 +686,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
                     break;
                 }
 
-                if (!(Player.state == States.FALL_IDLE) && !Player.collider.isGrounded(Player))
+                if (!(Player.state == States.FALL_IDLE) && !Player.isGrounded(Player))
                 {
                     if (Player.air_time == null)
                     {
@@ -815,7 +817,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
 
         toggleJump: () =>
         {
-            if (Player.collider.isGrounded(Player) && !Player.crouching)
+            if (Player.isGrounded(Player) && !Player.crouching)
             {
                 Player.anim_transitions['any to fallIdle']();
                 Player.state = States.FALL_IDLE;
@@ -883,7 +885,7 @@ define(['three', 'gltfLoader', 'dracoLoader', 'animator', 'collider', 'ray',
         printState: () =>
         {
             console.log(Player.threeObj.position);
-            console.log(Player.collider.isGrounded(Player));
+            console.log(Player.isGrounded());
         },
 
     }

@@ -16,7 +16,7 @@ define(["three", "ammo", "utils"],
         dispatcher : {},
         ammo : Ammo,
         terrain_height_data : null,
-        TERRAIN_MARGIN : 3.0,
+        TERRAIN_MARGIN : 6.0,
 
         init: () =>
         {

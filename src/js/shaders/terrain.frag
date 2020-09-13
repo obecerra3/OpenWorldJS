@@ -10,7 +10,7 @@ struct DirLight
     vec3 specular;
 };
 
-#define MAX_HEIGHT 150.0
+#define MAX_HEIGHT 700.0
 
 varying vec3 vPosition;
 varying vec3 vNormal;
@@ -30,6 +30,8 @@ const vec3 water = vec3(0.52, 0.76, 0.87);
 vec3 surfaceColor();
 vec3 directLightColor(vec3 color);
 
+#include Noise.glsl
+
 void main()
 {
     // Base color
@@ -43,45 +45,12 @@ void main()
 
 vec3 surfaceColor()
 {
-    /*
-    // float flatness = dot(vec3(0.0, 0.0, 1.0), vNormal);
-    // // flatness = pow(flatness, 3.0);
-    // // flatness = step(0.2, flatness);
-    //
     // float height = vPosition.z;
-    //
-    // if (height >= MAX_HEIGHT * 0.75)
-    // {
-    //     return mix(rock, snow, flatness);
-    // }
-    // else
-    // {
-    //     return mix (rock, grass, flatness);
-    // }
-    */
-    float height = vPosition.z;
-
-    if (height >= MAX_HEIGHT * 0.99)
-    {
-        return snow;
-    }
-    else if (height >= MAX_HEIGHT * 0.6)
-    {
-        return rock;
-    }
-    else if (height >= MAX_HEIGHT * 0.1)
-    {
-        return grass;
-    }
-    else if (height >= MAX_HEIGHT * 0.05)
-    {
-        return sand;
-    }
-    else
-    {
-        return water;
-    }
-}
+    float r_small = iqFBM(vPosition.xy * 100.0);
+    float r_large = iqFBM(vPosition.xy * 0.01);
+    vec3 color = vec3(0.0, clamp(r_small, 0.0, 1.0) * 0.3 + 0.5, 0.0);
+    vec3 color2 = vec3(clamp(r_large, 0.0, 1.0) * 0.2 + 0.5, clamp(r_large, 0.0, 1.0) * 0.2 + 0.5, 0.0);
+    return mix(color, color2, 0.5);}
 
 vec3 directLightColor(vec3 color)
 {

@@ -5,7 +5,7 @@
 uniform vec3 uGlobalOffset;
 uniform vec2 uTileOffset;
 uniform float uScale;
-uniform sampler2D uHeightData;
+uniform sampler2D uHeightmap;
 uniform vec2 uCenter;
 
 varying vec3 vNormal;
@@ -18,7 +18,7 @@ const float lod = 0.0;
 float getHeight(vec3 pos);
 vec3 getNormal();
 
-#include edgemorph.glsl
+#include Edgemorph.glsl
 
 void main()
 {
@@ -31,7 +31,7 @@ void main()
     vPosition = uScale * position + vec3(uTileOffset, 0.0) + uGlobalOffset;
 
     // Snap to grid
-    float grid = uScale / float(RESOLUTION);
+    float grid = uScale / RESOLUTION;
     vPosition = floor(vPosition / grid) * grid;
 
     // Morph between zoom layers
@@ -54,14 +54,14 @@ void main()
 
 float getHeight(vec3 pos)
 {
-    vec2 uv = (pos.xy + - uCenter.xy + float(DATA_WIDTH_2)) / float(DATA_WIDTH);
+    vec2 uv = (pos.xy + - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
 
     float height = 0.0;
 
     #ifdef WEBGL2
-        height = textureLod(uHeightData, uv, lod).r;
+        height = textureLod(uHeightmap, uv, lod).r;
     #else
-        height = texture2DLod(uHeightData, uv, lod).r;
+        height = texture2DLod(uHeightmap, uv, lod).r;
     #endif
 
     return height;//* 255.0;
@@ -70,7 +70,7 @@ float getHeight(vec3 pos)
 vec3 getNormal()
 {
     // Get 2 vectors perpendicular to the unperturbed normal, and create at point at each (relative to position)
-    float delta = (vMorphFactor + 1.0) * uScale / float(RESOLUTION);
+    float delta = (vMorphFactor + 1.0) * uScale / RESOLUTION;
     vec3 dA = delta * normalize(cross(normal.yzx, normal));
     vec3 dB = delta * normalize(cross(dA, normal));
     vec3 p = vPosition;
