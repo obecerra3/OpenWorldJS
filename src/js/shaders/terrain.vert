@@ -59,12 +59,12 @@ float getHeight(vec3 pos)
     float height = 0.0;
 
     #ifdef WEBGL2
-        height = textureLod(uHeightmap, uv, lod).r;
+        height = texture(uHeightmap, uv).r;
     #else
-        height = texture2DLod(uHeightmap, uv, lod).r;
+        height = texture2D(uHeightmap, uv, lod).r;
     #endif
 
-    return height;//* 255.0;
+    return height;
 }
 
 vec3 getNormal()

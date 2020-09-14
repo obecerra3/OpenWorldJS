@@ -9,7 +9,20 @@ void main()
 {
     vec2 pos = gl_FragCoord.xy - DATA_WIDTH_2 + uCenter;
 
-    float height = abs(iqFBM(pos * 0.0003)) * 255.0 * 70.0 * 2.0;
+    float height = abs(iqFBM(pos * 0.0003)) * 255.0 * 70.0 * 4.0;
+
+    // MirroredRepeatWrapping
+    if (height >= 65536.0)
+    {
+        if (mod(floor(height / 65536.0), 2.0) == 0.0)
+        {
+            height = mod(height, 65536.0);
+        }
+        else
+        {
+            height = 65536.0 - mod(height, 65536.0);
+        }
+    }
 
     // float m_dist = distance(pos.xy, m_pos);
 

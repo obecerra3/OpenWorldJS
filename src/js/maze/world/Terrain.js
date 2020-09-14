@@ -110,6 +110,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         {
             return new Promise(async (resolve, reject) =>
             {
+                var start_time = new Date();
+
                 // define constants for shaders
                 HeightmapGenFrag.define("DATA_WIDTH_2", (Terrain.DATA_WIDTH / 2).toFixed(2));
                 GroundCheckFrag.define("DATA_WIDTH", (Terrain.DATA_WIDTH).toFixed(2));
@@ -213,8 +215,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.noise_texture.generateMipmaps = true;
                 Terrain.noise_texture.needsUpdate = true;
 
-                // compute grass texture
-                var grass_width = Math.pow(2, 8);
+                // compute grass textures
+                var grass_width = Math.pow(2, 10);
                 var largeRenderTarget = new THREE.WebGLRenderTarget(grass_width, grass_width,
                     {
                         wrapS: THREE.ClampToEdgeWrapping,
@@ -247,11 +249,36 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.grass_texture.generateMipmaps = true;
                 Terrain.grass_texture.needsUpdate = true;
 
+                grass_width = Math.pow(2, 8);
+                pixels = new Uint8Array(4 * grass_width * grass_width);
+                textureGenShader.uniforms.uTextureType.value = 2;
+                Terrain.gpuCompute.doRenderTarget(textureGenShader, smallRenderTarget);
+                renderer.readRenderTargetPixels(smallRenderTarget, 0, 0, grass_width, grass_width, pixels);
+                grass_data = new Uint8Array(pixels.buffer);
+                Terrain.grass_small_texture = new THREE.DataTexture(
+                    grass_data,
+                    grass_width,
+                    grass_width,
+                    THREE.RGBAFormat,
+                    THREE.UnsignedByteType,
+                    THREE.UVMapping,
+                    THREE.MirroredRepeatWrapping,
+                    THREE.MirroredRepeatWrapping,
+                    THREE.LinearFilter,
+                    THREE.LinearMipMapLinearFilter,
+                    1
+                );
+                Terrain.grass_small_texture.generateMipmaps = true;
+                Terrain.grass_small_texture.needsUpdate = true;
+
                 // set uniforms
                 var uniforms = Terrain.height_variable.material.uniforms;
                 uniforms["uCenter"] = { value : new THREE.Vector2() };
                 uniforms["uHash"] = { value : false };
                 uniforms["uNoise"] = { value : Terrain.noise_texture };
+
+                var end_time = (new Date() - start_time) / 1000;
+                console.log("Init GPUCompute Time: " + end_time);
 
                 return resolve("GPUCompute Initialized");
             });
@@ -316,7 +343,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.groundCheckShader.uniforms.uHeightmap = { type : "t", value : Terrain.height_data_texture };
 
                 var end_time = (new Date() - start_time) / 1000;
-                console.log("end: " + end_time);
+                console.log("Update Height Data Time: " + end_time);
 
                 return resolve("height map generated");
             });
@@ -392,7 +419,9 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                                              specular  : Light.sunlight_specular
                                             }
                                      },
-                    uGrass        :  { type : "t", value : Terrain.grass_texture },
+                    uGrassLarge   :  { type : "t", value : Terrain.grass_texture },
+                    uGrassSmall   :  { type : "t", value : Terrain.grass_small_texture },
+                    uNoise        :  { type : "t", value : Terrain.noise_texture },
                 },
                 defines :
                 {
@@ -408,7 +437,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
         render : () =>
         {
-            console.log("Terrain render called, must only happen once");
             // add obj to scene
             scene.add(Terrain.obj);
         },
