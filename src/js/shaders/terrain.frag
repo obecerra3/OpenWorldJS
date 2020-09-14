@@ -1,6 +1,7 @@
 // ----------------------
 // Terrain Frag Shader
 // ----------------------
+
 struct DirLight
 {
     vec3 direction;
@@ -18,19 +19,12 @@ varying vec3 vNormal;
 uniform vec3 uLookDir;
 uniform float uAlpha;
 uniform DirLight uSunlight;
-
-const float lod = 0.0;
-const vec3 snow = vec3(0.94, 0.91, 1.0);
-const vec3 rock = vec3(0.25, 0.25, 0.28);
-const vec3 grass = vec3(0.4, 0.58, 0.14);
-const vec3 sand = vec3(0.8, 0.76, 0.68);
-const vec3 water = vec3(0.52, 0.76, 0.87);
+uniform sampler2D uGrass;
+uniform vec2 uCenter;
 
 // function prototypes
 vec3 surfaceColor();
 vec3 directLightColor(vec3 color);
-
-#include Noise.glsl
 
 void main()
 {
@@ -45,12 +39,15 @@ void main()
 
 vec3 surfaceColor()
 {
-    // float height = vPosition.z;
-    float r_small = iqFBM(vPosition.xy * 100.0);
-    float r_large = iqFBM(vPosition.xy * 0.01);
-    vec3 color = vec3(0.0, clamp(r_small, 0.0, 1.0) * 0.3 + 0.5, 0.0);
-    vec3 color2 = vec3(clamp(r_large, 0.0, 1.0) * 0.2 + 0.5, clamp(r_large, 0.0, 1.0) * 0.2 + 0.5, 0.0);
-    return mix(color, color2, 0.5);}
+    vec2 uv = (vPosition.xy - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
+
+    #ifdef WEBGL2
+        vec3 grass1 = textureLod(uGrass, uv, 0.0).rgb;
+        return grass1;
+    #else
+        return texture2DLod(uGrass, uv, 0.0).rgb;
+    #endif
+}
 
 vec3 directLightColor(vec3 color)
 {

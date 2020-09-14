@@ -52,6 +52,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             if (Terrain.isWebGL2)
             {
                 TerrainVert.define("WEBGL2", 1.0);
+                TerrainFrag.define("WEBGL2", 1.0);
                 GroundCheckFrag.define("WEBGL2", 1.0);
             }
 
@@ -122,18 +123,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     TextureGenFrag.value,
                     {
                         uHash : { value : true },
-                    }
-                );
-
-                var noiseRenderTarget = new THREE.WebGLRenderTarget(256, 256,
-                    {
-                        wrapS: THREE.ClampToEdgeWrapping,
-                        wrapT: THREE.ClampToEdgeWrapping,
-                        minFilter: THREE.NearestFilter,
-                        magFilter: THREE.NearestFilter,
-                        format: THREE.RGBAFormat,
-                        type: THREE.UnsignedByteType,
-                        depthBuffer: false,
+                        uTextureType : { value : 0 },
                     }
                 );
 
@@ -188,11 +178,22 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 );
 
                 // compute noise texture
+                var smallRenderTarget = new THREE.WebGLRenderTarget(256, 256,
+                    {
+                        wrapS: THREE.ClampToEdgeWrapping,
+                        wrapT: THREE.ClampToEdgeWrapping,
+                        minFilter: THREE.NearestFilter,
+                        magFilter: THREE.NearestFilter,
+                        format: THREE.RGBAFormat,
+                        type: THREE.UnsignedByteType,
+                        depthBuffer: false,
+                    }
+                );
                 var pixels = new Uint8Array(4 * 256 * 256);
-                Terrain.gpuCompute.doRenderTarget(textureGenShader, noiseRenderTarget);
-                renderer.readRenderTargetPixels(noiseRenderTarget, 0, 0, 256, 256, pixels);
+                Terrain.gpuCompute.doRenderTarget(textureGenShader, smallRenderTarget);
+                renderer.readRenderTargetPixels(smallRenderTarget, 0, 0, 256, 256, pixels);
                 var noise_data = new Uint8Array(256 * 256);
-                for (i = 0, j = 0; j < pixels.length; i++, j+=4)
+                for (var i = 0, j = 0; j < pixels.length; i++, j+=4)
                 {
                     noise_data[i] = pixels[j];
                 }
@@ -211,6 +212,41 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 );
                 Terrain.noise_texture.generateMipmaps = true;
                 Terrain.noise_texture.needsUpdate = true;
+
+                // compute grass texture
+                var grass_width = Math.pow(2, 8);
+                var largeRenderTarget = new THREE.WebGLRenderTarget(grass_width, grass_width,
+                    {
+                        wrapS: THREE.ClampToEdgeWrapping,
+                        wrapT: THREE.ClampToEdgeWrapping,
+                        minFilter: THREE.NearestFilter,
+                        magFilter: THREE.NearestFilter,
+                        format: THREE.RGBAFormat,
+                        type: THREE.UnsignedByteType,
+                        depthBuffer: false,
+                    }
+                );
+                pixels = new Uint8Array(4 * grass_width * grass_width);
+                textureGenShader.uniforms.uTextureType.value = 1;
+                Terrain.gpuCompute.doRenderTarget(textureGenShader, largeRenderTarget);
+                renderer.readRenderTargetPixels(largeRenderTarget, 0, 0, grass_width, grass_width, pixels);
+                var grass_data = new Uint8Array(pixels.buffer);
+                Terrain.grass_texture = new THREE.DataTexture(
+                    grass_data,
+                    grass_width,
+                    grass_width,
+                    THREE.RGBAFormat,
+                    THREE.UnsignedByteType,
+                    THREE.UVMapping,
+                    THREE.MirroredRepeatWrapping,
+                    THREE.MirroredRepeatWrapping,
+                    THREE.LinearFilter,
+                    THREE.LinearMipMapLinearFilter,
+                    1
+                );
+                Terrain.grass_texture.generateMipmaps = true;
+                Terrain.grass_texture.needsUpdate = true;
+
                 // set uniforms
                 var uniforms = Terrain.height_variable.material.uniforms;
                 uniforms["uCenter"] = { value : new THREE.Vector2() };
@@ -356,8 +392,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                                              specular  : Light.sunlight_specular
                                             }
                                      },
-                    uNoise        :  { type : "t", value : Terrain.noise_texture },
-                    uHash         :  { type : "b", value : false },
+                    uGrass        :  { type : "t", value : Terrain.grass_texture },
                 },
                 defines :
                 {
