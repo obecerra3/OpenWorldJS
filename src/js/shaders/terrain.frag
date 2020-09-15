@@ -68,17 +68,5 @@ vec3 directLightColor(vec3 color)
     float diff = max(dot(vNormal, light_dir), 0.0);
     vec3 diffuse = uSunlight.diffuse * diff * color;
 
-    // specular light
-    vec3 specular = vec3(0.0);
-
-    if (light_dir.z > 0.0)
-    {
-        vec3 half_vector = normalize(normalize(cameraPosition - vPosition) + light_dir);
-        float spec = dot(vNormal, half_vector);
-        spec = max(0.0, spec);
-        spec = pow(spec, 25.0);
-        specular = uSunlight.specular * spec * color;
-    }
-
-    return (ambient + diffuse + specular);
+    return (ambient + diffuse);
 }
