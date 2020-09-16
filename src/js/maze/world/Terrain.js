@@ -301,6 +301,40 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.grass_small_texture.generateMipmaps = true;
                 Terrain.grass_small_texture.needsUpdate = true;
 
+                // compute rock texture
+                var rock_width = Math.pow(2, 10);
+                largeRenderTarget = new THREE.WebGLRenderTarget(rock_width, rock_width,
+                    {
+                        wrapS: THREE.ClampToEdgeWrapping,
+                        wrapT: THREE.ClampToEdgeWrapping,
+                        minFilter: THREE.NearestFilter,
+                        magFilter: THREE.NearestFilter,
+                        format: THREE.RGBAFormat,
+                        type: THREE.UnsignedByteType,
+                        depthBuffer: false,
+                    }
+                );
+                pixels = new Uint8Array(4 * rock_width * rock_width);
+                textureGenShader.uniforms.uTextureType.value = 3;
+                Terrain.gpuCompute.doRenderTarget(textureGenShader, largeRenderTarget);
+                renderer.readRenderTargetPixels(largeRenderTarget, 0, 0, rock_width, rock_width, pixels);
+                var rock_data = new Uint8Array(pixels.buffer);
+                Terrain.rock_texture = new THREE.DataTexture(
+                    rock_data,
+                    rock_width,
+                    rock_width,
+                    THREE.RGBAFormat,
+                    THREE.UnsignedByteType,
+                    THREE.UVMapping,
+                    THREE.MirroredRepeatWrapping,
+                    THREE.MirroredRepeatWrapping,
+                    THREE.LinearFilter,
+                    THREE.LinearMipMapLinearFilter,
+                    1
+                );
+                Terrain.rock_texture.generateMipmaps = true;
+                Terrain.rock_texture.needsUpdate = true;
+
                 // set uniforms
                 var uniforms = Terrain.heightmapGenShader.uniforms;
                 uniforms["uCenter"] = { value : new THREE.Vector2() };
@@ -334,27 +368,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
                 Terrain.gpuCompute.doRenderTarget(Terrain.heightmapGenShader, Terrain.readHeightRenderTarget);
                 renderer.readRenderTargetPixels(Terrain.readHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, pixels);
-
-                // calculate box blur height_data
-                Terrain.boxBlurShader.uniforms.uHeightmap.value = Terrain.readHeightRenderTarget.texture;
-                Terrain.gpuCompute.doRenderTarget(Terrain.boxBlurShader, Terrain.readSmoothHeightRenderTarget);
-
-                for (var i = 0; i < 100; i++)
-                {
-                    if (i % 2 == 0)
-                    {
-                        Terrain.boxBlurShader.uniforms.uHeightmap.value = Terrain.readSmoothHeightRenderTarget.texture;
-                        Terrain.gpuCompute.doRenderTarget(Terrain.boxBlurShader, Terrain.readHeightRenderTarget);
-                    }
-                    else
-                    {
-                        Terrain.boxBlurShader.uniforms.uHeightmap.value = Terrain.readHeightRenderTarget.texture;
-                        Terrain.gpuCompute.doRenderTarget(Terrain.boxBlurShader, Terrain.readSmoothHeightRenderTarget);
-                    }
-                }
-
-                // renderer.readRenderTargetPixels(Terrain.readHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, pixels);
-                renderer.readRenderTargetPixels(Terrain.readSmoothHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, pixels);
                 var floatmap = new Float32Array(Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
 
                 for (var i = 0, j = 0; j < pixels.length; i++, j+=4)
@@ -379,12 +392,63 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.height_data_texture.generateMipmaps = true;
                 Terrain.height_data_texture.needsUpdate = true;
 
+                // calculate box blur height_data
+                Terrain.boxBlurShader.uniforms.uHeightmap.value = Terrain.readHeightRenderTarget.texture;
+                Terrain.gpuCompute.doRenderTarget(Terrain.boxBlurShader, Terrain.readSmoothHeightRenderTarget);
+
+                for (var i = 0; i < 100; i++)
+                {
+                    if (i % 2 == 0)
+                    {
+                        Terrain.boxBlurShader.uniforms.uHeightmap.value = Terrain.readSmoothHeightRenderTarget.texture;
+                        Terrain.gpuCompute.doRenderTarget(Terrain.boxBlurShader, Terrain.readHeightRenderTarget);
+                    }
+                    else
+                    {
+                        Terrain.boxBlurShader.uniforms.uHeightmap.value = Terrain.readHeightRenderTarget.texture;
+                        Terrain.gpuCompute.doRenderTarget(Terrain.boxBlurShader, Terrain.readSmoothHeightRenderTarget);
+                    }
+                }
+
+                renderer.readRenderTargetPixels(Terrain.readSmoothHeightRenderTarget, 0, 0, Terrain.DATA_WIDTH, Terrain.DATA_WIDTH, pixels);
+                var floatmap2 = new Float32Array(Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
+                for (var i = 0, j = 0; j < pixels.length; i++, j+=4)
+                {
+                    floatmap2[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
+                }
+                var floatmap3 = new Float32Array(Terrain.DATA_WIDTH * Terrain.DATA_WIDTH);
+                for (var i = 0; i < floatmap.length; i++)
+                {
+                    var value = floatmap[i] - floatmap2[i];
+                    if (value < 1.0)
+                    {
+                        value = 0.0;
+                    }
+                    floatmap3[i] = THREE.MathUtils.clamp(value, 0.0, 1.0);
+                }
+                Terrain.height_diff_texture = new THREE.DataTexture(
+                    floatmap3,
+                    Terrain.DATA_WIDTH,
+                    Terrain.DATA_WIDTH,
+                    THREE.RedFormat,
+                    THREE.FloatType,
+                    THREE.UVMapping,
+                    THREE.ClampToEdgeWrapping,
+                    THREE.ClampToEdgeWrapping,
+                    THREE.LinearFilter,
+                    THREE.LinearMipMapLinearFilter,
+                    1
+                );
+                Terrain.height_diff_texture.generateMipmaps = true;
+                Terrain.height_diff_texture.needsUpdate = true;
+
                 // update uniforms of shaders
                 for (var c in Terrain.obj.children)
                 {
                     var tile = Terrain.obj.children[c];
                     tile.material.uniforms.uCenter = { type : "v2", value : Terrain.height_data_center };
                     tile.material.uniforms.uHeightmap = { type : "t", value : Terrain.height_data_texture };
+                    tile.material.uniforms.uDiffmap = { type : "t", value : Terrain.height_diff_texture };
                 }
 
                 Terrain.groundCheckShader.uniforms.uCenter = { type : "v2", value : Terrain.height_data_center };
@@ -452,6 +516,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : Terrain.global_offset },
                     uHeightmap    :  { type : "t", value : Terrain.height_data_texture },
+                    uDiffmap      :  { type : "t", value : Terrain.height_diff_texture },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "f", value : Terrain.alpha },
@@ -469,7 +534,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                                      },
                     uGrassLarge   :  { type : "t", value : Terrain.grass_texture },
                     uGrassSmall   :  { type : "t", value : Terrain.grass_small_texture },
-                    uNoise        :  { type : "t", value : Terrain.noise_texture },
+                    uRock         :  { type : "t", value : Terrain.rock_texture },
                 },
                 defines :
                 {

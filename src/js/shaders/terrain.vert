@@ -16,6 +16,7 @@ const float lod = 0.0;
 
 // function prototypes
 float getHeight(vec3 pos);
+float getSmoothHeight(vec3 pos);
 vec3 getNormal();
 
 #include Edgemorph.glsl
@@ -47,7 +48,8 @@ void main()
 
     // Get height and calculate normal
     vNormal = getNormal();
-    vPosition = vPosition + vec3(0.0, 0.0, 1.0) * getHeight(vPosition);
+    float height = getHeight(vPosition);
+    vPosition = vPosition + vec3(0.0, 0.0, 1.0) * height;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
 }

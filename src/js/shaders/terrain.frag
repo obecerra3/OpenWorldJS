@@ -22,13 +22,11 @@ uniform DirLight uSunlight;
 uniform sampler2D uGrassLarge;
 uniform sampler2D uGrassSmall;
 uniform vec2 uCenter;
-uniform sampler2D uNoise;
+uniform sampler2D uDiffmap;
 
 // function prototypes
 vec3 surfaceColor();
 vec3 directLightColor(vec3 color);
-
-#include TextureNoTile.glsl
 
 void main()
 {
@@ -45,6 +43,7 @@ vec3 surfaceColor()
 {
     float flatness = dot(vec3(0, 1, 0), vNormal);
     vec2 uv = (vPosition.xy - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
+    float d = texture(uDiffmap, uv).x;
 
     #ifdef WEBGL2
         vec3 grass1 = texture(uGrassLarge, 4.0 * uv).rgb;
@@ -54,7 +53,9 @@ vec3 surfaceColor()
         vec3 grass2 = texture2D(uGrassSmall, 500.0 * uv).rgb;
     #endif
 
-    return mix(mix(grass1, grass2, 0.5), vec3(0.1, 0.1, 0.1), flatness);
+    vec3 grass = mix(mix(grass1, grass2, 0.5), vec3(0.1, 0.1, 0.1), flatness);
+
+    return mix(grass, vec3(0.5, 0.5, 0.5), d);
 }
 
 vec3 directLightColor(vec3 color)
