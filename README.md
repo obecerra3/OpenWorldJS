@@ -12,6 +12,8 @@ _3D open world game engine using three.js._
 
   - Navigate to the directory named _Maze_ in shell
 
+  - run node ./src/js/maze/world/HeightMapGenerator.js and wait for completion
+
   - Enter the command `./local.sh`
 
   - Game will be hosted locally, access with web browser
