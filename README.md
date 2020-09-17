@@ -1,8 +1,8 @@
 # Maze.io
 
-_3D game engine using three.js as a graphics library and ammo.js for a physics library._
+_3D open world game engine using three.js._
 
-![Alt_Text](https://media.giphy.com/media/j25Cd6TirdYcmfZkX9/giphy.gif)
+![Alt_Text](https://media.giphy.com/media/oHaiCSpAxsjR8ZKxeQ/giphy.gif)
 
 ## Setup
 
@@ -19,6 +19,8 @@ _3D game engine using three.js as a graphics library and ammo.js for a physics l
     - **Address:** <http://localhost:8000/maze.php>
 
 ## Basic structure
+
+![Alt_Text](https://media.giphy.com/media/j25Cd6TirdYcmfZkX9/giphy.gif)
 
 ## 'maze.js'
 
@@ -39,7 +41,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
     - 1 to decrease orbit speed
 
   - g to toggle Zero Gravity, Low Gravity, Normal Gravity
-  
+
   - x to toggle first person or third person controls
 
   ### Debug Commands
@@ -47,13 +49,13 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   Use input in the top right corner to enter commands for debugging purposes during the game. For example
   run1 toggles faster player movement speed, run0 toggles normal player movement speed. Full uses are
   in PlayerInputHandler.js.
-  
+
   ![Alt_Text](https://media.giphy.com/media/H1qGAF9wEtzx4jRWMW/giphy.gif)
 
   ### Collider.js/ Ray.js
 
   Raycasting and collider support to check for collisions with meshes or if a game entity is grounded.
-  
+
   ### Physics.js
 
   Wrapper for Ammo library functions used for initializing Ammo, creating rigidbodies, creating and
@@ -61,16 +63,16 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   ### Terrain.js
 
-  Uses GLSL terrain.vert and terrain.frag as well as Terrain.js and the CDLOD algorithm created by felixpalmer.
-  The height_data is generated in Terrain.js and used as a sampler2D texture for the vertex shader. The current
-  idea is to use MirroredRepeatWrapping of a low frequency band of Perlin noise as the base for the terrain. From
-  here we will introduce a feature agents data structure to add terrain points procedurally that will modify
-  the final vertice heights (e.g. a mountain range set of points that increase the amplitude of the noise data).
+  Currently using 2D Gradient Noise and Fractional Brownian Motion in Noise.glsl. This creates a realistic terrain
+  with several sharp edges/ details. This is pre-calculated per chunk using GPGPU GLSL Fragment Shaders through the
+  threejs library GPUCompute in Terrain.js. Also using a box blur algorithm to create a smoothed version of the terrain.
+  Textures are created procedurally using noise in TextureGen.frag. A gradient noise LUT is also precomputed in TextureGen.frag
+  to be used instead of a slower hash function.
 
   Terrain physics is handled by a moving chunk of height data centered on the player position which is updated once
   the player moves past Terrain.UPDATE_DISTANCE. The shape of the ammo height data mesh collider is updated
-  instead of deleting/ creating a new collider. There is also a mesh created on the CPU side (Terrain.collider_mesh)
-  which is used for raycasting to check if the player is grounded.
+  instead of deleting/ creating a new collider. Using GPGPU in order to check if the player is grounded by comparing
+  the player position to the current height of the terrain.
 
   ### MazeEngine.js
 
@@ -82,11 +84,11 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
 
   - Player animation FSM states are in Utils/States.js
   - Includes support for Idle, Idle Left/Right Turning
-  - Foward/Backward Walking, Left/Right Walk Strafing 
+  - Foward/Backward Walking, Left/Right Walk Strafing
   - Forward/Backward Running, Left/Right Run Strafing
   - Jump Animation/ Fall Idle animation/ Land Animation
   - Crouch Idle, Forward/Backward Crouch Walking
-  
+
   ![Alt_Text](https://media.giphy.com/media/igJyN1fDCncHgXyA2m/giphy.gif)
 
   ### Debug.js
@@ -131,4 +133,3 @@ The libraries we are using are in the **lib** directory
 - Terrain CDLOD from https://github.com/felixpalmer/lod-terrain
 
 - mixamo.com for animations and 3D Player models.
-

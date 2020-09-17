@@ -301,39 +301,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 Terrain.grass_small_texture.generateMipmaps = true;
                 Terrain.grass_small_texture.needsUpdate = true;
 
-                // compute rock texture
-                var rock_width = Math.pow(2, 10);
-                largeRenderTarget = new THREE.WebGLRenderTarget(rock_width, rock_width,
-                    {
-                        wrapS: THREE.ClampToEdgeWrapping,
-                        wrapT: THREE.ClampToEdgeWrapping,
-                        minFilter: THREE.NearestFilter,
-                        magFilter: THREE.NearestFilter,
-                        format: THREE.RGBAFormat,
-                        type: THREE.UnsignedByteType,
-                        depthBuffer: false,
-                    }
-                );
-                pixels = new Uint8Array(4 * rock_width * rock_width);
-                textureGenShader.uniforms.uTextureType.value = 3;
-                Terrain.gpuCompute.doRenderTarget(textureGenShader, largeRenderTarget);
-                renderer.readRenderTargetPixels(largeRenderTarget, 0, 0, rock_width, rock_width, pixels);
-                var rock_data = new Uint8Array(pixels.buffer);
-                Terrain.rock_texture = new THREE.DataTexture(
-                    rock_data,
-                    rock_width,
-                    rock_width,
-                    THREE.RGBAFormat,
-                    THREE.UnsignedByteType,
-                    THREE.UVMapping,
-                    THREE.MirroredRepeatWrapping,
-                    THREE.MirroredRepeatWrapping,
-                    THREE.LinearFilter,
-                    THREE.LinearMipMapLinearFilter,
-                    1
-                );
-                Terrain.rock_texture.generateMipmaps = true;
-                Terrain.rock_texture.needsUpdate = true;
 
                 // set uniforms
                 var uniforms = Terrain.heightmapGenShader.uniforms;
@@ -534,7 +501,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                                      },
                     uGrassLarge   :  { type : "t", value : Terrain.grass_texture },
                     uGrassSmall   :  { type : "t", value : Terrain.grass_small_texture },
-                    uRock         :  { type : "t", value : Terrain.rock_texture },
                 },
                 defines :
                 {
