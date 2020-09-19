@@ -49,7 +49,6 @@ var require =
         ray : "./physics/Ray",
         states : "./utils/States",
         terrain : "./world/Terrain",
-        texture : "../textures/texture",
         time : "./Utils/Time",
         utils : "./utils/Utils",
         world : "./world/World",

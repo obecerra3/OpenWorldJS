@@ -5,6 +5,7 @@ define(["three", "ammo", "utils"],
     // change this to happen only once
     Ammo().then((AmmoLib) =>
     {
+        console.log("Ammo init");
         Ammo = AmmoLib;
     });
 
@@ -18,74 +19,74 @@ define(["three", "ammo", "utils"],
         terrain_height_data : null,
         TERRAIN_MARGIN : 6.0,
 
-        init: () =>
+        init: function()
         {
-            var collisionConfiguration = new Physics.ammo.btDefaultCollisionConfiguration();
-            Physics.dispatcher         = new Physics.ammo.btCollisionDispatcher(collisionConfiguration);
-            var overlappingPairCache   = new Physics.ammo.btDbvtBroadphase();
-            var solver                 = new Physics.ammo.btSequentialImpulseConstraintSolver();
+            var collisionConfiguration = new this.ammo.btDefaultCollisionConfiguration();
+            this.dispatcher         = new this.ammo.btCollisionDispatcher(collisionConfiguration);
+            var overlappingPairCache   = new this.ammo.btDbvtBroadphase();
+            var solver                 = new this.ammo.btSequentialImpulseConstraintSolver();
 
-            Physics.physicsWorld = new Physics.ammo.btDiscreteDynamicsWorld(Physics.dispatcher, overlappingPairCache, solver, collisionConfiguration);
-            Physics.physicsWorld.setGravity(new Physics.ammo.btVector3(0, 0, 0));
+            this.physicsWorld = new this.ammo.btDiscreteDynamicsWorld(this.dispatcher, overlappingPairCache, solver, collisionConfiguration);
+            this.physicsWorld.setGravity(new this.ammo.btVector3(0, 0, 0));
 
-            Physics.tempBtTransform = new Physics.ammo.btTransform();
+            this.tempBtTransform = new this.ammo.btTransform();
         },
 
-        update: (_delta) =>
+        update: function(delta)
         {
-            Physics.physicsWorld.stepSimulation(_delta, 10);
+            this.physicsWorld.stepSimulation(delta, 10);
 
-            Physics.updateDynamicRigidbodies();
+            this.updateDynamicRigidbodies();
         },
 
         //dynamicRigidBody obj is of type PhysicsObject
         //updating specifically the graphics (threeObj) component from the
         //motion state of the physics rigidbody component
-        updateDynamicRigidbodies : () =>
+        updateDynamicRigidbodies : function()
         {
             var motionState, p, q;
-            Physics.dynamicRigidBodies.forEach((obj) =>
+            this.dynamicRigidBodies.forEach((obj) =>
             {
                 motionState = obj.rigidbody.getMotionState();
-                motionState.getWorldTransform(Physics.tempBtTransform);
-                p = Physics.tempBtTransform.getOrigin();
-                q = Physics.tempBtTransform.getRotation();
+                motionState.getWorldTransform(this.tempBtTransform);
+                p = this.tempBtTransform.getOrigin();
+                q = this.tempBtTransform.getRotation();
                 obj.threeObj.position.set(p.x() - obj.pos_offset.x, p.y() - obj.pos_offset.y, p.z() - obj.pos_offset.z);
                 obj.threeObj.quaternion.set(q.x(), q.y(), q.z(), q.w());
             });
         },
 
-        //returns a Physics.ammo.btRigidBody (also adds it to the physics world)
+        //returns a this.ammo.btRigidBody (also adds it to the physics world)
         //threeObj:
         //physics_shape:
         //init_pos : btVector3
         //init_quat: quaternion
         //position
-        createRigidbody: (threeObj, physics_shape, mass, init_pos, init_quat, pos_offset = new THREE.Vector3(), add_pointer = false) =>
+        createRigidbody: function(threeObj, physics_shape, mass, init_pos, init_quat, pos_offset = new THREE.Vector3(), add_pointer = false)
         {
-            var transform = new Physics.ammo.btTransform();
+            var transform = new this.ammo.btTransform();
             transform.setIdentity();
-            transform.setOrigin(new Physics.ammo.btVector3(init_pos.x + pos_offset.x, init_pos.y + pos_offset.y, init_pos.z + pos_offset.z));
-            transform.setRotation(new Physics.ammo.btQuaternion(init_quat.x, init_quat.y, init_quat.z, init_quat.w));
+            transform.setOrigin(new this.ammo.btVector3(init_pos.x + pos_offset.x, init_pos.y + pos_offset.y, init_pos.z + pos_offset.z));
+            transform.setRotation(new this.ammo.btQuaternion(init_quat.x, init_quat.y, init_quat.z, init_quat.w));
 
-            var motionState = new Physics.ammo.btDefaultMotionState(transform);
-            var localInertia = new Physics.ammo.btVector3(0, 0, 0);
+            var motionState = new this.ammo.btDefaultMotionState(transform);
+            var localInertia = new this.ammo.btVector3(0, 0, 0);
             physics_shape.calculateLocalInertia(mass, localInertia);
 
-            var rbInfo = new Physics.ammo.btRigidBodyConstructionInfo(mass, motionState, physics_shape, localInertia);
-            var rb = new Physics.ammo.btRigidBody(rbInfo);
+            var rbInfo = new this.ammo.btRigidBodyConstructionInfo(mass, motionState, physics_shape, localInertia);
+            var rb = new this.ammo.btRigidBody(rbInfo);
             try
             {
-                Physics.physicsWorld.addRigidBody(rb);
+                this.physicsWorld.addRigidBody(rb);
             }
             catch (err)
             {
-                console.log("Physics.js ERROR probably due to using multiple Physics.ammolibs: " + err);
+                console.log("this.js ERROR probably due to using multiple this.ammolibs: " + err);
             }
 
             if (add_pointer)
             {
-                var btVecUserData = new Physics.ammo.btVector3(0, 0, 0);
+                var btVecUserData = new this.ammo.btVector3(0, 0, 0);
                 btVecUserData.threeObj = threeObj;
                 rb.setUserPointer(btVecUserData);
             }
@@ -94,16 +95,16 @@ define(["three", "ammo", "utils"],
             //with the movement/ rotation of the rigidbody in the update() loop.
             if (mass > 0) {
                 rb.setActivationState(4);
-                Physics.dynamicRigidBodies.push(Physics.PhysicsObject(threeObj, rb, pos_offset));
+                this.dynamicRigidBodies.push(this.PhysicsObject(threeObj, rb, pos_offset));
             }
 
             return rb;
         },
 
-        //PhysicsObject internal class to Physics Class
+        //PhysicsObject internal class to this Class
         //holds graphics component, position offset to draw graphics component
         //and rigidbody ammo object
-        PhysicsObject: (threeObj, rigidbody, pos_offset) =>
+        PhysicsObject: function(threeObj, rigidbody, pos_offset)
         {
             var physics_obj =
             {
@@ -132,52 +133,52 @@ define(["three", "ammo", "utils"],
         // height_extents,
         // height_data,
         // center_pos,
-        createTerrainCollider: (cd) =>
+        createTerrainCollider: function(cd)
         {
             // create shape
-            var shape = Physics.createTerrainShape(cd);
+            var shape = this.createTerrainShape(cd);
 
             // transform object according to cd.center_pos and cd.min/max height
-            var transform = new Physics.ammo.btTransform();
+            var transform = new this.ammo.btTransform();
             transform.setIdentity();
-            transform.setOrigin(new Physics.ammo.btVector3(
+            transform.setOrigin(new this.ammo.btVector3(
                 cd.center_pos.x, cd.center_pos.y,
-                    ((cd.min_height + cd.max_height) / 2) - Physics.TERRAIN_MARGIN));
+                    ((cd.min_height + cd.max_height) / 2) - this.TERRAIN_MARGIN));
 
             // create rigidbody
             var mass = 0;
-            var local_inertia = new Physics.ammo.btVector3(0, 0, 0);
-            var motion_state = new Physics.ammo.btDefaultMotionState(transform);
-            var rb = new Physics.ammo.btRigidBody(
-                new Physics.ammo.btRigidBodyConstructionInfo(
+            var local_inertia = new this.ammo.btVector3(0, 0, 0);
+            var motion_state = new this.ammo.btDefaultMotionState(transform);
+            var rb = new this.ammo.btRigidBody(
+                new this.ammo.btRigidBodyConstructionInfo(
                     mass, motion_state, shape, local_inertia));
 
             // add userData to mark this rb as the ground
-            var btVecUserData = new Physics.ammo.btVector3(0, 0, 0);
+            var btVecUserData = new this.ammo.btVector3(0, 0, 0);
             btVecUserData.threeObj = { "userData" : { "name" :  "ground" } };
             rb.setUserPointer(btVecUserData);
 
             // add to physics world
-            Physics.physicsWorld.addRigidBody(rb);
+            this.physicsWorld.addRigidBody(rb);
             return rb;
         },
 
-        updateTerrainCollider: (cd, collider) =>
+        updateTerrainCollider: function(cd, collider)
         {
             // need max_height, min_height
-            var shape = Physics.createTerrainShape(cd);
-            var transform = new Physics.ammo.btTransform();
+            var shape = this.createTerrainShape(cd);
+            var transform = new this.ammo.btTransform();
             transform.setIdentity();
             transform.setOrigin(
-                new Physics.ammo.btVector3(cd.center_pos.x, cd.center_pos.y,
-                    ((cd.min_height + cd.max_height) / 2) - Physics.TERRAIN_MARGIN));
+                new this.ammo.btVector3(cd.center_pos.x, cd.center_pos.y,
+                    ((cd.min_height + cd.max_height) / 2) - this.TERRAIN_MARGIN));
             collider.setCollisionShape(shape);
             collider.setWorldTransform(transform);
             collider.getMotionState().setWorldTransform(transform);
         },
 
-        // takes as input a TerrainData object passed from Physics.createTerrainCollider()
-        createTerrainShape: (cd) =>
+        // takes as input a TerrainData object passed from this.createTerrainCollider()
+        createTerrainShape: function(cd)
         {
             // This parameter is not really used, since we are using PHY_FLOAT height data type and hence it is ignored
             var height_scale = 1;
@@ -191,13 +192,13 @@ define(["three", "ammo", "utils"],
             // (inverts the triangles)
             var flip_quad_edges = false;
 
-            // Creates height data buffer in Physics.ammo heap
-            if (Physics.terrain_height_data == null)
+            // Creates height data buffer in this.ammo heap
+            if (this.terrain_height_data == null)
             {
-                Physics.terrain_height_data = Physics.ammo._malloc(4 * cd.width * cd.depth);
+                this.terrain_height_data = this.ammo._malloc(4 * cd.width * cd.depth);
             }
 
-            // Copy the javascript height data array to the Physics.ammo one.
+            // Copy the javascript height data array to the this.ammo one.
             var p = 0;
             var p2 = 0;
             for (var j = 0; j < cd.depth; j++)
@@ -205,7 +206,7 @@ define(["three", "ammo", "utils"],
                 for (var i = 0; i < cd.width; i++)
                 {
                     // write 32-bit float data to memory
-                    Physics.ammo.HEAPF32[Physics.terrain_height_data + p2 >> 2] = cd.height_data[p];
+                    this.ammo.HEAPF32[this.terrain_height_data + p2 >> 2] = cd.height_data[p];
                     // index of height_data
                     p++;
                     // 4 bytes/float
@@ -214,10 +215,10 @@ define(["three", "ammo", "utils"],
             }
 
             // Creates the heightfield physics shape
-            var shape = new Physics.ammo.btHeightfieldTerrainShape(
+            var shape = new this.ammo.btHeightfieldTerrainShape(
                 cd.width,
                 cd.depth,
-                Physics.terrain_height_data,
+                this.terrain_height_data,
                 height_scale,
                 cd.min_height,
                 cd.max_height,
@@ -229,10 +230,10 @@ define(["three", "ammo", "utils"],
             // Set horizontal scale
             var scaleX = cd.width_extents / (cd.width - 1);
             var scaleY = cd.depth_extents / (cd.depth - 1);
-            shape.setLocalScaling(new Physics.ammo.btVector3(scaleX, scaleY, 1));
+            shape.setLocalScaling(new this.ammo.btVector3(scaleX, scaleY, 1));
 
             // set margin to avoid clipping
-            shape.setMargin(Physics.TERRAIN_MARGIN);
+            shape.setMargin(this.TERRAIN_MARGIN);
 
             return shape;
         }
