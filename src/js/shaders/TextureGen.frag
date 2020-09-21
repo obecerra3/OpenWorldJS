@@ -5,10 +5,8 @@ uniform int uTextureType;
 
 float r = 0.0;
 
-void main()
-{
-    switch (uTextureType)
-    {
+void main() {
+    switch (uTextureType) {
         // 2D Gradient Noise LUT
         case 0:
             gl_FragColor = vec4(noised(gl_FragCoord.xy).x, 0.0, 0.0, 0.0);

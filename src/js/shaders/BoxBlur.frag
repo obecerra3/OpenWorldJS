@@ -1,7 +1,6 @@
 uniform sampler2D uHeightmap;
 
-void main()
-{
+void main() {
     vec2 cell_size = 1.0 / resolution.xy;
 
     vec2 uv = gl_FragCoord.xy * cell_size;

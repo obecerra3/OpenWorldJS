@@ -1,6 +1,6 @@
 define(["three", "container"],
-(THREE, container) =>
-{
+       (THREE, container) => {
+
     container.innerHTML = "";
     var renderer = new THREE.WebGLRenderer({antialias: true, clearColor: 0x000000});
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -11,8 +11,7 @@ define(["three", "container"],
     renderer.gammaFactor = 2.2;
     container.appendChild(renderer.domElement);
 
-    window.addEventListener('resize', () =>
-    {
+    window.addEventListener('resize', () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(2);
     }, false);

@@ -1,7 +1,6 @@
-define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, EventQ, Time) =>
-{
-    var Light =
-    {
+define(["three", "scene", "colors", "eventQ", "time"],
+       (THREE, scene, Colors, EventQ, Time) => {
+    var Light = {
         MAX_X : 100,
         MAX_Y : 100,
         MAX_Z : 100,
@@ -29,8 +28,7 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
         sunlight_specular : new THREE.Vector3(0.5, 0.5, 0.5),
         sunlight_direction : new THREE.Vector3(),
 
-        init : (player) =>
-        {
+        init : (player) => {
             Light.player = player;
 
             Light.ambient = new THREE.AmbientLight(Light.ambient_color, Light.ambient_intensity);
@@ -48,14 +46,11 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
             // Light.sunlight.shadow.mapSize.width = 5000;
             // Light.sunlight.shadow.mapSize.height = 5000;
 
-            EventQ.push(
-            {
-                verify : () =>
-                {
+            EventQ.push({
+                verify : () => {
                     return Light.player.initialized;
                 },
-                action : () =>
-                {
+                action : () => {
                     Light.sunlight.target = Light.player.threeObj;
                 },
                 arguments : [],
@@ -70,42 +65,33 @@ define(["three", "scene", "colors", "eventQ", "time"], (THREE, scene, Colors, Ev
             scene.add(dirLightHelper);
         },
 
-        render : () =>
-        {
+        render : () => {
             scene.add(Light.ambient);
             scene.add(Light.hemisphere);
             scene.add(Light.sunlight);
         },
 
-        update : (delta) =>
-        {
-            if (Light.sunlight.visible)
-            {
+        update : (delta) => {
+            if (Light.sunlight.visible) {
                 // set orbit position of sun
                 Light.sunlight_pos.x = THREE.MathUtils.lerp(Light.MAX_X, -Light.MAX_X, Time.elapsed_day_time / Time.DAY_LENGTH);
                 Light.sunlight_pos.y = THREE.MathUtils.lerp(Light.MAX_Y, -Light.MAX_Y, Time.elapsed_day_time / Time.DAY_LENGTH);
 
-                if (Time.elapsed_day_time < Time.DAY_LENGTH * 0.5)
-                {
+                if (Time.elapsed_day_time < Time.DAY_LENGTH * 0.5) {
                     Light.sunlight_pos.z = THREE.MathUtils.lerp(-Light.MAX_Z * 0.1, Light.MAX_Z, Time.elapsed_day_time / (Time.DAY_LENGTH * 0.5));
-                }
-                else
-                {
+                } else {
                     Light.sunlight_pos.z = THREE.MathUtils.lerp(Light.MAX_Z, -Light.MAX_Z * 0.1, (Time.elapsed_day_time - Time.DAY_LENGTH * 0.5) / (Time.DAY_LENGTH * 0.5));
                 }
 
                 if (Light.player.initialized) Light.sunlight.position.addVectors(Light.sunlight_pos, Light.player.threeObj.position);
 
-                if (Time.elapsed_day_time > Time.DAY_LENGTH)
-                {
+                if (Time.elapsed_day_time > Time.DAY_LENGTH) {
                     Light.sunlight.visible = false;
                 }
 
                 Light.sunlight_direction.subVectors(Light.sunlight.target.position, Light.sunlight.position);
-            } else
-            {
-                if (Time.elapsed_day_time < Time.DAY_LENGTH)
-                {
+            } else {
+                if (Time.elapsed_day_time < Time.DAY_LENGTH) {
                     Light.sunlight.visible = true;
                 }
                 // set orbit position of moon

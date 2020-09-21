@@ -2,8 +2,7 @@
 // Terrain Frag Shader
 // ----------------------
 
-struct DirLight
-{
+struct DirLight {
     vec3 direction;
     vec3 position;
     vec3 ambient;
@@ -30,8 +29,7 @@ vec3 directLightColor(vec3 color);
 vec3 grassColor(vec2 uv, float flatness);
 vec3 rockColor(vec2 uv);
 
-void main()
-{
+void main() {
     // Base color
     vec3 color = vec3(0.0, 0.0, 0.0);
 
@@ -41,29 +39,23 @@ void main()
     gl_FragColor = vec4(color, uAlpha);
 }
 
-vec3 surfaceColor()
-{
+vec3 surfaceColor() {
     float flatness = dot(vec3(0, 1, 0), vNormal);
     vec2 uv = (vPosition.xy - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
 
     float d = texture(uDiffmap, uv).x;
-    if (d > 0.0)
-    {
+    if (d > 0.0) {
         return mix(grassColor(uv, flatness), rockColor(uv), d);
-    }
-    else
-    {
+    } else {
         return grassColor(uv, flatness);
     }
 }
 
-vec3 rockColor(vec2 uv)
-{
+vec3 rockColor(vec2 uv) {
     return vec3(0.5, 0.5, 0.5);
 }
 
-vec3 grassColor(vec2 uv, float flatness)
-{
+vec3 grassColor(vec2 uv, float flatness) {
     #ifdef WEBGL2
         vec3 grass1 = texture(uGrassLarge, 4.0 * uv).rgb;
         vec3 grass2 = texture(uGrassSmall, 500.0 * uv).rgb;
@@ -76,8 +68,7 @@ vec3 grassColor(vec2 uv, float flatness)
     return grass;
 }
 
-vec3 directLightColor(vec3 color)
-{
+vec3 directLightColor(vec3 color) {
     vec3 light_dir = normalize(-uSunlight.direction);
 
     //ambient

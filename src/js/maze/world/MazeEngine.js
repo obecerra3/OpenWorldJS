@@ -1,39 +1,31 @@
 define(["three", "physics", "scene", "utils"],
-(THREE, Physics, scene, Utils) =>
-{
-    var MazeEngine =
-    {
+       (THREE, Physics, scene, Utils) => {
+
+    var MazeEngine = {
         wall_material: new THREE.MeshLambertMaterial(),
         wall_color: new THREE.Color(0x727272),
         walls: [],
 
-        init : () =>
-        {
+        init : () => {
             MazeEngine.readMazeFile();
         },
 
-        readMazeFile: () =>
-        {
+        readMazeFile: () => {
             var loader = new THREE.FileLoader();
 
             loader.setResponseType("arraybuffer");
 
-            loader.load("maze.bin", (buffer) =>
-            {
+            loader.load("maze.bin", (buffer) => {
                 var byteArray = new Uint8Array(buffer);
 
-                var mazeArray = byteArray.reduce((array, curr, idx) =>
-                {
+                var mazeArray = byteArray.reduce((array, curr, idx) => {
                     var i, type, overall;
-                    for (i = 0; i < 8; i++)
-                    {
+                    for (i = 0; i < 8; i++) {
                         type = curr >> (7-i) & 1;
                         overall = idx * 8 + i;
-                        if ((overall % Utils.MAZE_SIZE) == 0)
-                        {
+                        if ((overall % Utils.MAZE_SIZE) == 0) {
                             array.push([type]);
-                        } else
-                        {
+                        } else {
                             array[Math.floor(overall / Utils.MAZE_SIZE)].push(type);
                         }
                     }
@@ -44,10 +36,8 @@ define(["three", "physics", "scene", "utils"],
             });
         },
 
-        createWallObject: (_walls_mesh, _wall_index, _wall_shape, _position) =>
-        {
-            MazeEngine.walls.push(
-            {
+        createWallObject: (_walls_mesh, _wall_index, _wall_shape, _position) => {
+            MazeEngine.walls.push({
                 wall_index: _wall_index,
                 wall_shape: _wall_shape,
                 position: _position,
@@ -56,8 +46,7 @@ define(["three", "physics", "scene", "utils"],
             });
         },
 
-        build: (_maze_array, _maze_size, _cell_size) =>
-        {
+        build: (_maze_array, _maze_size, _cell_size) => {
             console.log("build MazeEngine");
             MazeEngine.wall_material.color = MazeEngine.wall_color;
             var wall_geometry = new THREE.BoxBufferGeometry(2, 2, 2);
@@ -77,16 +66,12 @@ define(["three", "physics", "scene", "utils"],
 
             var i,j;
 
-            for (i = 0; i < _maze_size; i++)
-            {
-                for (j = 0; j < _maze_size - 1; j++)
-                {
+            for (i = 0; i < _maze_size; i++) {
+                for (j = 0; j < _maze_size - 1; j++) {
                     if (!_maze_array[i][j]) continue;
-                    if (_maze_array[i][j + 1] == 1)
-                    {
+                    if (_maze_array[i][j + 1] == 1) {
                         k = j + 2;
-                        while (k < _maze_size && _maze_array[i][k])
-                        {
+                        while (k < _maze_size && _maze_array[i][k]) {
                             k += 1;
                         }
                         wall_length = _cell_size * (k - j - 1) + Utils.WALL_WIDTH;

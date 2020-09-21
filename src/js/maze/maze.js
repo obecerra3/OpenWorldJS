@@ -1,12 +1,10 @@
 define(["three", "renderer", "camera", "container", "scene", "physics", "world",
         "player", "debug", "multiplayer", "eventQ", "time"],
         (THREE, renderer, camera, container, scene, Physics, World, Player, Debug,
-         Multiplayer, EventQ, Time) =>
-{
-    var maze =
-    {
-        init: () =>
-        {
+         Multiplayer, EventQ, Time) => {
+
+    var maze = {
+        init: () => {
             THREE.Cache.enabled = true;
 
             Physics.init();
@@ -15,8 +13,7 @@ define(["three", "renderer", "camera", "container", "scene", "physics", "world",
             World.init(Player);
         },
 
-        update: () =>
-        {
+        update: () => {
             requestAnimationFrame(maze.update);
 
             Debug.updateStart();

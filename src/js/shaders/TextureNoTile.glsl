@@ -4,8 +4,7 @@
 
 float sum( vec3 v ) { return v.x+v.y+v.z; }
 
-vec3 textureNoTile( vec2 x, sampler2D sample_texture )
-{
+vec3 textureNoTile( vec2 x, sampler2D sample_texture ) {
     float k = texture( uNoise, 0.005*x ).a; // cheap (cache friendly) lookup
 
     vec2 duvdx = dFdx( x );

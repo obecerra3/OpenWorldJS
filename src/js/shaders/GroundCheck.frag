@@ -3,8 +3,7 @@ uniform vec3 uPlayerPos;
 uniform vec2 uCenter;
 uniform sampler2D uHeightmap;
 
-void main()
-{
+void main() {
     vec2 uv = (uPlayerPos.xy + - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
 
     float height = 0.0;

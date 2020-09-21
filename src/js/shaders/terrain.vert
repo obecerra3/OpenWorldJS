@@ -21,8 +21,7 @@ vec3 getNormal();
 
 #include Edgemorph.glsl
 
-void main()
-{
+void main() {
     // Morph factor tells us how close we are to next level.
     // 0.0 is this level
     // 1.0 is next level
@@ -36,8 +35,7 @@ void main()
     vPosition = floor(vPosition / grid) * grid;
 
     // Morph between zoom layers
-    if (vMorphFactor > 0.0)
-    {
+    if (vMorphFactor > 0.0) {
         // Get position that we would have if we were on higher level grid
         grid = 2.0 * grid;
         vec3 position2 = floor(vPosition / grid) * grid;
@@ -54,8 +52,7 @@ void main()
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
 }
 
-float getHeight(vec3 pos)
-{
+float getHeight(vec3 pos) {
     vec2 uv = (pos.xy + - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
 
     float height = 0.0;
@@ -69,8 +66,7 @@ float getHeight(vec3 pos)
     return height;
 }
 
-vec3 getNormal()
-{
+vec3 getNormal() {
     // Get 2 vectors perpendicular to the unperturbed normal, and create at point at each (relative to position)
     float delta = (vMorphFactor + 1.0) * uScale / RESOLUTION;
     vec3 dA = delta * normalize(cross(normal.yzx, normal));

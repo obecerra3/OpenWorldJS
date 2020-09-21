@@ -1,33 +1,25 @@
 //Biomes enum
 
-const Biomes =
-{
-    GRASSLAND:
-    {
+const Biomes = {
+    GRASSLAND: {
         name: 'grassland',
     },
-    TEMPERATE_FOREST:
-    {
+    TEMPERATE_FOREST: {
         name: 'temperate_forest',
     },
-    SAVANNA:
-    {
+    SAVANNA: {
         name: 'savanna',
     },
-    DESERT:
-    {
+    DESERT: {
         name: 'desert',
     },
-    TAIGA:
-    {
+    TAIGA: {
         name: 'taiga',
     },
-    TUNDRA:
-    {
+    TUNDRA: {
         name: 'tundra',
     },
-    RAINFOREST:
-    {
+    RAINFOREST: {
         name: 'rainforest',
     },
 }

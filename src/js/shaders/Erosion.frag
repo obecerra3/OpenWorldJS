@@ -1,8 +1,7 @@
 // GPGPU Fragment shader used to generate eroded height data
 // https://www.researchgate.net/publication/4295561_Fast_Hydraulic_Erosion_Simulation_and_Visualization_on_GPU
 
-struct SimConstants
-{
+struct SimConstants {
     float A;                            // cross sectional area of pipe
     float lX;                           // x distance between grid points
     float lY;                           // y distance between grid points
@@ -32,10 +31,8 @@ uniform float uDelta;                   // ∆t
 // 4. st+∆t ← SedimentTransport(s1, vt+∆t);
 // 5. dt+∆t ← Evaporation(d2)
 
-void main()
-{
-    switch (uStep)
-    {
+void main() {
+    switch (uStep) {
         // 1. Water level increases from rainfall or a water source
         // ---------------------------------------------------------
         case 1:

@@ -1,16 +1,12 @@
 //Class for the Physics within the game that works on top of ammo.js
 define(["three", "ammo", "utils"],
-(THREE, Ammo, Utils) =>
-{
-    // change this to happen only once
-    Ammo().then((AmmoLib) =>
-    {
-        console.log("Ammo init");
+       (THREE, Ammo, Utils) => {
+
+    Ammo().then((AmmoLib) => {
         Ammo = AmmoLib;
     });
 
-    var Physics =
-    {
+    var Physics = {
         dynamicRigidBodies : [], //array of PhysicsObjects
         tempBtTransform : {},
         physicsWorld : {},
@@ -19,8 +15,7 @@ define(["three", "ammo", "utils"],
         terrain_height_data : null,
         TERRAIN_MARGIN : 6.0,
 
-        init: function()
-        {
+        init: function() {
             var collisionConfiguration = new this.ammo.btDefaultCollisionConfiguration();
             this.dispatcher         = new this.ammo.btCollisionDispatcher(collisionConfiguration);
             var overlappingPairCache   = new this.ammo.btDbvtBroadphase();
@@ -32,21 +27,17 @@ define(["three", "ammo", "utils"],
             this.tempBtTransform = new this.ammo.btTransform();
         },
 
-        update: function(delta)
-        {
+        update: function(delta) {
             this.physicsWorld.stepSimulation(delta, 10);
-
             this.updateDynamicRigidbodies();
         },
 
         //dynamicRigidBody obj is of type PhysicsObject
         //updating specifically the graphics (threeObj) component from the
         //motion state of the physics rigidbody component
-        updateDynamicRigidbodies : function()
-        {
+        updateDynamicRigidbodies : function() {
             var motionState, p, q;
-            this.dynamicRigidBodies.forEach((obj) =>
-            {
+            this.dynamicRigidBodies.forEach((obj) => {
                 motionState = obj.rigidbody.getMotionState();
                 motionState.getWorldTransform(this.tempBtTransform);
                 p = this.tempBtTransform.getOrigin();
@@ -62,8 +53,7 @@ define(["three", "ammo", "utils"],
         //init_pos : btVector3
         //init_quat: quaternion
         //position
-        createRigidbody: function(threeObj, physics_shape, mass, init_pos, init_quat, pos_offset = new THREE.Vector3(), add_pointer = false)
-        {
+        createRigidbody: function(threeObj, physics_shape, mass, init_pos, init_quat, pos_offset = new THREE.Vector3(), add_pointer = false) {
             var transform = new this.ammo.btTransform();
             transform.setIdentity();
             transform.setOrigin(new this.ammo.btVector3(init_pos.x + pos_offset.x, init_pos.y + pos_offset.y, init_pos.z + pos_offset.z));
@@ -75,17 +65,13 @@ define(["three", "ammo", "utils"],
 
             var rbInfo = new this.ammo.btRigidBodyConstructionInfo(mass, motionState, physics_shape, localInertia);
             var rb = new this.ammo.btRigidBody(rbInfo);
-            try
-            {
+            try {
                 this.physicsWorld.addRigidBody(rb);
-            }
-            catch (err)
-            {
+            } catch (err) {
                 console.log("this.js ERROR probably due to using multiple this.ammolibs: " + err);
             }
 
-            if (add_pointer)
-            {
+            if (add_pointer) {
                 var btVecUserData = new this.ammo.btVector3(0, 0, 0);
                 btVecUserData.threeObj = threeObj;
                 rb.setUserPointer(btVecUserData);
@@ -104,16 +90,13 @@ define(["three", "ammo", "utils"],
         //PhysicsObject internal class to this Class
         //holds graphics component, position offset to draw graphics component
         //and rigidbody ammo object
-        PhysicsObject: function(threeObj, rigidbody, pos_offset)
-        {
-            var physics_obj =
-            {
+        PhysicsObject: function(threeObj, rigidbody, pos_offset) {
+            var physics_obj = {
                 threeObj: {},
                 rigidbody: {},
                 pos_offset: {},
 
-                init: (_threeObj, _rigidbody, _pos_offset) =>
-                {
+                init: (threeObj, rigidbody, pos_offset) => {
                     physics_obj.threeObj = threeObj;
                     physics_obj.rigidbody = rigidbody;
                     physics_obj.pos_offset = pos_offset;
@@ -133,8 +116,7 @@ define(["three", "ammo", "utils"],
         // height_extents,
         // height_data,
         // center_pos,
-        createTerrainCollider: function(cd)
-        {
+        createTerrainCollider: function(cd) {
             // create shape
             var shape = this.createTerrainShape(cd);
 
@@ -163,8 +145,7 @@ define(["three", "ammo", "utils"],
             return rb;
         },
 
-        updateTerrainCollider: function(cd, collider)
-        {
+        updateTerrainCollider: function(cd, collider) {
             // need max_height, min_height
             var shape = this.createTerrainShape(cd);
             var transform = new this.ammo.btTransform();
@@ -178,8 +159,7 @@ define(["three", "ammo", "utils"],
         },
 
         // takes as input a TerrainData object passed from this.createTerrainCollider()
-        createTerrainShape: function(cd)
-        {
+        createTerrainShape: function(cd) {
             // This parameter is not really used, since we are using PHY_FLOAT height data type and hence it is ignored
             var height_scale = 1;
 
@@ -193,18 +173,15 @@ define(["three", "ammo", "utils"],
             var flip_quad_edges = false;
 
             // Creates height data buffer in this.ammo heap
-            if (this.terrain_height_data == null)
-            {
+            if (this.terrain_height_data === null) {
                 this.terrain_height_data = this.ammo._malloc(4 * cd.width * cd.depth);
             }
 
             // Copy the javascript height data array to the this.ammo one.
             var p = 0;
             var p2 = 0;
-            for (var j = 0; j < cd.depth; j++)
-            {
-                for (var i = 0; i < cd.width; i++)
-                {
+            for (var j = 0; j < cd.depth; j++) {
+                for (var i = 0; i < cd.width; i++) {
                     // write 32-bit float data to memory
                     this.ammo.HEAPF32[this.terrain_height_data + p2 >> 2] = cd.height_data[p];
                     // index of height_data
@@ -216,16 +193,8 @@ define(["three", "ammo", "utils"],
 
             // Creates the heightfield physics shape
             var shape = new this.ammo.btHeightfieldTerrainShape(
-                cd.width,
-                cd.depth,
-                this.terrain_height_data,
-                height_scale,
-                cd.min_height,
-                cd.max_height,
-                up_axis,
-                hdt,
-                flip_quad_edges
-            );
+                cd.width, cd.depth, this.terrain_height_data, height_scale,
+                cd.min_height, cd.max_height, up_axis, hdt, flip_quad_edges);
 
             // Set horizontal scale
             var scaleX = cd.width_extents / (cd.width - 1);
