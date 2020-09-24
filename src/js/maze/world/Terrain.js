@@ -26,7 +26,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
 
         obj : new THREE.Object3D(),
         geometry : new THREE.PlaneBufferGeometry(),
-        height_data_texture : new THREE.DataTexture(),
         height_data : [],
         frag_shader : TerrainFrag,
         init_scale : 32.0,
@@ -133,16 +132,16 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 if (new_center_pos)
                     this.heightmap_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
                 texture.updateTerrainTextures(this.heightmap_center);
-                this.height_data = texture.heightmap;
+                this.height_data = texture.heightmap.array;
                 // update uniforms of shaders
                 for (var c in this.obj.children) {
                     var tile = this.obj.children[c];
                     tile.material.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
-                    tile.material.uniforms.uHeightmap = { type : "t", value : texture.heightmap_texture };
-                    tile.material.uniforms.uDiffmap = { type : "t", value : texture.height_diff_texture };
+                    tile.material.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
+                    tile.material.uniforms.uDiffmap = { type : "t", value : texture.heightmap_diff.data_texture };
                 }
                 this.ground_check_mat.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
-                this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.heightmap_texture };
+                this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
                 return resolve("update height data");
             });
         },
@@ -192,8 +191,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 uniforms : {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : this.global_offset },
-                    uHeightmap    :  { type : "t", value : texture.heightmap_texture },
-                    uDiffmap      :  { type : "t", value : texture.height_diff_texture },
+                    uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
+                    uDiffmap      :  { type : "t", value : texture.heightmap_diff.data_texture },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
                     uAlpha        :  { type : "f", value : this.alpha },
@@ -270,14 +269,12 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 for (var x = -width; x < width; x++) {
                     // assign vertex to vertices
                     vertices.push(x, y, 0.0);
-
                     // // assign 2 faces per vertex
                     if (y != width - 1 && x != width - 1) {
                         // clockwise
                         indices.push(i, i + 1, i + 2 * width);
                         indices.push(i + 1, i + 1 + 2 * width, i + 2 * width);
                     }
-
                     // face/ vertex index
                     i++;
                 }

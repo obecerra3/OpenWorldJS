@@ -78,32 +78,23 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         // Terrain
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
-        heightmap_center : new THREE.Vector2(),
-        heightmap_texture_ : null,
-        heightmap_ : null,
-        height_texture_to_blur : null,
-        blur_heightmap_texture_ : null,
-        blur_heightmap_ : null,
-        erosion_heightmap_texture_ : null,
-        erosion_heightmap_ : null,
-        height_diff_texture_ : null,
-        height_diff_ : null,
+        heightmap_center      :      new THREE.Vector2(),
+        heightmap_            :      { data_texture : null, texture : null, array : null },
+        blur_heightmap_       :      { data_texture : null, array : null },
+        erosion_heightmap_    :      { data_texture : null, texture : null, array : null },
+        heightmap_diff_       :      { data_texture : null, array : null },
 
         updateTerrainTextures : function(new_heightmap_center) {
             this.heightmap_center = new_heightmap_center;
             this.updateHeightmap();
             this.updateBlurHeightmap();
             this.updateErosionHeightmap();
-            this.updateHeightDiff();
-        },
-
-        get heightmap_texture() {
-            if (this.heightmap_texture_ === null) this.updateHeightmap();
-            return this.heightmap_texture_;
+            this.updateHeightmapDiff();
         },
 
         get heightmap() {
-            if (this.heightmap_ === null) this.updateHeightmap();
+            if (Object.values(this.heightmap_).includes(null))
+                this.updateHeightmap();
             return this.heightmap_;
         },
 
@@ -113,33 +104,29 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             this.heightmap_gen_mat.uniforms.uCenter.value = this.heightmap_center;
             var pixels = new Uint8Array(4 * 4096 * 4096);
             this.gpuCompute4096.doRenderTarget(this.heightmap_gen_mat, this.renderTarget4096);
-            this.height_texture_to_blur = this.renderTarget4096.texture;
+            this.heightmap_.texture = this.renderTarget4096.texture;
             renderer.readRenderTargetPixels(this.renderTarget4096, 0, 0, 4096, 4096, pixels);
-            var floatmap = new Float32Array(4096 * 4096);
+            var float_array = new Float32Array(4096 * 4096);
             for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
-                floatmap[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
+                float_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
             }
-            this.heightmap_ = floatmap;
-            this.heightmap_texture_ = new THREE.DataTexture(
-                floatmap, 4096, 4096, THREE.RedFormat, THREE.FloatType,
-                THREE.UVMapping, THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
+            this.heightmap_.array = float_array;
+            this.heightmap_.data_texture = new THREE.DataTexture(float_array, 4096, 4096,
+                THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
+                THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
                 THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
-            this.heightmap_texture_.generateMipmaps = true;
-            this.heightmap_texture_.needsUpdate = true;
-        },
-
-        get blur_heightmap_texture() {
-            if (this.blur_heightmap_texture_ === null) this.updateBlurHeightmap();
-            return this.blur_heightmap_texture_;
+            this.heightmap_.data_texture.generateMipmaps = true;
+            this.heightmap_.data_texture.needsUpdate = true;
         },
 
         get blur_heightmap() {
-            if (this.blur_heightmap_ === null) this.updateBlurHeightmap();
+            if (Object.values(this.blur_heightmap_).includes(null))
+                this.updateBlurHeightmap();
             return this.blur_heightmap_;
         },
 
         updateBlurHeightmap : function() {
-            this.boxblur_mat.uniforms.uHeightmap.value = this.height_texture_to_blur;
+            this.boxblur_mat.uniforms.uHeightmap.value = this.heightmap.texture;
             this.gpuCompute4096.doRenderTarget(this.boxblur_mat, this.renderTarget4096_2);
             for (var i = 0; i < 100; i++) {
                 if (i % 2 == 0) {
@@ -152,59 +139,77 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             }
             var pixels = new Uint8Array(4 * 4096 * 4096);
             renderer.readRenderTargetPixels(this.renderTarget4096, 0, 0, 4096, 4096, pixels);
-            var floatmap2 = new Float32Array(4096 * 4096);
+            var float_array = new Float32Array(4096 * 4096);
             for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
-                floatmap2[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
+                float_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
             }
-            this.blur_heightmap_ = floatmap2;
-            this.blur_heightmap_texture_ = new THREE.DataTexture(
-                floatmap2, 4096, 4096, THREE.RedFormat, THREE.FloatType,
+            this.blur_heightmap_.array = float_array;
+            this.blur_heightmap_.data_texture = new THREE.DataTexture(
+                float_array, 4096, 4096, THREE.RedFormat, THREE.FloatType,
                 THREE.UVMapping, THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping,
                 THREE.LinearFilter, THREE.LinearMipMapLinearFilter, 1);
-            this.blur_heightmap_texture_.generateMipmaps = true;
-            this.blur_heightmap_texture_.needsUpdate = true;
-        },
-
-        get erosion_heightmap_texture() {
-            if (this.erosion_heightmap_texture_ === null) this.updateErosionHeightmap();
-            return this.erosion_heightmap_texture_;
+            this.blur_heightmap_.data_texture.generateMipmaps = true;
+            this.blur_heightmap_.data_texture.needsUpdate = true;
         },
 
         get erosion_heightmap() {
-            if (this.erosion_heightmap === null) this.updateErosionHeightmap();
+            if (Object.values(this.erosion_heightmap_).includes(null))
+                this.updateErosionHeightmap();
             return this.erosion_heightmap_;
         },
 
         updateErosionHeightmap : function() {
-            //TODO
+            // initialize uniforms
+            var u = this.erosion_mat.uniforms;
+            u.uSC.value = {
+                A : 1, lX : 1, lY : 1, g : -10, Kc : 0.5, Ks : 0.5, Kd : 0.5,
+                Ke : 0.5, delta : 0.000125,
+            };
+            u.uT1.value = this.heightmap.texture;
+            u.uT2.value = new THREE.Texture();
+            u.uT3.value = new THREE.Texture();
+            u.uHash.value = false;
+            u.uNoise.value = this.noise_texture;
+
+            // simulation loop
+            var steps = 1;
+            while (steps > 0) {
+                u.uStep.value = 1;
+                this.gpuCompute4096.doRenderTarget(this.erosion_mat, this.renderTarget4096_2);
+                steps--;
+            }
+            var pixels = new Uint8Array(4 * 4096 * 4096);
+            renderer.readRenderTargetPixels(this.renderTarget4096_2, 0, 0, 4096, 4096, pixels);
+            // console.log("erosion pixels");
+            // console.log(pixels);
         },
 
-        get height_diff_texture() {
-            if (this.height_diff_texture_ === null) this.updateHeightDiff();
-            return this.height_diff_texture_;
+        get heightmap_diff() {
+            if (Object.values(this.heightmap_diff_).includes(null))
+                this.updateHeightmapDiff();
+            return this.heightmap_diff_;
         },
 
-        get height_diff() {
-            if (this.height_diff_ === null)  this.updateHeightDiff();
-            return this.height_diff_;
-        },
+        updateHeightmapDiff : function() {
+            var heightmap_array = this.heightmap.array;
+            var size = heightmap_array.length;
+            var blur_heightmap_array = this.blur_heightmap.array;
 
-        updateHeightDiff : function() {
-            var floatmap3 = new Float32Array(4096 * 4096);
-            for (var i = 0; i < this.heightmap.length; i++) {
-                var value = this.heightmap[i] - this.blur_heightmap[i];
+            var float_array = new Float32Array(4096 * 4096);
+            for (var i = 0; i < size; i++) {
+                var value = heightmap_array[i] - blur_heightmap_array[i];
                 if (value < 1.0) {
                     value = 0.0;
                 }
-                floatmap3[i] = THREE.MathUtils.clamp(value, 0.0, 1.0);
+                float_array[i] = THREE.MathUtils.clamp(value, 0.0, 1.0);
             }
-            this.height_diff_ = floatmap3;
-            this.height_diff_texture_ = new THREE.DataTexture(
-                floatmap3, 4096, 4096, THREE.RedFormat, THREE.FloatType,
+            this.heightmap_diff_.array = float_array;
+            this.heightmap_diff_.data_texture = new THREE.DataTexture(
+                float_array, 4096, 4096, THREE.RedFormat, THREE.FloatType,
                 THREE.UVMapping, THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping,
                 THREE.LinearFilter, THREE.LinearMipMapLinearFilter, 1);
-            this.height_diff_texture_.generateMipmaps = true;
-            this.height_diff_texture_.needsUpdate = true;
+            this.heightmap_diff_.data_texture.generateMipmaps = true;
+            this.heightmap_diff_.data_texture.needsUpdate = true;
         },
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
@@ -256,6 +261,7 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         texture_gen_mat1024_ : null,
         heightmap_gen_mat_ : null,
         boxblur_mat_ : null,
+        erosion_mat_ : null,
 
         get texture_gen_mat256() {
             if (this.texture_gen_mat256_ === null) {
@@ -286,9 +292,20 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         get boxblur_mat() {
             if (this.boxblur_mat_ === null) {
                 this.boxblur_mat_ = this.gpuCompute4096.createShaderMaterial(
-                    BoxBlurFrag.value, { uHeightmap : { value : this.heightmap_texture }, });
+                    BoxBlurFrag.value, { uHeightmap : { value : this.heightmap_datatexture }, });
             }
             return this.boxblur_mat_;
         },
+
+        get erosion_mat() {
+            if (this.erosion_mat_ === null) {
+                this.erosion_mat_ = this.gpuCompute4096.createShaderMaterial(
+                    ErosionFrag.value, { uSC : { value : null },
+                    uT1 : { value : null }, uT2 : { value : null}, uT3 : { value : null },
+                    uStep : { value : null}, uHash : { value : false },
+                    uNoise : { value : null } });
+            }
+            return this.erosion_mat_;
+        }
     };
 });

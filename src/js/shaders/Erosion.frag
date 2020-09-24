@@ -10,14 +10,17 @@ struct SimConstants {
     float Ks;                           // sediment dissolving constant
     float Kd;                           // sediment deposition constant
     float Ke;                           // evaporation constant
-}
+    float delta;                        // ∆t
+};
 uniform SimConstants uSC;
-uniform sampler2D uCellData;            // .x = terrain height byte 1, .y = terrain height byte 2, .z = water height, .w = suspended sediment amount
-uniform sampler2D uFlux;                // .x = L, .y = R, .z = T, .w = D
-uniform sampler2D uNextFlux             // ft+∆t
-uniform sampler2D uVelocity;            // .x = u, .y = v
-uniform int uStep;                      // what step we are at in the simulation
-uniform float uDelta;                   // ∆t
+uniform sampler2D uT1;                   // Terrain Height b, Water Height d, Sediment s -> .x = b byte 1, .y = b byte 2, .z = d, .w = s
+uniform sampler2D uT2;                   // Flux .x = L, .y = R, .z = T, .w = D
+uniform sampler2D uT3;                   // Velocity .x = u, .y = v
+uniform int uStep;                       // what step we are at in the simulation
+
+float rainfall(vec2 uv);
+
+#include Noise.glsl
 
 // 1. Water level increases from rainfall or a water source
 // 2. Simulate flow and update the velocity field and water level
@@ -37,6 +40,10 @@ void main() {
         // ---------------------------------------------------------
         case 1:
             // d1(x, y) = dt(x, y) + ∆t · rt(x, y)
+            vec2 uv = gl_FragCoord.xy / resolution.xy;
+            vec4 current = texture(uT1, uv);
+            float water_level = current.z + uSC.delta * rainfall(uv);
+            gl_FragColor = vec4(current.x, current.y, water_level, current.w);
             break;
 
         // 2. Simulate flow
@@ -74,5 +81,8 @@ void main() {
             break;
 
     }
-    gl_FragColor = vec4(0.0);
+}
+
+float rainfall(vec2 uv) {
+    return noised(uv).x;
 }
