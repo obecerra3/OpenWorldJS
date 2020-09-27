@@ -15,7 +15,7 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         gpuCompute4096 : new GPUComputationRenderer(4096, 4096, renderer),
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
-        // render targets
+        // general render targets
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
         renderTarget256 : new THREE.WebGLRenderTarget(256, 256,
@@ -81,7 +81,7 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         heightmap_center      :      new THREE.Vector2(),
         heightmap_            :      { data_texture : null, texture : null, array : null },
         blur_heightmap_       :      { data_texture : null, array : null },
-        erosion_heightmap_    :      { data_texture : null, texture : null, array : null },
+        erosion_heightmap_    :      { data_texture : null, array : null },
         heightmap_diff_       :      { data_texture : null, array : null },
 
         updateTerrainTextures : function(new_heightmap_center) {
@@ -103,9 +103,9 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             if (error !== null) console.error("GPU Compute updateHeightmap Completeness Error: " + error);
             this.heightmap_gen_mat.uniforms.uCenter.value = this.heightmap_center;
             var pixels = new Uint8Array(4 * 4096 * 4096);
-            this.gpuCompute4096.doRenderTarget(this.heightmap_gen_mat, this.renderTarget4096);
-            this.heightmap_.texture = this.renderTarget4096.texture;
-            renderer.readRenderTargetPixels(this.renderTarget4096, 0, 0, 4096, 4096, pixels);
+            this.gpuCompute4096.doRenderTarget(this.heightmap_gen_mat, this.heightRenderTarget4096);
+            this.heightmap_.texture = this.heightRenderTarget4096.texture;
+            renderer.readRenderTargetPixels(this.heightRenderTarget4096, 0, 0, 4096, 4096, pixels);
             var float_array = new Float32Array(4096 * 4096);
             for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
                 float_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
@@ -126,6 +126,8 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         },
 
         updateBlurHeightmap : function() {
+            var error = this.gpuCompute4096.init();
+            if (error !== null) console.error("GPU Compute updateHeightmap Completeness Error: " + error);
             this.boxblur_mat.uniforms.uHeightmap.value = this.heightmap.texture;
             this.gpuCompute4096.doRenderTarget(this.boxblur_mat, this.renderTarget4096_2);
             for (var i = 0; i < 100; i++) {
@@ -158,30 +160,77 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             return this.erosion_heightmap_;
         },
 
+        erosion_rts : [],
+
         updateErosionHeightmap : function() {
+            // initialize erosion render targets
+            if (this.erosion_rts.length == 0) {
+                for (var i = 0; i < 14; i++) {
+                    this.erosion_rts.push(new THREE.WebGLRenderTarget(4096, 4096, {
+                        wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+                        minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+                        format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+                        depthBuffer: false,
+                    }));
+                }
+            }
             // initialize uniforms
+            var error = this.gpuCompute4096.init();
+            if (error !== null) console.error("GPU Compute updateHeightmap Completeness Error: " + error);
             var u = this.erosion_mat.uniforms;
+            //delta : 0.000125
             u.uSC.value = {
-                A : 1, lX : 1, lY : 1, g : -10, Kc : 0.5, Ks : 0.5, Kd : 0.5,
-                Ke : 0.5, delta : 0.000125,
+                A : 1, lX : 1, lY : 1, g : -10, Kc : 1.0, Ks : 0.5, Kd : 1.0,
+                Ke : 0.015, delta : 0.00125,
             };
             u.uT1.value = this.heightmap.texture;
             u.uT2.value = new THREE.Texture();
             u.uT3.value = new THREE.Texture();
             u.uHash.value = false;
             u.uNoise.value = this.noise_texture;
-
             // simulation loop
-            var steps = 1;
-            while (steps > 0) {
+            var steps = 100;
+            var currentRenderTarget;
+            for (var i = 0; i < steps; i++) {
+                var offset = i % 2;
+                u.uFrame.value = i;
+                // simulate rainfall
                 u.uStep.value = 1;
-                this.gpuCompute4096.doRenderTarget(this.erosion_mat, this.renderTarget4096_2);
-                steps--;
+                currentRenderTarget = this.erosion_rts[offset];
+                this.gpuCompute4096.doRenderTarget(this.erosion_mat, currentRenderTarget);
+                u.uT1.value = currentRenderTarget.texture;
+                // simulate flow
+                u.uStep.value = 2;
+                currentRenderTarget = this.erosion_rts[2 + offset];
+                this.gpuCompute4096.doRenderTarget(this.erosion_mat, currentRenderTarget);
+                u.uT2.value = currentRenderTarget.texture;
+                // update velocity field
+                u.uStep.value = 3;
+                currentRenderTarget = this.erosion_rts[4 + offset];
+                this.gpuCompute4096.doRenderTarget(this.erosion_mat, currentRenderTarget);
+                u.uT3.value = currentRenderTarget.texture;
+                // update water surface, erosion and deposition, suspended sediment transport, evaporation
+                for (var j = 4; j < 8; j++) {
+                    u.uStep.value = j;
+                    currentRenderTarget = this.erosion_rts[(j - 1) * 2 + offset];
+                    this.gpuCompute4096.doRenderTarget(this.erosion_mat, currentRenderTarget);
+                    u.uT1.value = currentRenderTarget.texture;
+                }
             }
             var pixels = new Uint8Array(4 * 4096 * 4096);
-            renderer.readRenderTargetPixels(this.renderTarget4096_2, 0, 0, 4096, 4096, pixels);
-            // console.log("erosion pixels");
-            // console.log(pixels);
+            renderer.readRenderTargetPixels(this.erosion_rts[13], 0, 0, 4096, 4096, pixels);
+            var float_array = new Float32Array(4096 * 4096);
+            for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
+                float_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
+                // float_array[i] = pixels[j + 2];
+            }
+            this.erosion_heightmap_.array = float_array;
+            this.erosion_heightmap_.data_texture = new THREE.DataTexture(float_array, 4096, 4096,
+                THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
+                THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
+                THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
+            this.erosion_heightmap_.data_texture.generateMipmaps = true;
+            this.erosion_heightmap_.data_texture.needsUpdate = true;
         },
 
         get heightmap_diff() {
@@ -193,14 +242,15 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         updateHeightmapDiff : function() {
             var heightmap_array = this.heightmap.array;
             var size = heightmap_array.length;
-            var blur_heightmap_array = this.blur_heightmap.array;
-
+            // var blur_heightmap_array = this.blur_heightmap.array;
+            var erosion_heightmap_array = this.erosion_heightmap.array;
             var float_array = new Float32Array(4096 * 4096);
             for (var i = 0; i < size; i++) {
-                var value = heightmap_array[i] - blur_heightmap_array[i];
-                if (value < 1.0) {
-                    value = 0.0;
-                }
+                var value = heightmap_array[i] - erosion_heightmap_array[i];
+                // var value = heightmap_array[i] - blur_heightmap_array[i];
+                // if (value < 1.0) {
+                //     value = 0.0;
+                // }
                 float_array[i] = THREE.MathUtils.clamp(value, 0.0, 1.0);
             }
             this.heightmap_diff_.array = float_array;
@@ -303,9 +353,77 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
                     ErosionFrag.value, { uSC : { value : null },
                     uT1 : { value : null }, uT2 : { value : null}, uT3 : { value : null },
                     uStep : { value : null}, uHash : { value : false },
-                    uNoise : { value : null } });
+                    uNoise : { value : null }, uFrame : { value : null } });
             }
             return this.erosion_mat_;
-        }
+        },
+        // -------------------------------------------------------------------
+        // -------------------------------------------------------------------
+        // specific render targets
+        // -------------------------------------------------------------------
+        // -------------------------------------------------------------------
+        heightRenderTarget4096 : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step1rT : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step1rT2 : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step2rT : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step2rT2 : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step3rT : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step3rT2 : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step4rT : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
+        step4rT2 : new THREE.WebGLRenderTarget(4096, 4096,
+        {
+            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+            depthBuffer: false,
+        }),
     };
 });

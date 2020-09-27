@@ -132,16 +132,19 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 if (new_center_pos)
                     this.heightmap_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
                 texture.updateTerrainTextures(this.heightmap_center);
-                this.height_data = texture.heightmap.array;
+                // this.height_data = texture.heightmap.array;
+                this.height_data = texture.erosion_heightmap.array;
                 // update uniforms of shaders
                 for (var c in this.obj.children) {
                     var tile = this.obj.children[c];
                     tile.material.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
-                    tile.material.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
+                    // tile.material.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
+                    tile.material.uniforms.uHeightmap = { type : "t", value : texture.erosion_heightmap.data_texture };
                     tile.material.uniforms.uDiffmap = { type : "t", value : texture.heightmap_diff.data_texture };
                 }
                 this.ground_check_mat.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
-                this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
+                // this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
+                this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.erosion_heightmap.data_texture };
                 return resolve("update height data");
             });
         },
@@ -191,7 +194,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 uniforms : {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : this.global_offset },
-                    uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
+                    // uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
+                    uHeightmap    :  { type : "t", value : texture.erosion_heightmap.data_texture },
                     uDiffmap      :  { type : "t", value : texture.heightmap_diff.data_texture },
                     uTileOffset   :  { type : "v2", value : tile_offset },
                     uScale        :  { type : "f", value : scale },
