@@ -8,7 +8,7 @@ uniform vec2 uCenter;
 void main() {
     vec2 pos = gl_FragCoord.xy - DATA_WIDTH_2 + uCenter;
 
-    float height = abs(iqFBM(pos * 0.0003)) * 255.0 * 70.0 * 3.0;
+    float height = abs(iqFBM(pos * 0.0003)) * 255.0 * 70.0 * 8.0;
 
     // MirroredRepeatWrapping
     if (height >= 65536.0) {

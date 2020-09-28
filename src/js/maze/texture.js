@@ -178,10 +178,10 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             var error = this.gpuCompute4096.init();
             if (error !== null) console.error("GPU Compute updateHeightmap Completeness Error: " + error);
             var u = this.erosion_mat.uniforms;
-            //delta : 0.000125
+            //delta : 0.000125, 0.00125
             u.uSC.value = {
                 A : 1, lX : 1, lY : 1, g : -10, Kc : 1.0, Ks : 0.5, Kd : 1.0,
-                Ke : 0.015, delta : 0.00125,
+                Ke : 0.015, delta : 0.2,
             };
             u.uT1.value = this.heightmap.texture;
             u.uT2.value = new THREE.Texture();
@@ -189,7 +189,7 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             u.uHash.value = false;
             u.uNoise.value = this.noise_texture;
             // simulation loop
-            var steps = 100;
+            var steps = 10;
             var currentRenderTarget;
             for (var i = 0; i < steps; i++) {
                 var offset = i % 2;
@@ -222,7 +222,6 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             var float_array = new Float32Array(4096 * 4096);
             for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
                 float_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
-                // float_array[i] = pixels[j + 2];
             }
             this.erosion_heightmap_.array = float_array;
             this.erosion_heightmap_.data_texture = new THREE.DataTexture(float_array, 4096, 4096,
@@ -242,17 +241,33 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         updateHeightmapDiff : function() {
             var heightmap_array = this.heightmap.array;
             var size = heightmap_array.length;
-            // var blur_heightmap_array = this.blur_heightmap.array;
             var erosion_heightmap_array = this.erosion_heightmap.array;
             var float_array = new Float32Array(4096 * 4096);
+            var max_v = Number.NEGATIVE_INFINITY;
+            var min_v = Number.POSITIVE_INFINITY;
+            var f = new Float32Array(4096 * 4096);
+            var j = 0;
             for (var i = 0; i < size; i++) {
                 var value = heightmap_array[i] - erosion_heightmap_array[i];
-                // var value = heightmap_array[i] - blur_heightmap_array[i];
-                // if (value < 1.0) {
-                //     value = 0.0;
-                // }
+                if (value > max_v) max_v = value;
+                if (value < min_v) min_v = value;
+                if (value > 0) {
+                    f[j] = value.toFixed(3);
+                    j++;
+                }
                 float_array[i] = THREE.MathUtils.clamp(value, 0.0, 1.0);
             }
+            console.log("max: " + max_v);
+            console.log("min: " + min_v);
+            var sum = 0;
+            var count = 0;
+            f.forEach((x) => {
+                if (x > 0) {
+                    sum += x;
+                    count++;
+                }
+            });
+            console.log("average: " + sum / count);
             this.heightmap_diff_.array = float_array;
             this.heightmap_diff_.data_texture = new THREE.DataTexture(
                 float_array, 4096, 4096, THREE.RedFormat, THREE.FloatType,

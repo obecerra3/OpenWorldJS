@@ -42,14 +42,11 @@ void main() {
 vec3 surfaceColor() {
     float flatness = dot(vec3(0, 1, 0), vNormal);
     vec2 uv = (vPosition.xy - uCenter + DATA_WIDTH_2) / DATA_WIDTH;
-    // return grassColor(uv, flatness);
-    //
     float d = texture(uDiffmap, uv).x;
-    if (d > 0.0) {
-        return mix(grassColor(uv, flatness), rockColor(uv), d);
-    } else {
-        return grassColor(uv, flatness);
-    }
+    d = (0.7 * d) + 0.3;
+    vec3 base = mix(grassColor(uv, flatness), rockColor(uv), d);
+    base = clamp(base * d, 0.0, 1.0);
+    return base;
 }
 
 vec3 rockColor(vec2 uv) {

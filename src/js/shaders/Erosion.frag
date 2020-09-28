@@ -146,6 +146,9 @@ void main() {
                 b_new = b + uSC.Kd * (st - C);
                 s1 = st - uSC.Kd * (st - C);
             }
+            if (b_new < 0.0) {
+                b_new = 0.0;
+            }
             b_new *= 70.0;
             float byte1 = float(int(b_new) & 0xff) / 255.0;
             float byte2 = float((int(b_new) >> 8) & 0xff) / 255.0;
@@ -178,5 +181,4 @@ void main() {
 
 float rainfall(vec2 uv) {
     return 5.0 * noised((uv + vec2(uFrame, uFrame)) * 1000.0).x;
-    // return 100.0 * noised((uv + vec2(uFrame, uFrame)) * 1000.0).x;
 }
