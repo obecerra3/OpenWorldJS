@@ -22,7 +22,7 @@ _3D open world game engine using three.js._
 
 ## Basic structure
 
-![Alt_Text](https://media.giphy.com/media/j25Cd6TirdYcmfZkX9/giphy.gif)
+![Alt_Text](https://media.giphy.com/media/LMEA6Szfgcwc8fp6QA/giphy.gif)
 
 ## 'maze.js'
 
