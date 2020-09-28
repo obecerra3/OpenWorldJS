@@ -2,7 +2,7 @@
 
 _3D open world game engine using three.js._
 
-![Alt_Text](https://media.giphy.com/media/oHaiCSpAxsjR8ZKxeQ/giphy.gif)
+![Alt_Text](https://media.giphy.com/media/43ibh592Afq8wREacG/giphy.gif)
 
 ## Setup
 
@@ -12,8 +12,6 @@ _3D open world game engine using three.js._
 
   - Navigate to the directory named _Maze_ in shell
 
-  - run node ./src/js/maze/world/HeightMapGenerator.js and wait for completion
-
   - Enter the command `./local.sh`
 
   - Game will be hosted locally, access with web browser
@@ -21,8 +19,6 @@ _3D open world game engine using three.js._
     - **Address:** <http://localhost:8000/maze.php>
 
 ## Basic structure
-
-![Alt_Text](https://media.giphy.com/media/LMEA6Szfgcwc8fp6QA/giphy.gif)
 
 ## 'maze.js'
 
@@ -69,7 +65,7 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   with several sharp edges/ details. This is pre-calculated per chunk using GPGPU GLSL Fragment Shaders through the
   threejs library GPUCompute in Terrain.js. Also using a box blur algorithm to create a smoothed version of the terrain.
   Textures are created procedurally using noise in TextureGen.frag. A gradient noise LUT is also precomputed in TextureGen.frag
-  to be used instead of a slower hash function.
+  to be used instead of a slower hash function. 
 
   Terrain physics is handled by a moving chunk of height data centered on the player position which is updated once
   the player moves past Terrain.UPDATE_DISTANCE. The shape of the ammo height data mesh collider is updated
