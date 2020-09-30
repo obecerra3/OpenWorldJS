@@ -98,13 +98,22 @@ void main() {
             float fin_sum = right_flow.x + left_flow.y + up_flow.w + down_flow.z;
             float fout_sum = flow.x + flow.y + flow.z + flow.w;
             float net_volume = uSC.delta * (fin_sum - fout_sum);
-            float d2 = state.z + (net_volume / (uSC.lX * uSC.lY));
+            float d2 = max(0.0, state.z + (net_volume / (uSC.lX * uSC.lY)));
             float outflow_flux_x = (left_flow.y - flow.x + flow.y - right_flow.x) / 2.0;
             float d_bar = (state.z + d2) / 2.0;
             float u = outflow_flux_x / (uSC.lY * d_bar);
             float outflow_flux_y = (up_flow.w - flow.z + flow.w - down_flow.z) / 2.0;
             float v = outflow_flux_y / (uSC.lX * d_bar);
-            gl_FragColor = vec4(u, v, d2, 0.0);
+            float bit_mask = 0.0;
+            if (u < 0.0) {
+                u = abs(u);
+                bit_mask += 1.0;
+            }
+            if (v < 0.0) {
+                v = abs(v);
+                bit_mask += 2.0;
+            }
+            gl_FragColor = vec4(u, v, d2, bit_mask);
             break;
 
         // 4. Update water surface
@@ -162,9 +171,17 @@ void main() {
             uv = gl_FragCoord.xy / resolution.xy;
             state = texture(uT1, uv);
             velocity = texture(uT3, uv);
+            if (velocity.w == 1.0) {
+                velocity.x *= -1.0;
+            } else if (velocity.w == 2.0) {
+                velocity.y *= -1.0;
+            } else if (velocity.w == 3.0) {
+                velocity.x *= -1.0;
+                velocity.y *= -1.0;
+            }
             vec4 p_state = texture(uT1, uv - (velocity.xy * uSC.delta));
             float s2 = p_state.w;
-            gl_FragColor = vec4(state.x, state.y, s2, state.w);
+            gl_FragColor = vec4(state.x, state.y, state.z, s2);
             break;
 
         // 7. Evaporation
@@ -173,7 +190,7 @@ void main() {
             cell_size = 1.0 / resolution.xy;
             uv = gl_FragCoord.xy / resolution.xy;
             state = texture(uT1, uv);
-            water_level = state.z * (1.0 - uSC.Ke * uSC.delta);
+            water_level = max(0.0, state.z * (1.0 - uSC.Ke * uSC.delta));
             gl_FragColor = vec4(state.x, state.y, water_level, state.w);
             break;
     }

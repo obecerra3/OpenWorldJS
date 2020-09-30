@@ -138,6 +138,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 for (var c in this.obj.children) {
                     var tile = this.obj.children[c];
                     tile.material.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
+                    // tile.material.uniforms.uHeightmap = { type : "t", value : texture.water_heightmap.data_texture };
                     tile.material.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
                     // tile.material.uniforms.uHeightmap = { type : "t", value : texture.erosion_heightmap.data_texture };
                     tile.material.uniforms.uDiffmap = { type : "t", value : texture.heightmap_diff.data_texture };
@@ -194,6 +195,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 uniforms : {
                     uEdgeMorph    :  { type : "i", value : edge_morph },
                     uGlobalOffset :  { type : "v3", value : this.global_offset },
+                    // uHeightmap    :  { type : "t", value : texture.water_heightmap.data_texture },
                     uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
                     // uHeightmap    :  { type : "t", value : texture.erosion_heightmap.data_texture },
                     uDiffmap      :  { type : "t", value : texture.heightmap_diff.data_texture },

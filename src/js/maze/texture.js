@@ -83,6 +83,7 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         blur_heightmap_       :      { data_texture : null, array : null },
         erosion_heightmap_    :      { data_texture : null, array : null },
         heightmap_diff_       :      { data_texture : null, array : null },
+        water_heightmap_      :      { data_texture : null, array : null },
 
         updateTerrainTextures : function(new_heightmap_center) {
             this.heightmap_center = new_heightmap_center;
@@ -180,8 +181,8 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             var u = this.erosion_mat.uniforms;
             //delta : 0.000125, 0.00125
             u.uSC.value = {
-                A : 1, lX : 1, lY : 1, g : -10, Kc : 1.0, Ks : 0.5, Kd : 1.0,
-                Ke : 0.015, delta : 0.2,
+                A : 1.0, lX : 0.1, lY : 0.1, g : -10, Kc : 1.0, Ks : 0.5, Kd : 1.0,
+                Ke : 0.015, delta : 0.5,
             };
             u.uT1.value = this.heightmap.texture;
             u.uT2.value = new THREE.Texture();
@@ -189,7 +190,7 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             u.uHash.value = false;
             u.uNoise.value = this.noise_texture;
             // simulation loop
-            var steps = 10;
+            var steps = 20;
             var currentRenderTarget;
             for (var i = 0; i < steps; i++) {
                 var offset = i % 2;
@@ -219,17 +220,35 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             }
             var pixels = new Uint8Array(4 * 4096 * 4096);
             renderer.readRenderTargetPixels(this.erosion_rts[13], 0, 0, 4096, 4096, pixels);
-            var float_array = new Float32Array(4096 * 4096);
+            var height_array = new Float32Array(4096 * 4096);
+            var water_array = new Float32Array(4096 * 4096);
             for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
-                float_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
+                height_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
+                water_array[i] = pixels[j + 2];
             }
-            this.erosion_heightmap_.array = float_array;
-            this.erosion_heightmap_.data_texture = new THREE.DataTexture(float_array, 4096, 4096,
+            console.log(water_array);
+
+            this.erosion_heightmap_.array = height_array;
+            this.erosion_heightmap_.data_texture = new THREE.DataTexture(height_array, 4096, 4096,
                 THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
                 THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
                 THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
             this.erosion_heightmap_.data_texture.generateMipmaps = true;
             this.erosion_heightmap_.data_texture.needsUpdate = true;
+
+            this.water_heightmap_.array = water_array;
+            this.water_heightmap_.data_texture = new THREE.DataTexture(water_array, 4096, 4096,
+                THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
+                THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
+                THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
+            this.water_heightmap_.data_texture.generateMipmaps = true;
+            this.water_heightmap_.data_texture.needsUpdate = true;
+        },
+
+        get water_heightmap() {
+            if (Object.values(this.water_heightmap_).includes(null))
+                this.updateErosionHeightmap();
+            return this.water_heightmap_;
         },
 
         get heightmap_diff() {

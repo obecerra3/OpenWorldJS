@@ -3,12 +3,10 @@ uniform vec2 uCenter;
 
 #include Noise.glsl
 
-// const vec2 m_pos = vec2(1000.0, 1000.0);
-
 void main() {
     vec2 pos = gl_FragCoord.xy - DATA_WIDTH_2 + uCenter;
 
-    float height = abs(iqFBM(pos * 0.0003)) * 255.0 * 70.0 * 8.0;
+    float height = abs(iqFBM(pos * 0.0003)) * 255.0 * 70.0 * 6.0;
 
     // MirroredRepeatWrapping
     if (height >= 65536.0) {
@@ -18,14 +16,6 @@ void main() {
             height = 65536.0 - mod(height, 65536.0);
         }
     }
-
-    // float m_dist = distance(pos.xy, m_pos);
-
-    // if (m_dist < 1000.0) {
-    //     height *= 10.0;
-    // }
-    //
-    // height = height * 255.0 * 70.0;
 
     float byte1 = float(int(height) & 0xff) / 255.0;
     float byte2 = float((int(height) >> 8) & 0xff) / 255.0;

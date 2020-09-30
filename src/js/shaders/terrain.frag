@@ -61,7 +61,6 @@ vec3 grassColor(vec2 uv, float flatness) {
         vec3 grass1 = texture2D(uGrassLarge, 4.0 * uv).rgb;
         vec3 grass2 = texture2D(uGrassSmall, 500.0 * uv).rgb;
     #endif
-
     vec3 grass = mix(mix(grass1, grass2, 0.5), vec3(0.1, 0.1, 0.1), flatness);
     return grass;
 }
