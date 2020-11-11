@@ -1,4 +1,4 @@
-# Maze.io
+# OpenWorldJS
 
 _3D open world game engine using three.js._
 
