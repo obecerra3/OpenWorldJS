@@ -2,12 +2,13 @@
 // https://github.com/felixpalmer/lod-terrain
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 'use strict'
-define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics",
-        "player", "shader!Terrain.vert", "shader!Terrain.frag", "renderer",
-        "eventQ", "GPUComputationRenderer", "texture", "shader!GroundCheck.frag"],
-        (THREE, Utils, scene, Light, ImprovedNoise, camera, Physics, Player,
+define(["three", "utils", "scene", "light", "time", "camera", "physics",
+        "player", "texture", "shader!Terrain.vert", "shader!Terrain.frag",
+        "renderer", "eventQ", "GPUComputationRenderer", "shader!GroundCheck.frag",
+        "shader!Water.vert", "shader!Water.frag"],
+        (THREE, Utils, scene, Light, Time, camera, Physics, Player, texture,
         TerrainVert, TerrainFrag, renderer, EventQ, GPUComputationRenderer,
-        texture, GroundCheckFrag) => {
+        GroundCheckFrag, WaterVert, WaterFrag) => {
     var Edge = {
         NONE : 0,
         TOP : 1,
@@ -24,7 +25,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         RESOLUTION : 32.0,              // 128.0 looks the best and runs at about ~40 fps, 64.0 at ~50 fps, and 32.0 at ~60 fps
         TILE_WIDTH : 1,
 
-        obj : new THREE.Object3D(),
+        terrain_obj : new THREE.Object3D(),
+        water_obj : new THREE.Object3D(),
         geometry : new THREE.PlaneBufferGeometry(),
         height_data : [],
         frag_shader : TerrainFrag,
@@ -48,6 +50,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                 TerrainFrag.define("WEBGL2", 1.0);
                 GroundCheckFrag.define("WEBGL2", 1.0);
             }
+            WaterVert.define("WAVE_COUNT", 15);
 
             // Event for passing data to player
             EventQ.push({
@@ -66,12 +69,7 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
             });
 
             this.initGPUCompute().then(() => {
-                // // create height_data using Promise
                 this.updateHeightData().then(() => {
-                    // only do this if updateHeightData is done
-                    // init Collider mesh and data
-                    this.createColliderMesh();
-
                     // set the frag shader
                     this.frag_shader = TerrainFrag;
 
@@ -84,8 +82,9 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     translation_matrix.makeTranslation(0.5, 0.5, 0.0);
                     this.geometry.applyMatrix4(translation_matrix);
 
-                    // init tiles
+                    // init CDLOD tiles of terrain and water
                     this.initTiles();
+                    this.initTiles(true);
                 });
             });
         },
@@ -133,104 +132,133 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
                     this.heightmap_center = new THREE.Vector2(Math.round(new_center_pos.x), Math.round(new_center_pos.y));
                 texture.updateTerrainTextures(this.heightmap_center);
                 this.height_data = texture.heightmap.array;
-                // this.height_data = texture.erosion_heightmap.array;
                 // update uniforms of shaders
-                for (var c in this.obj.children) {
-                    var tile = this.obj.children[c];
+                for (var c in this.terrain_obj.children) {
+                    var tile = this.terrain_obj.children[c];
                     tile.material.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
-                    // tile.material.uniforms.uHeightmap = { type : "t", value : texture.water_heightmap.data_texture };
                     tile.material.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
-                    // tile.material.uniforms.uHeightmap = { type : "t", value : texture.erosion_heightmap.data_texture };
-                    tile.material.uniforms.uDiffmap = { type : "t", value : texture.heightmap_diff.data_texture };
+                    // tile.material.uniforms.uDiffmap = { type : "t", value : texture.heightmap_diff.data_texture };
                 }
                 this.ground_check_mat.uniforms.uCenter = { type : "v2", value : this.heightmap_center };
                 this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.heightmap.data_texture };
-                // this.ground_check_mat.uniforms.uHeightmap = { type : "t", value : texture.erosion_heightmap.data_texture };
                 return resolve("update height data");
             });
         },
 
-        initTiles : function() {
+        initTiles : function(is_water = false) {
             this.init_scale = this.WORLD_WIDTH / Math.pow(2, this.LEVELS);
 
             // create center tiles
-            this.createTile(-this.init_scale, -this.init_scale, this.init_scale, Edge.NONE, true);
-            this.createTile(-this.init_scale, 0, this.init_scale, Edge.NONE, true);
-            this.createTile(0, 0, this.init_scale, Edge.NONE, true);
-            this.createTile(0, -this.init_scale, this.init_scale, Edge.NONE, true);
+            this.createTile(-this.init_scale, -this.init_scale, this.init_scale, Edge.NONE, is_water);
+            this.createTile(-this.init_scale, 0, this.init_scale, Edge.NONE, is_water);
+            this.createTile(0, 0, this.init_scale, Edge.NONE, is_water);
+            this.createTile(0, -this.init_scale, this.init_scale, Edge.NONE, is_water);
 
             // create quadtree of tiles
             for (var scale = this.init_scale; scale < this.WORLD_WIDTH; scale *= 2) {
-                this.createTile(-2 * scale, -2 * scale, scale, Edge.BOTTOM | Edge.LEFT);
-                this.createTile(-2 * scale, -scale, scale, Edge.LEFT);
-                this.createTile(-2 * scale, 0, scale, Edge.LEFT);
-                this.createTile(-2 * scale, scale, scale, Edge.TOP | Edge.LEFT);
+                this.createTile(-2 * scale, -2 * scale, scale, Edge.BOTTOM | Edge.LEFT, is_water);
+                this.createTile(-2 * scale, -scale, scale, Edge.LEFT, is_water);
+                this.createTile(-2 * scale, 0, scale, Edge.LEFT, is_water);
+                this.createTile(-2 * scale, scale, scale, Edge.TOP | Edge.LEFT, is_water);
 
-                this.createTile(-scale, -2 * scale, scale, Edge.BOTTOM);
-                this.createTile(-scale, scale, scale, Edge.TOP);
+                this.createTile(-scale, -2 * scale, scale, Edge.BOTTOM, is_water);
+                this.createTile(-scale, scale, scale, Edge.TOP, is_water);
 
-                this.createTile(0, -2 * scale, scale, Edge.BOTTOM);
-                this.createTile(0, scale, scale, Edge.TOP);
+                this.createTile(0, -2 * scale, scale, Edge.BOTTOM, is_water);
+                this.createTile(0, scale, scale, Edge.TOP, is_water);
 
-                this.createTile(scale, -2 * scale, scale, Edge.BOTTOM | Edge.RIGHT);
-                this.createTile(scale, -scale, scale, Edge.RIGHT);
-                this.createTile(scale, 0, scale, Edge.RIGHT);
-                this.createTile(scale, scale, scale, Edge.TOP | Edge.RIGHT);
+                this.createTile(scale, -2 * scale, scale, Edge.BOTTOM | Edge.RIGHT, is_water);
+                this.createTile(scale, -scale, scale, Edge.RIGHT, is_water);
+                this.createTile(scale, 0, scale, Edge.RIGHT, is_water);
+                this.createTile(scale, scale, scale, Edge.TOP | Edge.RIGHT, is_water);
           }
         },
 
-        createTile : function(tile_offset_x, tile_offset_y, scale, edge_morph, is_collider_mesh = false) {
+        createTile : function(tile_offset_x, tile_offset_y, scale, edge_morph, is_water) {
             var tile_offset = new THREE.Vector2(tile_offset_x, tile_offset_y);
-            var tile_material = this.createMaterial(tile_offset, scale, edge_morph);
+            var tile_material = this.createMaterial(tile_offset, scale, edge_morph, is_water);
             var mesh = new THREE.Mesh(this.geometry, tile_material);
             mesh.frustumCulled = false;
-
-            if (is_collider_mesh) this.collider_meshes.push(mesh);
-
-            this.obj.add(mesh);
+            if (is_water) {
+                this.water_obj.add(mesh);
+            } else {
+                this.terrain_obj.add(mesh);
+            }
         },
 
-        createMaterial : function(tile_offset, scale, edge_morph) {
-            return new THREE.ShaderMaterial({
-                uniforms : {
-                    uEdgeMorph    :  { type : "i", value : edge_morph },
-                    uGlobalOffset :  { type : "v3", value : this.global_offset },
-                    // uHeightmap    :  { type : "t", value : texture.water_heightmap.data_texture },
-                    uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
-                    // uHeightmap    :  { type : "t", value : texture.erosion_heightmap.data_texture },
-                    uDiffmap      :  { type : "t", value : texture.heightmap_diff.data_texture },
-                    uTileOffset   :  { type : "v2", value : tile_offset },
-                    uScale        :  { type : "f", value : scale },
-                    uAlpha        :  { type : "f", value : this.alpha },
-                    uLookDir      :  { type : "v3", value : Player.look_direction },
-                    uCenter       :  { type : "v2", value : this.heightmap_center },
-                    uSunlight     :  {
-                                        value :
-                                            {
+        createMaterial : function(tile_offset, scale, edge_morph, is_water) {
+            if (is_water) {
+                return new THREE.ShaderMaterial({
+                    uniforms : {
+                        uEdgeMorph    :  { type : "i", value : edge_morph },
+                        uGlobalOffset :  { type : "v3", value : this.global_offset },
+                        // uWatermap    :  { type : "t", value : texture.water_heightmap.data_texture },
+                        uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
+                        uTileOffset   :  { type : "v2", value : tile_offset },
+                        uScale        :  { type : "f", value : scale },
+                        uAlpha        :  { type : "f", value : this.alpha },
+                        uLookDir      :  { type : "v3", value : Player.look_direction },
+                        uCenter       :  { type : "v2", value : this.heightmap_center },
+                        uSunlight     :  { value : {
                                              direction : Light.sunlight_direction,
                                              position  : Light.sunlight.position,
                                              ambient   : Light.sunlight_ambient,
                                              diffuse   : Light.sunlight_diffuse,
                                              specular  : Light.sunlight_specular
                                             }
-                                     },
-                    uGrassLarge   :  { type : "t", value : texture.grass_large_texture },
-                    uGrassSmall   :  { type : "t", value : texture.grass_small_texture },
-                },
-                defines : {
-                    RESOLUTION  : this.RESOLUTION.toFixed(2),
-                    DATA_WIDTH : this.DATA_WIDTH.toFixed(2),
-                    DATA_WIDTH_2 : (this.DATA_WIDTH / 2).toFixed(2),
-                },
-                vertexShader  : TerrainVert.value,
-                fragmentShader  : this.frag_shader.value,
-                transparent : true,
-            });
+                                         },
+                        uWaves        :  { value : texture.waves },
+                        uTime         :  { type : "f", value : Time.clock.elapsedTime }
+                    },
+                    defines : {
+                        RESOLUTION    :  this.RESOLUTION.toFixed(2),
+                        DATA_WIDTH    :  this.DATA_WIDTH.toFixed(2),
+                        DATA_WIDTH_2  :  (this.DATA_WIDTH / 2).toFixed(2),
+                        WAVE_COUNT    :  15,
+                    },
+                    vertexShader  : WaterVert.value,
+                    fragmentShader  : WaterFrag.value,
+                    transparent : true,
+                    side : THREE.DoubleSide,
+                });
+            } else {
+                return new THREE.ShaderMaterial({
+                    uniforms : {
+                        uEdgeMorph    :  { type : "i", value : edge_morph },
+                        uGlobalOffset :  { type : "v3", value : this.global_offset },
+                        uHeightmap    :  { type : "t", value : texture.heightmap.data_texture },
+                        uDiffmap      :  { type : "t", value : texture.heightmap_diff.data_texture },
+                        uTileOffset   :  { type : "v2", value : tile_offset },
+                        uScale        :  { type : "f", value : scale },
+                        uAlpha        :  { type : "f", value : this.alpha },
+                        uLookDir      :  { type : "v3", value : Player.look_direction },
+                        uCenter       :  { type : "v2", value : this.heightmap_center },
+                        uSunlight     :  { value : {
+                                             direction : Light.sunlight_direction,
+                                             position  : Light.sunlight.position,
+                                             ambient   : Light.sunlight_ambient,
+                                             diffuse   : Light.sunlight_diffuse,
+                                             specular  : Light.sunlight_specular
+                                            }
+                                         },
+                        uGrassLarge   :  { type : "t", value : texture.grass_large_texture },
+                        uGrassSmall   :  { type : "t", value : texture.grass_small_texture },
+                    },
+                    defines : {
+                        RESOLUTION    :  this.RESOLUTION.toFixed(2),
+                        DATA_WIDTH    :  this.DATA_WIDTH.toFixed(2),
+                        DATA_WIDTH_2  :  (this.DATA_WIDTH / 2).toFixed(2),
+                    },
+                    vertexShader  : TerrainVert.value,
+                    fragmentShader  : this.frag_shader.value,
+                    transparent : true,
+                });
+            }
         },
-
         render : function() {
             // add obj to scene
-            scene.add(this.obj);
+            scene.add(this.terrain_obj);
+            scene.add(this.water_obj);
         },
         // --------------------------------------------------------------------
         // --------------------------------------------------------------------
@@ -240,6 +268,11 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         update : function() {
             this.global_offset.x = camera.position.x;
             this.global_offset.y = camera.position.y;
+
+            for (var c in this.water_obj.children) {
+                var tile = this.water_obj.children[c];
+                tile.material.uniforms.uTime.value = Time.clock.elapsedTime;
+            }
 
             if (Player.initialized) {
                 if (Utils.distance2D(Player.threeObj.position, this.last_collider_pos) >= this.RESOLUTION * 0.75)
@@ -254,43 +287,6 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         //    PHYSICS
         // --------------------------------------------------------------------
         // --------------------------------------------------------------------
-        createColliderMesh : function() {
-            var res = 0.0
-            var geometry = new THREE.PlaneBufferGeometry(
-                res * 2, res * 2,
-                res * 2, res * 2);
-            var material = new THREE.MeshStandardMaterial({ visible : false, color : 0x004433 });
-            var mesh = new THREE.Mesh(geometry, material);
-            mesh.frustumCulled = false;
-            scene.add(mesh);
-            this.collider_mesh = mesh;
-
-            var vertices = [];
-            var indices = [];
-            var width = res;
-
-            var i = 0;
-
-            for (var y = -width; y < width; y++) {
-                for (var x = -width; x < width; x++) {
-                    // assign vertex to vertices
-                    vertices.push(x, y, 0.0);
-                    // // assign 2 faces per vertex
-                    if (y != width - 1 && x != width - 1) {
-                        // clockwise
-                        indices.push(i, i + 1, i + 2 * width);
-                        indices.push(i + 1, i + 1 + 2 * width, i + 2 * width);
-                    }
-                    // face/ vertex index
-                    i++;
-                }
-            }
-
-            // assign indices and vertices to mesh
-            this.collider_mesh.geometry.setIndex(indices);
-            this.collider_mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        },
-
         updateCollider : function() {
             // get chunk data
             var cd = this.getChunkData();
@@ -361,8 +357,8 @@ define(["three", "utils", "scene", "light", "ImprovedNoise", "camera", "physics"
         // --------------------------------------------------------------------
         toggleAlpha : function(a) {
             this.alpha = a;
-            for (var c in this.obj.children) {
-                var tile = this.obj.children[c];
+            for (var c in this.terrain_obj.children) {
+                var tile = this.terrain_obj.children[c];
                 tile.material.uniforms.uAlpha = { type : "f", value : this.alpha };
             }
         },

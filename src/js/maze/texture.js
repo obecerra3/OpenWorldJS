@@ -179,9 +179,8 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             var error = this.gpuCompute4096.init();
             if (error !== null) console.error("GPU Compute updateHeightmap Completeness Error: " + error);
             var u = this.erosion_mat.uniforms;
-            //delta : 0.000125, 0.00125
             u.uSC.value = {
-                A : 1.0, lX : 0.1, lY : 0.1, g : -10, Kc : 1.0, Ks : 0.5, Kd : 1.0,
+                A : 1.0, lX : 0.1, lY : 0.1, g : 9.8, Kc : 1.0, Ks : 0.5, Kd : 1.0,
                 Ke : 0.015, delta : 0.5,
             };
             u.uT1.value = this.heightmap.texture;
@@ -221,13 +220,9 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
             var pixels = new Uint8Array(4 * 4096 * 4096);
             renderer.readRenderTargetPixels(this.erosion_rts[13], 0, 0, 4096, 4096, pixels);
             var height_array = new Float32Array(4096 * 4096);
-            var water_array = new Float32Array(4096 * 4096);
             for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
                 height_array[i] = (pixels[j] + (pixels[j + 1] << 8)) / 70.0;
-                water_array[i] = pixels[j + 2];
             }
-            console.log(water_array);
-
             this.erosion_heightmap_.array = height_array;
             this.erosion_heightmap_.data_texture = new THREE.DataTexture(height_array, 4096, 4096,
                 THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
@@ -235,20 +230,6 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
                 THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
             this.erosion_heightmap_.data_texture.generateMipmaps = true;
             this.erosion_heightmap_.data_texture.needsUpdate = true;
-
-            this.water_heightmap_.array = water_array;
-            this.water_heightmap_.data_texture = new THREE.DataTexture(water_array, 4096, 4096,
-                THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
-                THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
-                THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
-            this.water_heightmap_.data_texture.generateMipmaps = true;
-            this.water_heightmap_.data_texture.needsUpdate = true;
-        },
-
-        get water_heightmap() {
-            if (Object.values(this.water_heightmap_).includes(null))
-                this.updateErosionHeightmap();
-            return this.water_heightmap_;
         },
 
         get heightmap_diff() {
@@ -294,6 +275,84 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
                 THREE.LinearFilter, THREE.LinearMipMapLinearFilter, 1);
             this.heightmap_diff_.data_texture.generateMipmaps = true;
             this.heightmap_diff_.data_texture.needsUpdate = true;
+        },
+        // -------------------------------------------------------------------
+        // -------------------------------------------------------------------
+        // Water
+        // -------------------------------------------------------------------
+        // -------------------------------------------------------------------
+        water_rts : [],
+
+        updateWaterHeightmap : function() {
+            if (this.water_rts.length == 0) {
+                for (var i = 0; i < 6; i++) {
+                    this.water_rts.push(new THREE.WebGLRenderTarget(4096, 4096, {
+                        wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
+                        minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+                        format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+                        depthBuffer: false,
+                    }));
+                }
+            }
+            var error = this.gpuCompute4096.init();
+            if (error !== null) console.error("GPU Compute updateHeightmap Completeness Error: " + error);
+
+            var pixels = new Uint8Array(4 * 4096 * 4096);
+            renderer.readRenderTargetPixels(this.water_rts[5], 0, 0, 4096, 4096, pixels);
+            var water_array = new Float32Array(4096 * 4096);
+            for (var i = 0, j = 0; j < pixels.length; i++, j+=4) {
+                water_array2[i] = pixels[j + 2];
+            }
+            this.water_heightmap_.array = water_array;
+            this.water_heightmap_.data_texture = new THREE.DataTexture(water_array, 4096, 4096,
+                THREE.RedFormat, THREE.FloatType, THREE.UVMapping,
+                THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
+                THREE.LinearFilter,THREE.LinearMipMapLinearFilter, 1);
+            this.water_heightmap_.data_texture.generateMipmaps = true;
+            this.water_heightmap_.data_texture.needsUpdate = true;
+        },
+
+        get water_heightmap() {
+            if (Object.values(this.water_heightmap_).includes(null))
+                this.updateWaterHeightmap();
+            return this.water_heightmap_;
+        },
+
+        waves_ : [],
+
+        updateWaves : function() {
+            // choose median wavelength L, generate Li from double to half of L
+            // frequency w = sqrt(g * 2pi / L)
+            // choose a median amplitude, the ratio of amplitude to wavelength for all waves must match ratio from median values
+            // choose xy vector for wind direction and find random Di within constant angle of D
+            // express speed as phase constant S * 2pi / L
+            var L = 4;
+            var L_min = L * 0.5;
+            var L_max = L * 2;
+            var amp_over_len = 0.01;
+            var D = new THREE.Vector2(1, 1);
+            var D_offset = Math.PI;
+            var num_waves = 15;
+            var S = 2.5;
+            this.waves_ = [];
+            for (var i = 0; i < num_waves; i++) {
+                var Li = Math.random() * (L_max - L_min) + L_min;
+                var Ai = Li * amp_over_len;
+                // 2d rotation x' = x cos θ − y sin θ,  y' = x sin θ + y cos θ
+                var theta = D_offset * Math.random();
+                var Di_x = D.x * Math.cos(theta) - D.y * Math.sin(theta);
+                var Di_y = D.x * Math.sin(theta) - D.y * Math.cos(theta);
+                var Di = new THREE.Vector2(Di_x, Di_y);
+                var wi = Math.sqrt(9.8 * 2 * Math.PI / Li);
+                var phase_i = S * 2 * Math.PI / Li;
+                this.waves_.push( { Ai: Ai, Di : Di, wi : wi, phase_i : phase_i } );
+            }
+        },
+
+        get waves() {
+            if (this.waves_.length === 0)
+                this.updateWaves();
+            return this.waves_;
         },
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
@@ -397,62 +456,6 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
         heightRenderTarget4096 : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step1rT : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step1rT2 : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step2rT : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step2rT2 : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step3rT : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step3rT2 : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step4rT : new THREE.WebGLRenderTarget(4096, 4096,
-        {
-            wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-            minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-            depthBuffer: false,
-        }),
-        step4rT2 : new THREE.WebGLRenderTarget(4096, 4096,
         {
             wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
             minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,

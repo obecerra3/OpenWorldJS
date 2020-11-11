@@ -1,7 +1,6 @@
 // ----------------------
 // Terrain Frag Shader
 // ----------------------
-
 struct DirLight {
     vec3 direction;
     vec3 position;
@@ -9,8 +8,6 @@ struct DirLight {
     vec3 diffuse;
     vec3 specular;
 };
-
-#define MAX_HEIGHT 700.0
 
 varying vec3 vPosition;
 varying vec3 vNormal;
