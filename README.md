@@ -2,7 +2,7 @@
 
 _3D open world game engine using three.js._
 
-![Alt_Text](https://media.giphy.com/media/43ibh592Afq8wREacG/giphy.gif)
+![Alt_Text](https://giphy.com/gifs/PwcFUVi3EyyPyxaUEd)
 
 ## Setup
 
@@ -48,8 +48,6 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   run1 toggles faster player movement speed, run0 toggles normal player movement speed. Full uses are
   in PlayerInputHandler.js.
 
-  ![Alt_Text](https://media.giphy.com/media/H1qGAF9wEtzx4jRWMW/giphy.gif)
-
   ### Collider.js/ Ray.js
 
   Raycasting and collider support to check for collisions with meshes or if a game entity is grounded.
@@ -86,8 +84,6 @@ Currently everything is initialized in the **'maze.js'** file located in **_src/
   - Forward/Backward Running, Left/Right Run Strafing
   - Jump Animation/ Fall Idle animation/ Land Animation
   - Crouch Idle, Forward/Backward Crouch Walking
-
-  ![Alt_Text](https://media.giphy.com/media/igJyN1fDCncHgXyA2m/giphy.gif)
 
   ### Debug.js
 
