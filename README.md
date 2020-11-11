@@ -2,7 +2,7 @@
 
 _3D open world game engine using three.js._
 
-![Alt_Text](https://giphy.com/gifs/PwcFUVi3EyyPyxaUEd)
+![Alt_Text](https://media.giphy.com/media/PwcFUVi3EyyPyxaUEd/giphy.gif)
 
 ## Setup
 
