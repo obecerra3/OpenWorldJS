@@ -10,7 +10,8 @@ _3D open world game engine using three.js._
 
 - Build Locally:
 
-  - Navigate to the directory named _Maze_ in shell
+Option 1:
+  - Navigate to the directory named _src_ in shell
 
   - Enter the command `./local.sh`
 
@@ -18,6 +19,11 @@ _3D open world game engine using three.js._
 
     - **Address:** <http://localhost:8000/maze.php>
 
+Option 2:
+    - Run `python -m http.server` from the _src_ directory. This avoids needing
+    to install php or watchify if you are on a Windows machine.
+    - Game will be hosted locally on your web browser at <localhost:8000>
+    
 ## Basic structure
 
 ## 'maze.js'

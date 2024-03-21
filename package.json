@@ -1,26 +1,24 @@
 {
-    "name": "maze",
+    "name": "OpenWorldJS",
     "version": "1.0.0",
-    "description": "Internet Maze",
+    "description": "OpenWorld builder in JS",
     "main": "js/maze.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/bnwlkr/Maze.git"
+        "url": "git+https://github.com/obecerra3/OpenWorldJS.git"
     },
-    "author": "Ben Walker",
+    "author": "Oscar Becerra and Ben Walker",
     "license": "ISC",
-    "private": true,
-    "bugs": {
-        "url": "https://github.com/bnwlkr/Maze/issues"
-    },
-    "homepage": "https://github.com/bnwlkr/Maze#readme",
+    "private": false,
+    "homepage": "https://github.com/obecerra3/OpenWorldJS",
     "devDependencies": {
         "browserify": "^16.5.0",
-        "watchify": "^3.11.1"
+        "watchify": "^4.0.0"
     },
     "dependencies": {
+        "php": "^1.0.2"
     }
 }
