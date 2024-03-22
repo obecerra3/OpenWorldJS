@@ -3,9 +3,9 @@
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain.html
 'use strict'
 define(["three", "utils", "scene", "light", "time", "camera", "physics",
-        "player", "texture", "shader!Terrain.vert", "shader!Terrain.frag",
-        "renderer", "eventQ", "GPUComputationRenderer", "shader!GroundCheck.frag",
-        "shader!Water.vert", "shader!Water.frag"],
+        "player", "texture", "shader!terrain.vert", "shader!terrain.frag",
+        "renderer", "eventQ", "GPUComputationRenderer", "shader!groundCheck.frag",
+        "shader!water.vert", "shader!water.frag"],
         (THREE, Utils, scene, Light, Time, camera, Physics, Player, texture,
         TerrainVert, TerrainFrag, renderer, EventQ, GPUComputationRenderer,
         GroundCheckFrag, WaterVert, WaterFrag) => {

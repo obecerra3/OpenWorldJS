@@ -3,13 +3,13 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray",
         "physics", "scene", "camera", "utils", "states", "playerInputHandler",
         "container", "eventQ", "time", "texture"],
         (THREE, GLTFLoader, dracoLoader, Animator, Collider, Ray, Physics,
-        scene, camera, Utils, States, PlayerInputHandler, container, EventQ,
+        scene, camera, Utils, States, playerInputHandler, container, EventQ,
         Time, texture) => {
 
-    var Player =
+    var player =
     {
         username: "",
-        input_handler: PlayerInputHandler,
+        input_handler: playerInputHandler,
         // collider: {},
         state: States.IDLE,
         running: false,
@@ -889,5 +889,5 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray",
         },
 
     }
-    return Player;
+    return player;
 });
