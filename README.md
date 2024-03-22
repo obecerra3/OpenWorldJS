@@ -13,13 +13,7 @@ Watch the demo on youtube: https://www.youtube.com/watch?v=k0mx0g4ujek
 
   - Game will be hosted locally, access with web browser
 
-    - **Address:** <http://localhost:8000/maze.php>
-    
-## Basic structure
-
-## 'game.js'
-
-Currently everything is initialized in the **'game.js'** file located in **/js/game.js_**
+    - **Address:** <http://localhost:8000>
 
 ## Features
 
