@@ -2,7 +2,7 @@
 var require =
 {
     // Default load path for js files
-    baseUrl : "/src/js/maze",
+    baseUrl : "/js/game",
     shim :
     {
         "threeCore" : { exports : "THREE" },
@@ -39,6 +39,7 @@ var require =
         game : "./multiplayer/Game",
         infoManager : "./multiplayer/InfoManager",
         light : "./world/Light",
+        game : "./game",
         mazeEngine : "./world/MazeEngine",
         messageBuilder : "./multiplayer/MessageBuilder",
         multiplayer : "./multiplayer/Multiplayer",

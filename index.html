@@ -7,7 +7,7 @@ generation aspect.
 
 <head>
     <meta charset="UTF-8">
-    <title>The Maze</title>
+    <title>OpenWorldJS</title>
 </head>
 <body>
     <a href="login.php">login</a>
@@ -23,17 +23,8 @@ generation aspect.
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         <link type="text/css" rel="stylesheet" href="style.css">
-        <script src="src/js/config.js"></script>
-        <script src="src/js/require.js"></script>
-        <script src="src/js/main.js"></script>
-        <!--
-        <script src="src/js/require.js"></script>
-        <script>
-        require(['src/js/config.js'], function() {
-            
-        })
-        </script>
-        -->
+        <script src="js/config.js"></script>
+        <script data-main="../main" src="js/require.js"></script>
     </head>
     <body>
         <div id="threejs-container"></div>
