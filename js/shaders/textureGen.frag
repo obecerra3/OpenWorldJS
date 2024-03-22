@@ -1,5 +1,5 @@
 // GPGPU Fragment shader used to generate Data Textures
-#include Noise.glsl
+#include noise.glsl
 
 uniform int uTextureType;
 

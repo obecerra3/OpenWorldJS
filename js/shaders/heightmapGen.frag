@@ -1,7 +1,7 @@
 // GPGPU Fragment shader used to calculate the Heights of each position in a chunk
 uniform vec2 uCenter;
 
-#include Noise.glsl
+#include noise.glsl
 
 void main() {
     vec2 pos = gl_FragCoord.xy - DATA_WIDTH_2 + uCenter;

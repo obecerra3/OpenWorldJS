@@ -19,7 +19,7 @@ float getHeight(vec3 pos);
 float getSmoothHeight(vec3 pos);
 vec3 getNormal();
 
-#include Edgemorph.glsl
+#include edgemorph.glsl
 
 void main() {
     // Morph factor tells us how close we are to next level.

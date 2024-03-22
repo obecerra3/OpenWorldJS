@@ -1,7 +1,7 @@
 // Object that initializes and holds data textures
 'use strict'
 define( ["three", "renderer", "GPUComputationRenderer", "shader!heightmapGen.frag",
-        "shader!textureGen.frag", "shader!boxBlur.frag", "shader!erosion.frag"],
+        "shader!textureGen.frag", "shader!boxblur.frag", "shader!erosion.frag"],
         (THREE, renderer, GPUComputationRenderer, HeightmapGenFrag, TextureGenFrag,
         BoxBlurFrag, ErosionFrag) => {
     return {

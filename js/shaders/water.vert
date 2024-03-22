@@ -26,7 +26,7 @@ varying float vDepth;
 // function prototypes
 void calcWaveData();
 
-#include Edgemorph.glsl
+#include edgemorph.glsl
 
 void main() {
     // Morph factor tells us how close we are to next level.

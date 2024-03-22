@@ -21,7 +21,7 @@ uniform int uFrame;                      // how many total simulation steps we h
 
 float rainfall(vec2 uv);
 
-#include Noise.glsl
+#include noise.glsl
 
 // 1. Water level increases from rainfall or a water source
 // 2. Simulate flow and update the velocity field and water level

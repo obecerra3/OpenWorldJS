@@ -50,7 +50,7 @@ Watch the demo on youtube: https://www.youtube.com/watch?v=k0mx0g4ujek
 
   ### Terrain.js
 
-  Currently using 2D Gradient Noise and Fractional Brownian Motion in Noise.glsl. This creates a realistic terrain
+  Currently using 2D Gradient Noise and Fractional Brownian Motion in noise.glsl. This creates a realistic terrain
   with several sharp edges/ details. This is pre-calculated per chunk using GPGPU GLSL Fragment Shaders through the
   threejs library GPUCompute in Terrain.js. Also using a box blur algorithm to create a smoothed version of the terrain.
   Textures are created procedurally using noise in TextureGen.frag. A gradient noise LUT is also precomputed in TextureGen.frag
