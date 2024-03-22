@@ -3,6 +3,7 @@
 _3D open world game engine using three.js._
 
 Play the demo on github pages: https://obecerra3.github.io/OpenWorldJS/
+
 Watch the demo on youtube: https://www.youtube.com/watch?v=k0mx0g4ujek
 
 ## Setup
