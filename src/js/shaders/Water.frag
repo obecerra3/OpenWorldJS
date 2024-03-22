@@ -32,8 +32,7 @@ void main() {
 }
 
 vec3 surfaceColor() {
-    // return vec3(0.75, 0.9, 1.0);
-    return vec3(0.05, 0.36, 0.61);
+    return vec3(0.05, 0.3, 0.9);
 }
 
 vec3 directLightColor(vec3 color) {
@@ -46,5 +45,5 @@ vec3 directLightColor(vec3 color) {
     float diff = max(dot(vNormal, light_dir), 0.0);
     vec3 diffuse = uSunlight.diffuse * diff * color;
 
-    return (ambient + diffuse);
+    return (ambient + diffuse + uSunlight.specular);
 }

@@ -2,7 +2,7 @@
 
 _3D open world game engine using three.js._
 
-![Alt_Text](https://media.giphy.com/media/PwcFUVi3EyyPyxaUEd/giphy.gif)
+Watch the demo on youtube: https://www.youtube.com/watch?v=k0mx0g4ujek
 
 ## Setup
 
@@ -130,6 +130,8 @@ The libraries we are using are in the **lib** directory
 
 - Currently uses the same structure as https://github.com/felixpalmer/amd-three.js/ in order to organize requiring shaders or javascript components.
 
-- Terrain CDLOD from https://github.com/felixpalmer/lod-terrain
+- Terrain CDLOD algorithm from https://github.com/felixpalmer/lod-terrain
 
 - mixamo.com for animations and 3D Player models.
+
+- Skybox art from Chad Wolfe: https://opengameart.org/content/sky-box-sunny-day

@@ -84,9 +84,10 @@ void calcWaveData() {
             height += w.Ai * sin(dot(w.Di, vPosition.xy) * w.wi + uTime * w.phase_i);
             normal.x += w.wi * w.Di.x * w.Ai * cos(dot(w.Di, vPosition.xy) * w.wi + uTime * w.phase_i); // change cos to LUT
             normal.y += w.wi * w.Di.y * w.Ai * cos(dot(w.Di, vPosition.xy) * w.wi + uTime * w.phase_i); // change cos to LUT
+            normal.z += w.wi * w.Di.y * w.Ai * cos(dot(w.Di, vPosition.yz) * w.wi + uTime * w.phase_i); // change cos to LUT
         }
         depth = height - b;
-        normal.xy *= -1.0;
+        normal.xyz *= -1.0;
     }
 
     vDepth = depth;
