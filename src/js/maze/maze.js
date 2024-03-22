@@ -6,7 +6,6 @@ define(["three", "renderer", "camera", "container", "scene", "physics", "world",
     var maze = {
         init: () => {
             THREE.Cache.enabled = true;
-
             Physics.init();
             Debug.init();
             Player.init();

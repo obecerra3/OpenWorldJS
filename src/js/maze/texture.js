@@ -257,8 +257,6 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
                 }
                 float_array[i] = THREE.MathUtils.clamp(value, 0.0, 1.0);
             }
-            console.log("max: " + max_v);
-            console.log("min: " + min_v);
             var sum = 0;
             var count = 0;
             f.forEach((x) => {
@@ -267,7 +265,6 @@ define( ["three", "renderer", "GPUComputationRenderer", "shader!HeightmapGen.fra
                     count++;
                 }
             });
-            console.log("average: " + sum / count);
             this.heightmap_diff_.array = float_array;
             this.heightmap_diff_.data_texture = new THREE.DataTexture(
                 float_array, 4096, 4096, THREE.RedFormat, THREE.FloatType,

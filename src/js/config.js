@@ -33,7 +33,7 @@ var require =
         //game code
         animator : "./utils/Animator",
         collider : "./physics/Collider",
-        colors : "./Utils/Colors",
+        colors : "./utils/Colors",
         debug : "./utils/Debug",
         eventQ : "./utils/EventQ",
         game : "./multiplayer/Game",
@@ -47,9 +47,10 @@ var require =
         player : "./player/Player",
         playerInputHandler : "./player/playerInputHandler",
         ray : "./physics/Ray",
+        skybox : "./world/SkyBox",
         states : "./utils/States",
         terrain : "./world/Terrain",
-        time : "./Utils/Time",
+        time : "./utils/Time",
         utils : "./utils/Utils",
         world : "./world/World",
     }

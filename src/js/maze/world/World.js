@@ -4,7 +4,6 @@ define(["three", "mazeEngine", "utils", "terrain", "light", "time"],
         init: (player) => {
             Light.init(player);
             Terrain.init();
-
             World.render();
         },
 

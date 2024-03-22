@@ -20,9 +20,9 @@ Option 1:
     - **Address:** <http://localhost:8000/maze.php>
 
 Option 2:
-    - Run `python -m http.server` from the _src_ directory. This avoids needing
+  - Run `python -m http.server` from the _src_ directory. This avoids needing
     to install php or watchify if you are on a Windows machine.
-    - Game will be hosted locally on your web browser at <localhost:8000>
+  - Game will be hosted locally on your web browser at <localhost:8000>
     
 ## Basic structure
 

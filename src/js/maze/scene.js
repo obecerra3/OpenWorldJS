@@ -1,6 +1,10 @@
 define(["three"],
        (THREE) => {
-    var scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xB3F3FF);
+    let scene = new THREE.Scene();
+    let cube_texture = new THREE.CubeTextureLoader()
+        .setPath("/js/textures/")
+        .load(["skybox_right.bmp", "skybox_left.bmp", "skybox_back.bmp", 
+               "skybox_front.bmp", "skybox_top.bmp", "skybox_bottom.bmp"]);
+    scene.background = cube_texture;
     return scene;
 });
