@@ -2,7 +2,7 @@
 var require =
 {
     // Default load path for js files
-    baseUrl : "js/maze",
+    baseUrl : "/src/js/maze",
     shim :
     {
         "threeCore" : { exports : "THREE" },

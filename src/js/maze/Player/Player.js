@@ -139,7 +139,7 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray",
             var dracoLoader = new THREE.DRACOLoader();
             dracoLoader.setDecoderPath("../lib/draco/");
             loader.setDRACOLoader(dracoLoader);
-            loader.load("./js/models/michelle.glb", (gltf) =>
+            loader.load("/src/js/models/michelle.glb", (gltf) =>
             {
                 this.model = gltf;
                 this.threeObj = gltf.scene;
