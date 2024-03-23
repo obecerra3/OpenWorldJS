@@ -120,6 +120,8 @@ define(["three", "gltfLoader", "dracoLoader", "animator", "collider", "ray",
 
                     rigidbody.setAngularFactor(new Physics.ammo.btVector3(0.0, 0.0, 0.0));
                     this.rigidbody = rigidbody;
+
+                    this.toggleGravity(2);
                 },
                 arguments: []
             });
